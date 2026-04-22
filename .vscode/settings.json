@@ -1,0 +1,7 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\rich0\\OneDrive\\Desktop\\Course\\1142 Java\\Final Project\\lib\\jna-5.18.1.jar",
+        "c:\\Users\\rich0\\OneDrive\\Desktop\\Course\\1142 Java\\Final Project\\lib\\jna-platform-5.18.1.jar"
+    ]
+}
