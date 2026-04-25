@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -108,9 +107,13 @@ public class ExportData {
                 }
 
                 for (ActivityRecord activity : activities) {
-                    writer.write(toTrainingLine(activity));
-                    writer.newLine();
+                    String line = toTrainingLine(activity);
                     currentMaxId = activity.id();
+                    if (line.isEmpty()) {
+                        continue;
+                    }
+                    writer.write(line);
+                    writer.newLine();
                 }
 
                 if (activities.size() < DEFAULT_BATCH_SIZE) {
@@ -205,15 +208,20 @@ public class ExportData {
     }
 
     private String toTrainingLine(ActivityRecord activity) {
+        String cleanApp = textCleaner.apply(activity.appName());
+        String cleanTitle = textCleaner.apply(activity.windowTitle());
+
+        if (cleanApp.isBlank() && cleanTitle.isBlank()) {
+            return "";
+        }
+
         StringBuilder line = new StringBuilder(64);
         line.append(activity.focus() ? "STUDY" : "PLAY");
 
-        String cleanApp = textCleaner.apply(activity.appName());
         if (!cleanApp.isBlank()) {
             line.append(' ').append(cleanApp);
         }
 
-        String cleanTitle = textCleaner.apply(activity.windowTitle());
         if (!cleanTitle.isBlank()) {
             line.append(' ').append(cleanTitle);
         }
