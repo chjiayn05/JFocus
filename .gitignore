@@ -22,11 +22,3 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
-
-
-# 根目錄 target
-/target/
-*/test/
-
-# 本機可見資料目錄（db / ml）
-/jfocus-data/

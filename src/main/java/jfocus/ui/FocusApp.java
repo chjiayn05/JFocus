@@ -17,7 +17,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import jfocus.db.DatabaseCore;
 
 public class FocusApp extends Application {
 
@@ -36,7 +35,6 @@ public class FocusApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        DatabaseCore.initializeDatabase();
 
         startBtn.setOnAction(e -> {
             timerLabel.setStyle("-fx-font-size: 80px; -fx-text-fill: #27ae60; -fx-font-weight: bold;"); // 變綠色
