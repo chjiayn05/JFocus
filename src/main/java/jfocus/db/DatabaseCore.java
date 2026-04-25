@@ -85,6 +85,7 @@ public class DatabaseCore {
                 app_name TEXT,
                 window_title TEXT,
                 start_time TEXT,
+                end_time TEXT,
                 duration INTEGER,
                 is_focus INTEGER,
                 session_id TEXT
@@ -96,6 +97,8 @@ public class DatabaseCore {
             stmt.execute("PRAGMA journal_mode=WAL");
             stmt.execute("PRAGMA synchronous=NORMAL");
             stmt.execute(sql);
+            ensureColumnExists(conn, "activities", "end_time", "TEXT");
+            ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
             ensureIndexes(stmt);
             System.out.println("✅ DatabaseCore: SQLite 資料庫與資料表已就緒！");
@@ -181,6 +184,7 @@ public class DatabaseCore {
 
     private void ensureIndexes(Statement stmt) throws SQLException {
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_start_time ON activities(start_time)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_end_time ON activities(end_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_session_id ON activities(session_id)");
     }
 }

@@ -7,6 +7,7 @@ import jfocus.activity.ActivityRecord;
 import jfocus.activity.ActivityRepository;
 import jfocus.activity.JdbcActivityRepository;
 import jfocus.db.DatabaseCore;
+import jfocus.ui.FocusApp;
 
 /**
  * 提供活動資料寫入功能。
@@ -34,40 +35,20 @@ public class PushData {
      * 新增一筆活動紀錄。
      *
      * @param app 應用程式名稱
-     * @param title 視窗標題
-     * @param duration 使用秒數
-     * @param isFocus 是否為專注活動
-     */
-    public void insertActivity(String app, String title, int duration, boolean isFocus) {
-        insertActivity(app, title, duration, isFocus, null, LocalDateTime.now());
-    }
-
-    /**
-     * 新增一筆帶有 session ID 的活動紀錄。
-     *
-     * @param app 應用程式名稱
-     * @param title 視窗標題
-     * @param duration 使用秒數
-     * @param isFocus 是否為專注活動
-     * @param sessionId 所屬 session ID
-     */
-    public void insertActivity(String app, String title, int duration, boolean isFocus, String sessionId) {
-        insertActivity(app, title, duration, isFocus, sessionId, LocalDateTime.now());
-    }
-
-    /**
-     * 新增一筆活動紀錄，並指定 session 與開始時間。
-     *
-     * @param app 應用程式名稱
-     * @param title 視窗標題
-     * @param duration 使用秒數
-     * @param isFocus 是否為專注活動
-     * @param sessionId 所屬 session ID
+     * @param title 視窗標題，可為 null
      * @param startTime 開始時間
+     * @param endTime 結束時間
+     * @param isFocus 是否為專注活動
      */
-    public void insertActivity(String app, String title, int duration, boolean isFocus, String sessionId,
-            LocalDateTime startTime) {
-        ActivityRecord activity = new ActivityRecord(app, title, startTime, duration, isFocus, sessionId);
+    public void insertActivity(String app, String title, LocalDateTime startTime,
+            LocalDateTime endTime, boolean isFocus) {
+        ActivityRecord activity = new ActivityRecord(
+                app,
+                title,
+                startTime,
+                endTime,
+                isFocus,
+                FocusApp.getSessionId());
         repository.saveActivity(activity);
         System.out.println("💾 成功存入紀錄: [" + app + "] " + title);
     }

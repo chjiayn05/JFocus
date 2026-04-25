@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,12 @@ import jfocus.db.StorageException;
  */
 public class JdbcActivityRepository implements ActivityRepository {
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String DURATION_SECONDS_SQL = "CASE "
+            + "WHEN end_time IS NOT NULL THEN "
+            + "CASE WHEN CAST(strftime('%s', end_time) - strftime('%s', start_time) AS INTEGER) < 0 THEN 0 "
+            + "ELSE CAST(strftime('%s', end_time) - strftime('%s', start_time) AS INTEGER) END "
+            + "WHEN duration IS NOT NULL THEN CASE WHEN duration < 0 THEN 0 ELSE duration END "
+            + "ELSE 0 END";
 
     private final DatabaseCore databaseCore;
 
@@ -41,7 +48,8 @@ public class JdbcActivityRepository implements ActivityRepository {
     public void saveActivity(ActivityRecord activity) {
         Objects.requireNonNull(activity, "activity cannot be null");
 
-        String sql = "INSERT INTO activities(app_name, window_title, start_time, duration, is_focus, session_id) VALUES(?,?,?,?,?,?)";
+        String sql = "INSERT INTO activities(app_name, window_title, start_time, end_time, duration, is_focus, session_id) VALUES(?,?,?,?,?,?,?)";
+        int durationSeconds = calculateDurationSeconds(activity.startTime(), activity.endTime());
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -49,9 +57,10 @@ public class JdbcActivityRepository implements ActivityRepository {
             pstmt.setString(1, activity.appName());
             pstmt.setString(2, activity.windowTitle());
             pstmt.setString(3, TIMESTAMP_FORMATTER.format(activity.startTime()));
-            pstmt.setInt(4, activity.duration());
-            pstmt.setInt(5, activity.focus() ? 1 : 0);
-            pstmt.setString(6, activity.sessionId());
+            pstmt.setString(4, TIMESTAMP_FORMATTER.format(activity.endTime()));
+            pstmt.setInt(5, durationSeconds);
+            pstmt.setInt(6, activity.focus() ? 1 : 0);
+            pstmt.setString(7, activity.sessionId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("寫入資料失敗", e);
@@ -62,7 +71,7 @@ public class JdbcActivityRepository implements ActivityRepository {
     public Map<String, Integer> getAppUsageByDate(LocalDate date) {
         Objects.requireNonNull(date, "date cannot be null");
 
-        String sql = "SELECT app_name, SUM(duration) AS total_time FROM activities "
+        String sql = "SELECT app_name, SUM(" + DURATION_SECONDS_SQL + ") AS total_time FROM activities "
             + "WHERE start_time >= ? AND start_time < ? GROUP BY app_name";
         return queryUsageStats(sql, toDayStart(date), toDayStart(date.plusDays(1)));
     }
@@ -73,7 +82,8 @@ public class JdbcActivityRepository implements ActivityRepository {
             throw new IllegalArgumentException("sessionId cannot be null or blank");
         }
 
-        String sql = "SELECT app_name, SUM(duration) AS total_time FROM activities WHERE session_id = ? GROUP BY app_name";
+        String sql = "SELECT app_name, SUM(" + DURATION_SECONDS_SQL + ") AS total_time "
+                + "FROM activities WHERE session_id = ? GROUP BY app_name";
         return queryUsageStats(sql, sessionId);
     }
 
@@ -85,7 +95,7 @@ public class JdbcActivityRepository implements ActivityRepository {
             throw new IllegalArgumentException("endDate cannot be before startDate");
         }
 
-        String sql = "SELECT app_name, SUM(duration) AS total_time FROM activities "
+        String sql = "SELECT app_name, SUM(" + DURATION_SECONDS_SQL + ") AS total_time FROM activities "
                 + "WHERE start_time >= ? AND start_time < ? GROUP BY app_name";
         return queryUsageStats(sql, toDayStart(startDate), toDayStart(endDate.plusDays(1)));
     }
@@ -99,7 +109,7 @@ public class JdbcActivityRepository implements ActivityRepository {
             throw new IllegalArgumentException("limit must be greater than zero");
         }
 
-        String sql = "SELECT id, app_name, window_title, start_time, duration, is_focus, session_id "
+        String sql = "SELECT id, app_name, window_title, start_time, end_time, duration, is_focus, session_id "
                 + "FROM activities WHERE id > ? ORDER BY id ASC LIMIT ?";
 
         try (Connection conn = databaseCore.getConnection();
@@ -142,12 +152,20 @@ public class JdbcActivityRepository implements ActivityRepository {
     }
 
     private ActivityRecord mapActivity(ResultSet rs) throws SQLException {
+        LocalDateTime startTime = parseTimestamp(rs.getString("start_time"));
+        LocalDateTime endTime = parseOptionalTimestamp(rs.getString("end_time"));
+        if (endTime == null) {
+            Integer duration = getNullableInt(rs, "duration");
+            int safeDuration = duration == null ? 0 : Math.max(duration, 0);
+            endTime = startTime.plusSeconds(safeDuration);
+        }
+
         return new ActivityRecord(
                 rs.getInt("id"),
                 rs.getString("app_name"),
                 rs.getString("window_title"),
-                parseTimestamp(rs.getString("start_time")),
-                rs.getInt("duration"),
+                startTime,
+                endTime,
                 rs.getInt("is_focus") == 1,
                 rs.getString("session_id"));
     }
@@ -168,5 +186,35 @@ public class JdbcActivityRepository implements ActivityRepository {
         } catch (DateTimeParseException e) {
             throw new StorageException("無法解析活動時間: " + value, e);
         }
+    }
+
+    private LocalDateTime parseOptionalTimestamp(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        try {
+            return value.contains("T")
+                    ? LocalDateTime.parse(value)
+                    : LocalDateTime.parse(value, TIMESTAMP_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new StorageException("無法解析活動結束時間: " + value, e);
+        }
+    }
+
+    private Integer getNullableInt(ResultSet rs, String columnName) throws SQLException {
+        int value = rs.getInt(columnName);
+        if (rs.wasNull()) {
+            return null;
+        }
+        return value;
+    }
+
+    private int calculateDurationSeconds(LocalDateTime startTime, LocalDateTime endTime) {
+        long seconds = Duration.between(startTime, endTime).getSeconds();
+        if (seconds <= 0) {
+            return 0;
+        }
+        return seconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) seconds;
     }
 }

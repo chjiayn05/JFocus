@@ -11,7 +11,7 @@ public record ActivityRecord(
         String appName,
         String windowTitle,
         LocalDateTime startTime,
-        int duration,
+    LocalDateTime endTime,
         boolean focus,
         String sessionId) {
 
@@ -19,22 +19,24 @@ public record ActivityRecord(
      * 建立尚未寫入資料庫的活動紀錄。
      *
      * @param appName 應用程式名稱
-     * @param windowTitle 視窗標題
+    * @param windowTitle 視窗標題，可為 null
      * @param startTime 開始時間
-     * @param duration 使用秒數
+     * @param endTime 結束時間
      * @param focus 是否為專注活動
      * @param sessionId 所屬 session ID
      */
-    public ActivityRecord(String appName, String windowTitle, LocalDateTime startTime, int duration, boolean focus, String sessionId) {
-        this(0, appName, windowTitle, startTime, duration, focus, sessionId);
+    public ActivityRecord(String appName, String windowTitle, LocalDateTime startTime,
+            LocalDateTime endTime, boolean focus, String sessionId) {
+        this(0, appName, windowTitle, startTime, endTime, focus, sessionId);
     }
 
     public ActivityRecord {
         appName = requireText(appName, "appName");
         windowTitle = windowTitle == null ? "" : windowTitle;
         startTime = Objects.requireNonNull(startTime, "startTime cannot be null");
-        if (duration < 0) {
-            throw new IllegalArgumentException("duration cannot be negative");
+        endTime = Objects.requireNonNull(endTime, "endTime cannot be null");
+        if (endTime.isBefore(startTime)) {
+            throw new IllegalArgumentException("endTime cannot be before startTime");
         }
         sessionId = normalize(sessionId);
     }
