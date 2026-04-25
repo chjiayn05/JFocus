@@ -123,35 +123,6 @@ public class ExportData {
 
         return currentMaxId;
     }
-    
-    /**
-     * 讀取全部歷史紀錄並轉成訓練語料。
-     *
-     * @return 清理後的訓練語料列表
-     */
-    public List<String> extractTrainingData() {
-        List<String> trainingData = new ArrayList<>();
-
-        int currentMaxId = 0;
-        while (true) {
-            List<ActivityRecord> activities = repository.findActivitiesAfterId(currentMaxId, DEFAULT_BATCH_SIZE);
-            if (activities.isEmpty()) {
-                break;
-            }
-
-            for (ActivityRecord activity : activities) {
-                trainingData.add(toTrainingLine(activity));
-                currentMaxId = activity.id();
-            }
-
-            if (activities.size() < DEFAULT_BATCH_SIZE) {
-                break;
-            }
-        }
-
-        System.out.println("🧠 成功萃取出 " + trainingData.size() + " 筆 AI 訓練語料！");
-        return trainingData;
-    }
 
     private void createParentDirectories(Path outputPath) {
         Path parent = outputPath.toAbsolutePath().normalize().getParent();
