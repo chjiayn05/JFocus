@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -17,6 +19,7 @@ import jfocus.db.StorageException;
  */
 public final class UserData {
     private static final Pattern STAGE_KEY_PATTERN = Pattern.compile("\\d{3}_[1-3]");
+    private static final Pattern POKEMON_ID_PATTERN = Pattern.compile("\\d{3}");
     private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_1", "004_1", "007_1");
 
     private UserData() {
@@ -109,6 +112,69 @@ public final class UserData {
     }
 
     /**
+     * 載入每隻寶可夢的 XP。
+     */
+    public static Map<String, Integer> loadPokemonXp() {
+        String sql = "SELECT pokemon_id, xp FROM pokemon_xp ORDER BY pokemon_id";
+
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+
+            Map<String, Integer> result = new LinkedHashMap<>();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String pokemonId = rs.getString("pokemon_id");
+                    if (isValidPokemonId(pokemonId)) {
+                        result.put(pokemonId, Math.max(0, rs.getInt("xp")));
+                    }
+                }
+            }
+            return result;
+        } catch (SQLException e) {
+            throw new StorageException("讀取寶可夢 XP 失敗", e);
+        }
+    }
+
+    /**
+     * 以覆蓋方式儲存所有寶可夢 XP。
+     */
+    public static void savePokemonXp(Map<String, Integer> pokemonXpMap) {
+        String deleteSql = "DELETE FROM pokemon_xp";
+        String upsertSql = "INSERT INTO pokemon_xp(pokemon_id, xp) VALUES (?, ?) "
+                + "ON CONFLICT(pokemon_id) DO UPDATE SET xp = excluded.xp";
+
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+
+            try (Statement deleteStmt = conn.createStatement()) {
+                deleteStmt.executeUpdate(deleteSql);
+            }
+
+            if (pokemonXpMap == null || pokemonXpMap.isEmpty()) {
+                return;
+            }
+
+            try (PreparedStatement upsertStmt = conn.prepareStatement(upsertSql)) {
+                for (Map.Entry<String, Integer> entry : pokemonXpMap.entrySet()) {
+                    String pokemonId = entry.getKey();
+                    if (!isValidPokemonId(pokemonId)) {
+                        continue;
+                    }
+
+                    int xp = entry.getValue() == null ? 0 : Math.max(0, entry.getValue());
+                    upsertStmt.setString(1, pokemonId.trim());
+                    upsertStmt.setInt(2, xp);
+                    upsertStmt.addBatch();
+                }
+                upsertStmt.executeBatch();
+            }
+        } catch (SQLException e) {
+            throw new StorageException("儲存寶可夢 XP 失敗", e);
+        }
+    }
+
+    /**
      * 儲存單一解鎖關卡（重複會自動忽略）。
      */
     public static void saveUnlockedStage(String stageKey) {
@@ -146,9 +212,17 @@ public final class UserData {
                 )
                 """;
 
+        String createPokemonXpSql = """
+                CREATE TABLE IF NOT EXISTS pokemon_xp (
+                    pokemon_id TEXT PRIMARY KEY,
+                    xp INTEGER NOT NULL DEFAULT 0
+                )
+                """;
+
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(createStatsSql);
             stmt.execute(createUnlockedSql);
+            stmt.execute(createPokemonXpSql);
             stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
         }
 
@@ -178,5 +252,11 @@ public final class UserData {
         return stageKey != null
                 && !stageKey.isBlank()
                 && STAGE_KEY_PATTERN.matcher(stageKey.trim()).matches();
+    }
+
+    private static boolean isValidPokemonId(String pokemonId) {
+        return pokemonId != null
+                && !pokemonId.isBlank()
+                && POKEMON_ID_PATTERN.matcher(pokemonId.trim()).matches();
     }
 }

@@ -7,7 +7,7 @@ import jfocus.activity.ActivityRecord;
 import jfocus.activity.ActivityRepository;
 import jfocus.activity.JdbcActivityRepository;
 import jfocus.db.DatabaseCore;
-import jfocus.ui.FocusApp;
+import jfocus.main.FocusApp;
 
 /**
  * 提供活動資料寫入功能。

@@ -62,7 +62,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>jfocus.ui.FocusApp</mainClass>
+                    <mainClass>jfocus.main.FocusApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>
