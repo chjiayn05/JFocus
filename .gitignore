@@ -23,10 +23,6 @@
 hs_err_pid*
 replay_pid*
 
-
-# 根目錄 target
-/target/
+target/
 */test/
-
-# 本機可見資料目錄（db / ml）
-/jfocus-data/
+jfocus-data/

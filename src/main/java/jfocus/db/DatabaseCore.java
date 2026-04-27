@@ -79,7 +79,7 @@ public class DatabaseCore {
      * 建立系統所需的資料表，並補齊既有資料庫缺少的欄位。
      */
     public void initialize() {
-        String sql = """
+        String activityTableSql = """
             CREATE TABLE IF NOT EXISTS activities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 app_name TEXT,
@@ -92,11 +92,29 @@ public class DatabaseCore {
             );
             """;
 
+        String playerStatsTableSql = """
+            CREATE TABLE IF NOT EXISTS player_stats (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                coins INTEGER NOT NULL DEFAULT 0,
+                stones INTEGER NOT NULL DEFAULT 0,
+                xp INTEGER NOT NULL DEFAULT 0
+            );
+            """;
+
+        String unlockedStagesTableSql = """
+            CREATE TABLE IF NOT EXISTS unlocked_stages (
+                stage_key TEXT PRIMARY KEY
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
             stmt.execute("PRAGMA synchronous=NORMAL");
-            stmt.execute(sql);
+            stmt.execute(activityTableSql);
+            stmt.execute(playerStatsTableSql);
+            stmt.execute(unlockedStagesTableSql);
+            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
