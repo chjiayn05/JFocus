@@ -2,7 +2,10 @@ module jfocus {
     requires javafx.controls;
     requires javafx.graphics;
     requires javafx.fxml;
+    requires com.google.gson;
 
-    // 開放這個 package 給 JavaFX 執行環境讀取
-    opens jfocus.ui to javafx.graphics, javafx.fxml;
+    // --- 將所有 opens 合併成這一行 ---
+    opens jfocus.ui to com.google.gson, javafx.graphics, javafx.fxml;
+
+    exports jfocus.ui;
 }

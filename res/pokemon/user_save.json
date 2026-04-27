@@ -1,0 +1,13 @@
+{
+  "userName": "User",
+  "currency": {
+    "focusCoins": 450,
+    "masterStones": 5
+  },
+  "gachaStats": {
+    "standardPityCount": 12,
+    "masterPityCount": 3
+  },
+  "unlockedPokemonIds": ["001", "004", "007"],
+  "totalXP": 125
+}
