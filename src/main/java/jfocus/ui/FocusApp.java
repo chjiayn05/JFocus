@@ -328,71 +328,112 @@ public class FocusApp extends Application {
 
     // 抽獎
     // 動畫
-    private void playGachaAnimation(ImageView ballView, Label coinLabel) {
-        // 1. 晃動動畫 (Shake)
-        RotateTransition shake = new RotateTransition(javafx.util.Duration.millis(100), ballView);
-        shake.setFromAngle(-15);
-        shake.setToAngle(15);
-        shake.setCycleCount(10);
-        shake.setAutoReverse(true);
+ // --- 在 FocusApp.java 中替換原本的方法 ---
 
-        shake.setOnFinished(event -> {
-            // 2. 隨機決定中獎的寶可夢
-            String resultId = gameManager.performPokeBallDraw(); // 假設這會回傳一個 ID
+private void playGachaAnimation(ImageView ballView, Label currencyLabel, String drawType) {
+    // 1. 晃動動畫 (Shake)
+    RotateTransition shake = new RotateTransition(javafx.util.Duration.millis(100), ballView);
+    shake.setFromAngle(-15);
+    shake.setToAngle(15);
+    shake.setCycleCount(10);
+    shake.setAutoReverse(true);
 
-            // 3. 換圖並噴發效果 (這裡先簡單換成中獎圖)
-            ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
+    shake.setOnFinished(event -> {
+        // 2. 隨機決定中獎的寶可夢 (把 drawType 傳給後台決定抽什麼池)
+        String resultId = gameManager.performPokeBallDraw(drawType); 
+        
+        // 3. 換圖並噴發效果 
+        // 這裡確保你的 JSON id 有補零 (如 "004")，就能正確對應資料夾
+        String folderPath = "";
+        for(PokemonData data : pokedexList) {
+            if(data.getId().equals(resultId)) {
+                folderPath = data.getFolderName();
+                break;
+            }
+        }
+        
+        if(!folderPath.isEmpty()) {
+            ballView.setImage(new Image("file:res/pokemon/" + folderPath + "/stage1.png"));
+        }
 
-            // 放大效果 (Pop up)
-            ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
-            pop.setFromX(0.5);
-            pop.setFromY(0.5);
-            pop.setToX(1.5);
-            pop.setToY(1.5);
-            pop.play();
+        // 放大效果 (Pop up)
+        ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
+        pop.setFromX(0.5); pop.setFromY(0.5);
+        pop.setToX(1.5); pop.setToY(1.5);
+        pop.play();
 
-            coinLabel.setText("我的專注幣: " + gameManager.getFocusCoins());
-            statusLabel.setText("恭喜！收服了新夥伴！");
-        });
+        // 4. 更新 UI 上的雙貨幣顯示
+        currencyLabel.setText("💰 " + gameManager.getFocusCoins() + "   💎 " + gameManager.getMasterStones());
+        
+        // 5. 更新右上角的全域貨幣顯示 (這樣切換分頁才不會數字不對)
+        coinLabel.setText("💰 " + gameManager.getFocusCoins());
+        stoneLabel.setText("💎 " + gameManager.getMasterStones());
 
-        shake.play();
-    }
+        statusLabel.setText("恭喜！收服了新夥伴！");
+    });
+
+    shake.play();
+}
 
     // 抽獎主邏輯
     private Tab createGachaTab() {
-        VBox layout = new VBox(30);
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #34495e; -fx-padding: 40;");
+    VBox layout = new VBox(30);
+    layout.setAlignment(Pos.CENTER);
+    layout.setStyle("-fx-background-color: #34495e; -fx-padding: 40;");
 
-        Label title = new Label("精靈補給站");
-        title.setStyle("-fx-text-fill: #f1c40f; -fx-font-size: 32px; -fx-font-weight: bold;");
+    Label title = new Label("精靈補給站");
+    title.setStyle("-fx-text-fill: #f1c40f; -fx-font-size: 32px; -fx-font-weight: bold;");
 
-        // 顯示貨幣（之後要串接 GameManager）
-        Label currencyLabel = new Label("我的專注幣: " + gameManager.getFocusCoins());
-        currencyLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
+    // 顯示貨幣 (同時顯示兩種)
+    Label currencyLabel = new Label("💰 " + gameManager.getFocusCoins() + "   💎 " + gameManager.getMasterStones());
+    currencyLabel.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
 
-        // 抽獎展示區（這就是動畫發生的地方）
-        StackPane gachaDisplay = new StackPane();
-        ImageView ballView = new ImageView(new Image("file:res/pokemon/000_ball.png")); // 找一顆精靈球的圖
-        ballView.setFitHeight(150);
-        ballView.setPreserveRatio(true);
+    // 抽獎展示區
+    StackPane gachaDisplay = new StackPane();
+    ImageView ballView = new ImageView(new Image("file:res/pokemon/000_ball.png")); 
+    ballView.setFitHeight(150);
+    ballView.setPreserveRatio(true);
+    gachaDisplay.getChildren().add(ballView);
+    
+    // --- 【新增】雙按鈕設計 ---
+    Button normalBtn = new Button("普通球 (200 💰)");
+    normalBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
 
-        gachaDisplay.getChildren().add(ballView);
+    Button premiumBtn = new Button("大師球 (1 💎)");
+    premiumBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
 
-        Button drawBtn = new Button("普通球抽獎 (200 幣)");
-        drawBtn.getStyleClass().add("gacha-button"); // 記得去 CSS 加這個樣式
+    HBox btnBox = new HBox(20, normalBtn, premiumBtn);
+    btnBox.setAlignment(Pos.CENTER);
 
-        drawBtn.setOnAction(e -> {
-            if (gameManager.getFocusCoins() >= 200) {
-                playGachaAnimation(ballView, currencyLabel);
-            } else {
-                statusLabel.setText("錢不夠啦！再去專注幾分鐘吧！");
-            }
-        });
+    // --- 【新增】滑鼠懸停互動 (Hover) ---
+    normalBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_ball.png")));
+    premiumBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_masterball.png")));
 
-        layout.getChildren().addAll(title, currencyLabel, gachaDisplay, drawBtn);
-        return new Tab("精靈抽獎", layout);
-    }
+    // --- 按鈕點擊邏輯 ---
+    normalBtn.setOnAction(e -> {
+        if (gameManager.getFocusCoins() >= 200) {
+            // 注意：這裡假設你有寫扣錢的方法，請依照你的實際方法名稱修改
+            gameManager.addFocusCoins(-200); 
+            // 傳入 "normal" 讓動畫方法知道這次抽什麼
+            playGachaAnimation(ballView, currencyLabel, "normal"); 
+        } else {
+            statusLabel.setText("專注幣不夠啦！再去專注幾分鐘吧！");
+        }
+    });
+
+    premiumBtn.setOnAction(e -> {
+        if (gameManager.getMasterStones() >= 1) {
+            gameManager.addMasterStones(-1); 
+            // 傳入 "premium"
+            playGachaAnimation(ballView, currencyLabel, "premium"); 
+        } else {
+            statusLabel.setText("大師寶石不足！");
+        }
+    });
+
+    layout.getChildren().addAll(title, currencyLabel, gachaDisplay, btnBox);
+    return new Tab("精靈抽獎", layout);
+}
 
     private void setupButtonStyles() {
         startBtn.setStyle(
@@ -447,43 +488,52 @@ public class FocusApp extends Application {
      * 建立單個寶可夢卡片
      */
     private VBox createPokemonCard(PokemonData data, int stage) {
-        VBox card = new VBox(5);
-        card.getStyleClass().add("pokemon-card"); // 確保 CSS 有這條
-        card.setPrefSize(70, 90);
-        card.setAlignment(Pos.CENTER);
+    VBox card = new VBox(5);
+    card.getStyleClass().add("pokemon-card"); 
+    card.setPrefSize(70, 90);
+    card.setAlignment(Pos.CENTER);
 
-        ImageView view = new ImageView();
-        String path = "file:res/pokemon/" + data.getFolderName() + "/stage" + stage + ".png";
-
-        try {
-            Image img = new Image(path);
-            view.setImage(img);
-        } catch (Exception e) {
-            // 如果找不到圖片，放一個預設占位圖或顯示錯誤
-            System.err.println("找不到圖片: " + path);
-        }
-
-        view.setFitWidth(55);
-        view.setPreserveRatio(true);
-
-        // 如果沒解鎖，變黑色 (這裡假設 gameManager 有這個方法)
-        if (!gameManager.isStageUnlocked(data.getId(), stage)) {
-            ColorAdjust blackout = new ColorAdjust();
-            blackout.setBrightness(-1.0);
-            view.setEffect(blackout);
-        }
-
-        // 點擊事件：改用我們之前設計的 showDetailView (包含屬性和出戰)
-        card.setOnMouseClicked(e -> showDetailView(
-                data.getFolderName(),
-                stage,
-                data.getName(),
-                data.getTypes(),
-                data.getDescriptions().get(stage - 1)));
-
-        card.getChildren().add(view);
-        return card;
+    ImageView view = new ImageView();
+    String path = "file:res/pokemon/" + data.getFolderName() + "/stage" + stage + ".png";
+    try {
+        view.setImage(new Image(path));
+    } catch (Exception e) {
+        System.err.println("找不到圖片: " + path);
     }
+    view.setFitWidth(55);
+    view.setPreserveRatio(true);
+
+    // --- 【核心修正】真正的鎖定與點擊邏輯 ---
+    boolean isUnlocked = gameManager.isStageUnlocked(data.getId(), stage);
+
+    if (!isUnlocked) {
+        // 尚未解鎖：加上黑影特效
+        ColorAdjust blackout = new ColorAdjust();
+        blackout.setBrightness(-1.0);
+        view.setEffect(blackout);
+
+        // 點擊事件：只顯示警告，不跳出詳情視窗
+        card.setOnMouseClicked(e -> {
+            statusLabel.setText("這隻精靈尚未解鎖喔！去抽獎吧！");
+            statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+        });
+    } else {
+        // 已經解鎖：確保清除黑影 (這步很重要，否則重整時會黑掉)
+        view.setEffect(null);
+
+        // 點擊事件：跳出完整的彩色詳情視窗
+        card.setOnMouseClicked(e -> showDetailView(
+            data.getFolderName(), 
+            stage, 
+            data.getName(), 
+            data.getTypes(), 
+            data.getDescriptions().get(stage - 1)
+        ));
+    }
+
+    card.getChildren().add(view);
+    return card;
+}
 
     // 在 FocusApp.java 類別中
 
