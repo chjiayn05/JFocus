@@ -1,5 +1,7 @@
 package jfocus.monitor;
 
+import java.awt.Rectangle;
+import java.awt.geom.Area;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,14 +38,34 @@ public class Win32WindowScanner implements WindowScanner {
     @Override
     public Map<String, WindowSession> scanWindows() {
         Map<String, WindowSession> currentScan = new HashMap<>();
+        final Area seenArea = new Area(); // 用來記錄已經被上層視窗蓋住的畫布區域
 
         User32.INSTANCE.EnumWindows((hWnd, arg1) -> {
             if (isValidWindow(hWnd)) {
+                // 取得視窗的範圍
+                RECT rect = new RECT();
+                User32.INSTANCE.GetWindowRect(hWnd, rect);
+                Rectangle windowRect = new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top);
+                Area windowArea = new Area(windowRect);
+                
+                // 進行遮擋剔除 (Occlusion Culling)
+                // 拿這個視窗的形狀，去扣除目前已經被上層視窗擋住的形狀
+                windowArea.subtract(seenArea);
+                
+                // 如果扣除後什麼都不剩（面積為 0），代表它被前面的視窗完全擋住了
+                if (windowArea.isEmpty()) {
+                    return true; // 直接跳過，不記錄這個視窗
+                }
+                
+                // 如果沒有被完全遮住（使用者還看得到它），就記錄下來
                 String hwndKey = hWnd.getPointer().toString();
                 String title = getWindowTitle(hWnd);
                 String processName = getProcessName(hWnd);
                 
                 currentScan.put(hwndKey, new WindowSession(hwndKey, processName, title));
+                
+                // 最後，把這個視窗的完整形狀疊加到「已遮蔽畫布」上，讓下一個底層視窗進行比對
+                seenArea.add(new Area(windowRect));
             }
             return true;
         }, null);

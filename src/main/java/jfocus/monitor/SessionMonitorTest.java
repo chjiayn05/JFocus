@@ -31,9 +31,11 @@ public class SessionMonitorTest {
         // 2. 實例化你要測試的 SessionMonitor，並把測試用接聽器裝上去
         SessionMonitor monitor = new SessionMonitor(testListener);
 
-        // 3. 寫一個無窮迴圈，模擬 FocusEngine 裡面的「每秒定期掃描」
+        // 3. 啟動 SessionMonitor 的獨立背景掃描
+        monitor.start();
+
+        // 讓主執行緒保持存活，觀察背景掃描的輸出
         while (true) {
-            monitor.scan();
             Thread.sleep(1000);
         }
     }

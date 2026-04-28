@@ -2,11 +2,18 @@ package jfocus.monitor;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class SessionMonitor {
     private Map<String, WindowSession> activeSessions = new HashMap<>();
     private SessionListener listener;
     private WindowScanner scanner;
+    
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> scanTask;
 
     public SessionMonitor(SessionListener listener) {
         this.listener = listener;
@@ -23,8 +30,28 @@ public class SessionMonitor {
             this.scanner = () -> new HashMap<>();
         }
     }
+    
+    public void start() {
+        if (scheduler == null || scheduler.isShutdown()) {
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+        }
+        
+        // 每 1 秒獨立執行一次掃描
+        if (scanTask == null || scanTask.isCancelled()) {
+            scanTask = scheduler.scheduleAtFixedRate(this::scan, 0, 1, TimeUnit.SECONDS);
+        }
+    }
+    
+    public void stop() {
+        if (scanTask != null && !scanTask.isCancelled()) {
+            scanTask.cancel(false);
+        }
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+        }
+    }
 
-    public void scan() {
+    private void scan() {
         if (scanner == null) return;
         
         Map<String, WindowSession> currentScan = scanner.scanWindows();
@@ -55,4 +82,4 @@ public class SessionMonitor {
             }
         });
     }
-}
+}
