@@ -3,6 +3,9 @@ module jfocus {
     requires transitive javafx.graphics;
     requires javafx.fxml;
     requires com.google.gson;
+    requires com.sun.jna;
+    requires com.sun.jna.platform;
+    requires java.desktop;
     requires org.apache.opennlp.tools;
     requires transitive java.sql;
     requires jieba.analysis;
