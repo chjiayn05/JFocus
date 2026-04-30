@@ -39,7 +39,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
 
@@ -420,7 +419,6 @@ public class FocusUI extends Application {
     // start
     @Override
     public void start(Stage primaryStage) {
-        DatabaseCore.initializeDatabase(); // 確保資料庫在 UI 啟動前就準備好
         loadPokedexData();
         loadUserProgressSafely();
 

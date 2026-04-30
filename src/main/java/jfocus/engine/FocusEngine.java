@@ -1,40 +1,89 @@
 package jfocus.engine;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import jfocus.ai.DistractionClassifier;
+import jfocus.ai.distraction.DistractingTargetCloser;
+import jfocus.ai.distraction.DistractionHandlingMode;
+import jfocus.ai.distraction.DistractionModeRepository;
+import jfocus.ai.distraction.DistractionUserNotifier;
+import jfocus.ai.distraction.JdbcDistractionModeRepository;
+import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
+import jfocus.db.DatabaseCore;
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
 import jfocus.monitor.WindowSession;
 
 public class FocusEngine {
+    private static final int SECONDS_PER_HOUR = 3600;
+    private static final int SECONDS_PER_MINUTE = 60;
+    private static final int SCHEDULER_INITIAL_DELAY_SECONDS = 0;
+    private static final int SCHEDULER_PERIOD_SECONDS = 1;
+
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> currentTask;
-    
+
     // 💡 變數改名為 currentSeconds，因為它現在可能是「剩餘秒數」，也可能是「已過秒數」
-    private int currentSeconds; 
+    private int currentSeconds;
     private FocusListener listener;
 
+    private final DistractionClassifier distractionClassifier;
+    private volatile DistractionUserNotifier distractionUserNotifier;
+    private final DistractingTargetCloser distractingTargetCloser;
+    private final DistractionModeRepository distractionModeRepository;
+    private volatile DistractionHandlingMode distractionHandlingMode;
+
     private final SessionMonitor sessionMonitor;
-    
+
     public FocusEngine(FocusListener listener) {
+        this(listener,
+            new DistractionClassifier(),
+            FocusEngine::notifyUserToStayFocused,
+            new SystemAwareDistractingTargetCloser(),
+            new JdbcDistractionModeRepository(new DatabaseCore()));
+    }
+
+    FocusEngine(FocusListener listener,
+                DistractionClassifier distractionClassifier,
+                DistractionUserNotifier distractionUserNotifier,
+                DistractingTargetCloser distractingTargetCloser,
+                DistractionModeRepository distractionModeRepository) {
         this.listener = listener;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        
+        this.distractionClassifier = Objects.requireNonNull(distractionClassifier,  "distractionClassifier cannot be null");
+        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier, "distractionUserNotifier cannot be null");
+        this.distractingTargetCloser = Objects.requireNonNull(distractingTargetCloser, "distractingTargetCloser cannot be null");
+        this.distractionModeRepository = Objects.requireNonNull(distractionModeRepository,
+            "distractionModeRepository cannot be null");
+        this.distractionHandlingMode = this.distractionModeRepository.loadMode(DistractionHandlingMode.WARN_USER);
+
         this.sessionMonitor = new SessionMonitor(new SessionListener() {
-            
+
             // ==========================================
             // 🚀 新增：當新視窗一出現時觸發
             // ==========================================
             @Override
             public void onSessionStarted(WindowSession session) {
-                // TODO: (交給隊友寫) 偵測是否分心的邏輯
-                // 隊友可以在這裡呼叫他寫好的判斷方法，例如：
-                // session.isDistracted = DistractionChecker.check(session.title);
-                
                 System.out.println("🟢 [引擎接獲通報] 新視窗開啟: " + session.title);
+                session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName, session.title);
+                if (!session.isDistracted) {
+                    return;
+                }
+
+                if (FocusEngine.this.distractionHandlingMode == DistractionHandlingMode.WARN_USER) {
+                    FocusEngine.this.distractionUserNotifier.notifyDontBeDistracted(session);
+                    return;
+                }
+
+                boolean closeTabOnly = FocusEngine.this.distractionClassifier.isWebsiteActivity(session.processName, session.title);
+                boolean closed = FocusEngine.this.distractingTargetCloser.closeDistractingTarget(session, closeTabOnly);
+                if (!closed) {
+                    System.err.println("無法關閉分心視窗或分頁: " + session.title);
+                }
             }
 
             // ==========================================
@@ -43,21 +92,42 @@ public class FocusEngine {
             @Override
             public void onSessionEnded(WindowSession session) {
                 // TODO: (交給隊友寫) 將結束的 session 寫入資料庫的邏輯
-                // 例如：DatabaseCore.insertActivity(session);
-                
+                // 過濾"新分頁", "要翻譯這個網頁嗎？"
+                // 例如：DatabaseCore.insertActivity(session);                
                 System.out.println("🚩 [引擎後台收到報告] 視窗關閉了: " + session.title);
             }
         });
+    }
+
+    private static void notifyUserToStayFocused(WindowSession session) {
+        // TODO Placeholder: 這裡保留給未來的訊息框函式，現在先透過回呼呼叫點串好。
+        if (session != null) {
+            System.out.println("⚠️ 請勿分心: " + session.title);
+        }
+    }
+
+    public DistractionHandlingMode getDistractionHandlingMode() {
+        return distractionHandlingMode;
+    }
+
+    public void setDistractionHandlingMode(DistractionHandlingMode distractionHandlingMode) {
+        DistractionHandlingMode validatedMode = Objects.requireNonNull(distractionHandlingMode, "distractionHandlingMode cannot be null");
+        this.distractionHandlingMode = validatedMode;
+        this.distractionModeRepository.saveMode(validatedMode);
+    }
+
+    public void setDistractionUserNotifier(DistractionUserNotifier distractionUserNotifier) {
+        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier, "distractionUserNotifier cannot be null");
     }
 
     // ==========================================
     // 🔽 模式一：倒數計時模式 (番茄鐘/倒數)
     // ==========================================
     public void start(int hours, int minutes, int seconds) {
-        int totalSecond = (hours * 3600) + (minutes * 60) + seconds;
+        int totalSecond = (hours * SECONDS_PER_HOUR) + (minutes * SECONDS_PER_MINUTE) + seconds;
         start(totalSecond);
     }
-    
+
     public void start(int seconds) {
         stop();
         this.currentSeconds = seconds;
@@ -76,7 +146,7 @@ public class FocusEngine {
                     listener.onTick(currentSeconds); 
                 }
             }
-        }, 0, 1, TimeUnit.SECONDS);
+        }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
     // ==========================================
@@ -94,7 +164,7 @@ public class FocusEngine {
                 listener.onTick(currentSeconds); // 不斷更新 UI
             }
             // 碼表不會自動結束，必須等使用者自己按 stop()
-        }, 0, 1, TimeUnit.SECONDS);
+        }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
     // ==========================================

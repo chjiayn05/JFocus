@@ -26,3 +26,4 @@ replay_pid*
 target/
 */test/
 jfocus-data/
+.DS_Store

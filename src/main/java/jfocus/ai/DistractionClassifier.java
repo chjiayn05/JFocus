@@ -4,10 +4,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
+import jfocus.ai.rules.AppWindowRule;
+import jfocus.ai.rules.DistractionRuleRepository;
+import jfocus.ai.rules.JdbcDistractionRuleRepository;
+import jfocus.ai.rules.RuleListType;
 import jfocus.db.AppPaths;
+import jfocus.db.DatabaseCore;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 
@@ -16,7 +23,8 @@ import opennlp.tools.doccat.DocumentCategorizerME;
  */
 public class DistractionClassifier {
     private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
-    private static final Set<String> APP_BLACKLIST = Set.of(
+    private static final String WINDOW_TITLE_SEPARATOR = ": ";
+    private static final Set<String> DEFAULT_APP_BLACKLIST = Set.of(
             "netflix",
             "steam",
             "league of legends",
@@ -30,17 +38,96 @@ public class DistractionClassifier {
 
     private final DocumentCategorizerME categorizer;
     private final double playThreshold;
+    private final DistractionRuleRepository ruleRepository;
 
     /**
      * 使用預設模型路徑建立分心分類器。
      */
     public DistractionClassifier() {
-        this(loadCategorizer(AppPaths.getModelPath()), DEFAULT_PLAY_THRESHOLD);
+        this(
+                loadCategorizer(AppPaths.getModelPath()),
+                DEFAULT_PLAY_THRESHOLD,
+                new JdbcDistractionRuleRepository(new DatabaseCore()));
     }
 
     DistractionClassifier(DocumentCategorizerME categorizer, double playThreshold) {
+        this(categorizer, playThreshold, new JdbcDistractionRuleRepository(new DatabaseCore()));
+    }
+
+    DistractionClassifier(DocumentCategorizerME categorizer, double playThreshold,
+            DistractionRuleRepository ruleRepository) {
         this.categorizer = categorizer;
         this.playThreshold = playThreshold;
+        this.ruleRepository = Objects.requireNonNull(ruleRepository, "ruleRepository cannot be null");
+    }
+
+    /**
+     * 儲存白名單規則到資料庫。
+     */
+    public void addWhitelistRule(String appName, String windowTitle) {
+        ruleRepository.saveRule(RuleListType.WHITELIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    }
+
+    /**
+     * 儲存黑名單規則到資料庫。
+     */
+    public void addBlacklistRule(String appName, String windowTitle) {
+        ruleRepository.saveRule(RuleListType.BLACKLIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    }
+
+    /**
+     * 移除白名單規則。
+     */
+    public void removeWhitelistRule(String appName, String windowTitle) {
+        ruleRepository.deleteRule(RuleListType.WHITELIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    }
+
+    /**
+     * 移除黑名單規則。
+     */
+    public void removeBlacklistRule(String appName, String windowTitle) {
+        ruleRepository.deleteRule(RuleListType.BLACKLIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    }
+
+    /**
+     * 取得所有白名單規則。
+     */
+    public List<AppWindowRule> getWhitelistRules() {
+        return ruleRepository.getRules(RuleListType.WHITELIST);
+    }
+
+    /**
+     * 取得所有黑名單規則。
+     */
+    public List<AppWindowRule> getBlacklistRules() {
+        return ruleRepository.getRules(RuleListType.BLACKLIST);
+    }
+
+    /**
+     * 使用 appName + windowTitle 判斷是否命中白名單。
+     */
+    public boolean isWhitelisted(String appName, String windowTitle) {
+        String app = normalize(appName);
+        String title = normalize(extractWindowTitle(windowTitle));
+        return matchesWhitelistRule(app, title);
+    }
+
+    /**
+     * 使用 appName + windowTitle 判斷是否命中黑名單。
+     */
+    public boolean isBlacklisted(String appName, String windowTitle) {
+        String app = normalize(appName);
+        String title = normalize(extractWindowTitle(windowTitle));
+        return matchesBlacklistRule(app, title);
+    }
+
+    /**
+     * 是否屬於瀏覽器中的網站活動。
+     */
+    public boolean isWebsiteActivity(String appName, String windowTitle) {
+        String app = normalize(appName);
+        String title = normalize(extractWindowTitle(windowTitle));
+        return isBrowserApp(app) && !title.isBlank();
     }
 
     /**
@@ -52,7 +139,11 @@ public class DistractionClassifier {
         String app = normalize(appName);
         String title = normalize(extractWindowTitle(windowTitle));
 
-        if (isBlacklistedApp(app)) {
+        if (matchesWhitelistRule(app, title)) {
+            return false;
+        }
+
+        if (matchesBlacklistRule(app, title)) {
             return true;
         }
 
@@ -94,12 +185,23 @@ public class DistractionClassifier {
         }
     }
 
-    private boolean isBlacklistedApp(String app) {
+    private boolean matchesWhitelistRule(String app, String title) {
+        return ruleRepository.matches(RuleListType.WHITELIST, app, title);
+    }
+
+    private boolean matchesBlacklistRule(String app, String title) {
+        if (isBuiltInBlacklistedApp(app)) {
+            return true;
+        }
+        return ruleRepository.matches(RuleListType.BLACKLIST, app, title);
+    }
+
+    private boolean isBuiltInBlacklistedApp(String app) {
         if (app.isBlank()) {
             return false;
         }
 
-        for (String keyword : APP_BLACKLIST) {
+        for (String keyword : DEFAULT_APP_BLACKLIST) {
             if (app.contains(keyword)) {
                 return true;
             }
@@ -135,9 +237,10 @@ public class DistractionClassifier {
             return "";
         }
 
-        int separatorIndex = windowTitle.indexOf(": ");
-        if (separatorIndex >= 0 && separatorIndex + 2 < windowTitle.length()) {
-            return windowTitle.substring(separatorIndex + 2);
+        int separatorIndex = windowTitle.indexOf(WINDOW_TITLE_SEPARATOR);
+        int titleStartIndex = separatorIndex + WINDOW_TITLE_SEPARATOR.length();
+        if (separatorIndex >= 0 && titleStartIndex < windowTitle.length()) {
+            return windowTitle.substring(titleStartIndex);
         }
         return windowTitle;
     }

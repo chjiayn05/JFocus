@@ -107,6 +107,25 @@ public class DatabaseCore {
             );
             """;
 
+        String distractionRulesTableSql = """
+            CREATE TABLE IF NOT EXISTS distraction_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_type TEXT NOT NULL,
+                app_name TEXT NOT NULL DEFAULT '',
+                window_title TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(list_type, app_name, window_title)
+            );
+            """;
+
+        String appSettingsTableSql = """
+            CREATE TABLE IF NOT EXISTS app_settings (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -114,6 +133,8 @@ public class DatabaseCore {
             stmt.execute(activityTableSql);
             stmt.execute(playerStatsTableSql);
             stmt.execute(unlockedStagesTableSql);
+            stmt.execute(distractionRulesTableSql);
+            stmt.execute(appSettingsTableSql);
             stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
@@ -204,5 +225,6 @@ public class DatabaseCore {
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_start_time ON activities(start_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_end_time ON activities(end_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_session_id ON activities(session_id)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_distraction_rules_type ON distraction_rules(list_type)");
     }
 }

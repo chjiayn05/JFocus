@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.RECT;
@@ -58,7 +59,8 @@ public class Win32WindowScanner implements WindowScanner {
                 }
                 
                 // 如果沒有被完全遮住（使用者還看得到它），就記錄下來
-                String hwndKey = hWnd.getPointer().toString();
+                long handleValue = Pointer.nativeValue(hWnd.getPointer());
+                String hwndKey = Long.toUnsignedString(handleValue);
                 String title = getWindowTitle(hWnd);
                 String processName = getProcessName(hWnd);
                 
