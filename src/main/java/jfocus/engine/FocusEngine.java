@@ -1,9 +1,19 @@
 package jfocus.engine;
 
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import jfocus.ai.DistractionClassifier;
+import jfocus.ai.distraction.DistractingTargetCloser;
+import jfocus.ai.distraction.DistractionHandlingMode;
+import jfocus.ai.distraction.DistractionModeRepository;
+import jfocus.ai.distraction.DistractionUserNotifier;
+import jfocus.ai.distraction.JdbcDistractionModeRepository;
+import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
+import jfocus.db.DatabaseCore;
 
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
@@ -12,25 +22,35 @@ import jfocus.idle.IdleDetector;
 import jfocus.idle.IdleListener;
 
 public class FocusEngine {
+    private static final int SECONDS_PER_HOUR = 3600;
+    private static final int SECONDS_PER_MINUTE = 60;
+    private static final int SCHEDULER_INITIAL_DELAY_SECONDS = 0;
+    private static final int SCHEDULER_PERIOD_SECONDS = 1;
+
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> currentTask;
-    
+
     // 💡 變數改名為 currentSeconds，因為它現在可能是「剩餘秒數」，也可能是「已過秒數」
-    private int currentSeconds; 
+    private int currentSeconds;
     private FocusListener listener;
     private boolean isPaused = false;
     private boolean isStopwatch = false;
     private int originalSeconds;
+    private final DistractionClassifier distractionClassifier;
+    private volatile DistractionUserNotifier distractionUserNotifier;
+    private final DistractingTargetCloser distractingTargetCloser;
+    private final DistractionModeRepository distractionModeRepository;
+    private volatile DistractionHandlingMode distractionHandlingMode;
 
     private final SessionMonitor sessionMonitor;
     private final IdleDetector idleDetector;
-    
+
     public FocusEngine(FocusListener listener) {
         this.listener = listener;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        
+
         this.sessionMonitor = new SessionMonitor(new SessionListener() {
-            
+
             // ==========================================
             // 🚀 新增：當新視窗一出現時觸發
             // ==========================================
@@ -39,7 +59,7 @@ public class FocusEngine {
                 // TODO: (交給隊友寫) 偵測是否分心的邏輯
                 // 隊友可以在這裡呼叫他寫好的判斷方法，例如：
                 // session.isDistracted = DistractionChecker.check(session.title);
-                
+
                 System.out.println("🟢 [引擎接獲通報] 新視窗開啟: " + session.title);
             }
 
@@ -50,7 +70,7 @@ public class FocusEngine {
             public void onSessionEnded(WindowSession session) {
                 // TODO: (交給隊友寫) 將結束的 session 寫入資料庫的邏輯
                 // 例如：DatabaseCore.insertActivity(session);
-                
+
                 System.out.println("🚩 [引擎後台收到報告] 視窗關閉了: " + session.title);
             }
         });
@@ -74,7 +94,7 @@ public class FocusEngine {
         int totalSecond = (hours * 3600) + (minutes * 60) + seconds;
         start(totalSecond);
     }
-    
+
     public void start(int seconds) {
         stop();
         this.isPaused = false;
@@ -85,18 +105,19 @@ public class FocusEngine {
         idleDetector.start();
 
         currentTask = scheduler.scheduleAtFixedRate(() -> {
-            if (isPaused) return;
-            
+            if (isPaused)
+                return;
+
             currentSeconds--; // 倒數遞減
 
             if (currentSeconds <= 0) {
-                stop(); 
+                stop();
                 if (listener != null) {
                     listener.onFinished(); // 時間到，通知 UI
                 }
             } else {
                 if (listener != null) {
-                    listener.onTick(currentSeconds); 
+                    listener.onTick(currentSeconds);
                 }
             }
         }, 0, 1, TimeUnit.SECONDS);
@@ -114,8 +135,9 @@ public class FocusEngine {
         idleDetector.start();
 
         currentTask = scheduler.scheduleAtFixedRate(() -> {
-            if (isPaused) return;
-            
+            if (isPaused)
+                return;
+
             currentSeconds++; // 上數遞增
 
             if (listener != null) {
@@ -135,15 +157,17 @@ public class FocusEngine {
     public void pause(long deductMillis) {
         System.out.println("⏸️ [計時暫停] 使用者閒置，中斷計時與紀錄");
         isPaused = true;
-        
+
         int deductSeconds = (int) (deductMillis / 1000);
         if (deductSeconds > 0) {
             if (isStopwatch) {
                 currentSeconds -= deductSeconds;
-                if (currentSeconds < 0) currentSeconds = 0;
+                if (currentSeconds < 0)
+                    currentSeconds = 0;
             } else {
                 currentSeconds += deductSeconds;
-                if (currentSeconds > originalSeconds) currentSeconds = originalSeconds;
+                if (currentSeconds > originalSeconds)
+                    currentSeconds = originalSeconds;
             }
             // 強制觸發一次 listener 更新 UI
             if (listener != null) {
@@ -155,7 +179,8 @@ public class FocusEngine {
     }
 
     public void resume() {
-        if (!isPaused) return;
+        if (!isPaused)
+            return;
         System.out.println("▶️ [計時恢復] 使用者回來了，恢復計時與紀錄");
         isPaused = false;
         sessionMonitor.resume();
