@@ -14,9 +14,12 @@ import jfocus.ai.distraction.DistractionUserNotifier;
 import jfocus.ai.distraction.JdbcDistractionModeRepository;
 import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
 import jfocus.db.DatabaseCore;
+
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
 import jfocus.monitor.WindowSession;
+import jfocus.idle.IdleDetector;
+import jfocus.idle.IdleListener;
 
 public class FocusEngine {
     private static final int SECONDS_PER_HOUR = 3600;
@@ -30,7 +33,9 @@ public class FocusEngine {
     // 💡 變數改名為 currentSeconds，因為它現在可能是「剩餘秒數」，也可能是「已過秒數」
     private int currentSeconds;
     private FocusListener listener;
-
+    private boolean isPaused = false;
+    private boolean isStopwatch = false;
+    private int originalSeconds;
     private final DistractionClassifier distractionClassifier;
     private volatile DistractionUserNotifier distractionUserNotifier;
     private final DistractingTargetCloser distractingTargetCloser;
@@ -38,6 +43,7 @@ public class FocusEngine {
     private volatile DistractionHandlingMode distractionHandlingMode;
 
     private final SessionMonitor sessionMonitor;
+    private final IdleDetector idleDetector;
 
     public FocusEngine(FocusListener listener) {
         this(listener,
@@ -68,6 +74,7 @@ public class FocusEngine {
             // ==========================================
             @Override
             public void onSessionStarted(WindowSession session) {
+
                 System.out.println("🟢 [引擎接獲通報] 新視窗開啟: " + session.title);
                 session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName, session.title);
                 if (!session.isDistracted) {
@@ -95,6 +102,17 @@ public class FocusEngine {
                 // 過濾"新分頁", "要翻譯這個網頁嗎？"
                 // 例如：DatabaseCore.insertActivity(session);                
                 System.out.println("🚩 [引擎後台收到報告] 視窗關閉了: " + session.title);
+            }
+        });
+
+        this.idleDetector = new IdleDetector(new IdleListener() {
+            @Override
+            public void onIdleStateChanged(boolean isIdle, long idleTimeMillis) {
+                if (isIdle) {
+                    pause(idleTimeMillis);
+                } else {
+                    resume();
+                }
             }
         });
     }
@@ -130,20 +148,27 @@ public class FocusEngine {
 
     public void start(int seconds) {
         stop();
+        this.isPaused = false;
+        this.isStopwatch = false;
+        this.originalSeconds = seconds;
         this.currentSeconds = seconds;
         sessionMonitor.start();
+        idleDetector.start();
 
         currentTask = scheduler.scheduleAtFixedRate(() -> {
+            if (isPaused)
+                return;
+
             currentSeconds--; // 倒數遞減
 
             if (currentSeconds <= 0) {
-                stop(); 
+                stop();
                 if (listener != null) {
                     listener.onFinished(); // 時間到，通知 UI
                 }
             } else {
                 if (listener != null) {
-                    listener.onTick(currentSeconds); 
+                    listener.onTick(currentSeconds);
                 }
             }
         }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
@@ -154,10 +179,16 @@ public class FocusEngine {
     // ==========================================
     public void startStopwatch() {
         stop();
+        this.isPaused = false;
+        this.isStopwatch = true;
         this.currentSeconds = 0; // 碼表永遠從 0 開始
         sessionMonitor.start();
+        idleDetector.start();
 
         currentTask = scheduler.scheduleAtFixedRate(() -> {
+            if (isPaused)
+                return;
+
             currentSeconds++; // 上數遞增
 
             if (listener != null) {
@@ -168,6 +199,45 @@ public class FocusEngine {
     }
 
     // ==========================================
+    // 🛑 暫停與恢復功能
+    // ==========================================
+    public void pause() {
+        pause(0);
+    }
+
+    public void pause(long deductMillis) {
+        System.out.println("⏸️ [計時暫停] 使用者閒置，中斷計時與紀錄");
+        isPaused = true;
+
+        int deductSeconds = (int) (deductMillis / 1000);
+        if (deductSeconds > 0) {
+            if (isStopwatch) {
+                currentSeconds -= deductSeconds;
+                if (currentSeconds < 0)
+                    currentSeconds = 0;
+            } else {
+                currentSeconds += deductSeconds;
+                if (currentSeconds > originalSeconds)
+                    currentSeconds = originalSeconds;
+            }
+            // 強制觸發一次 listener 更新 UI
+            if (listener != null) {
+                listener.onTick(currentSeconds);
+            }
+        }
+
+        sessionMonitor.pause(deductMillis);
+    }
+
+    public void resume() {
+        if (!isPaused)
+            return;
+        System.out.println("▶️ [計時恢復] 使用者回來了，恢復計時與紀錄");
+        isPaused = false;
+        sessionMonitor.resume();
+    }
+
+    // ==========================================
     // 🛑 停止與關閉功能
     // ==========================================
     public void stop() {
@@ -175,6 +245,9 @@ public class FocusEngine {
             currentTask.cancel(true);
         }
         sessionMonitor.stop();
+        if (idleDetector != null) {
+            idleDetector.stop();
+        }
     }
 
     // 確保程式關閉時，資源能正確釋放
