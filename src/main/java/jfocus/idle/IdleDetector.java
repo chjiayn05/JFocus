@@ -8,10 +8,10 @@ import java.util.concurrent.TimeUnit;
 public class IdleDetector {
     // 閒置條件：5 分鐘沒有動滑鼠/鍵盤
     // private static final long IDLE_THRESHOLD_MS = 5 * 60 * 1000;
-    private static final long IDLE_THRESHOLD_MS = 10000;
+    private static final long IDLE_THRESHOLD_MS = 5 * 60 * 1000;
     // 檢查螢幕是否變化的頻率：5 秒
     // private static final long SCREEN_CHECK_INTERVAL_MS = 5 * 1000;
-    private static final long SCREEN_CHECK_INTERVAL_MS = 3000;
+    private static final long SCREEN_CHECK_INTERVAL_MS = 5 * 1000;
 
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> task;
