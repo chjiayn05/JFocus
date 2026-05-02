@@ -49,6 +49,38 @@ public class SessionMonitor {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
         }
+        clearActiveSessions(0);
+    }
+
+    public void pause() {
+        pause(0);
+    }
+
+    public void pause(long deductMillis) {
+        if (scanTask != null && !scanTask.isCancelled()) {
+            scanTask.cancel(false);
+        }
+        System.out.println("⏸️ [監控暫停] 進入閒置狀態，停止記錄視窗 (已扣除閒置時間)");
+        clearActiveSessions(deductMillis);
+    }
+
+    public void resume() {
+        System.out.println("▶️ [監控恢復] 使用者恢復活動");
+        // 重新啟動掃描任務
+        if (scanTask == null || scanTask.isCancelled()) {
+            scanTask = scheduler.scheduleAtFixedRate(this::scan, 0, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    private void clearActiveSessions(long deductMillis) {
+        for (WindowSession session : activeSessions.values()) {
+            // 將結束時間往前扣掉發呆的這段時間
+            session.endTime = java.time.LocalDateTime.now().minusNanos(deductMillis * 1_000_000);
+            if (listener != null) {
+                listener.onSessionEnded(session);
+            }
+        }
+        activeSessions.clear();
     }
 
     private void scan() {
