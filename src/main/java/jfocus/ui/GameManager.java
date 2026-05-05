@@ -146,7 +146,7 @@ public class GameManager {
     //抽獎
 
     // 假設這是在 GameManager.java 內
-public String performPokeBallDraw() {
+public String performPokeBallDraw(String drawType) {
     if (this.focusCoins < 200) {
         return "INSUFFICIENT_FUNDS";
     }
