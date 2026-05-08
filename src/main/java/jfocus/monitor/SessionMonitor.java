@@ -60,7 +60,11 @@ public class SessionMonitor {
         if (scanTask != null && !scanTask.isCancelled()) {
             scanTask.cancel(false);
         }
-        System.out.println("⏸️ [監控暫停] 進入閒置狀態，停止記錄視窗 (已扣除閒置時間)");
+        if (deductMillis > 0) {
+            System.out.println("⏸️ [監控暫停] 進入閒置狀態，停止記錄視窗 (已扣除閒置時間)");
+        } else {
+            System.out.println("⏸️ [監控暫停] 使用者手動暫停，停止記錄視窗");
+        }
         clearActiveSessions(deductMillis);
     }
 

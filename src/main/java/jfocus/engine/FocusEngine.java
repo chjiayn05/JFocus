@@ -206,7 +206,11 @@ public class FocusEngine {
     }
 
     public void pause(long deductMillis) {
-        System.out.println("⏸️ [計時暫停] 使用者閒置，中斷計時與紀錄");
+        if (deductMillis > 0) {
+            System.out.println("⏸️ [計時暫停] 使用者閒置，中斷計時與紀錄");
+        } else {
+            System.out.println("⏸️ [計時暫停] 使用者手動暫停計時");
+        }
         isPaused = true;
 
         int deductSeconds = (int) (deductMillis / 1000);
