@@ -42,29 +42,35 @@ public class FocusEngine {
     private final DistractionModeRepository distractionModeRepository;
     private volatile DistractionHandlingMode distractionHandlingMode;
 
+    private String currentSubject = "未分類";
+    private FocusSessionRecord currentSessionRecord;
+
     private final SessionMonitor sessionMonitor;
     private final IdleDetector idleDetector;
 
     public FocusEngine(FocusListener listener) {
         this(listener,
-            new DistractionClassifier(),
-            FocusEngine::notifyUserToStayFocused,
-            new SystemAwareDistractingTargetCloser(),
-            new JdbcDistractionModeRepository(new DatabaseCore()));
+                new DistractionClassifier(),
+                FocusEngine::notifyUserToStayFocused,
+                new SystemAwareDistractingTargetCloser(),
+                new JdbcDistractionModeRepository(new DatabaseCore()));
     }
 
     FocusEngine(FocusListener listener,
-                DistractionClassifier distractionClassifier,
-                DistractionUserNotifier distractionUserNotifier,
-                DistractingTargetCloser distractingTargetCloser,
-                DistractionModeRepository distractionModeRepository) {
+            DistractionClassifier distractionClassifier,
+            DistractionUserNotifier distractionUserNotifier,
+            DistractingTargetCloser distractingTargetCloser,
+            DistractionModeRepository distractionModeRepository) {
         this.listener = listener;
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.distractionClassifier = Objects.requireNonNull(distractionClassifier,  "distractionClassifier cannot be null");
-        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier, "distractionUserNotifier cannot be null");
-        this.distractingTargetCloser = Objects.requireNonNull(distractingTargetCloser, "distractingTargetCloser cannot be null");
+        this.distractionClassifier = Objects.requireNonNull(distractionClassifier,
+                "distractionClassifier cannot be null");
+        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier,
+                "distractionUserNotifier cannot be null");
+        this.distractingTargetCloser = Objects.requireNonNull(distractingTargetCloser,
+                "distractingTargetCloser cannot be null");
         this.distractionModeRepository = Objects.requireNonNull(distractionModeRepository,
-            "distractionModeRepository cannot be null");
+                "distractionModeRepository cannot be null");
         this.distractionHandlingMode = this.distractionModeRepository.loadMode(DistractionHandlingMode.WARN_USER);
 
         this.sessionMonitor = new SessionMonitor(new SessionListener() {
@@ -76,7 +82,8 @@ public class FocusEngine {
             public void onSessionStarted(WindowSession session) {
 
                 System.out.println("🟢 [引擎接獲通報] 新視窗開啟: " + session.title);
-                session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName, session.title);
+                session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName,
+                        session.title);
                 if (!session.isDistracted) {
                     return;
                 }
@@ -86,7 +93,8 @@ public class FocusEngine {
                     return;
                 }
 
-                boolean closeTabOnly = FocusEngine.this.distractionClassifier.isWebsiteActivity(session.processName, session.title);
+                boolean closeTabOnly = FocusEngine.this.distractionClassifier.isWebsiteActivity(session.processName,
+                        session.title);
                 boolean closed = FocusEngine.this.distractingTargetCloser.closeDistractingTarget(session, closeTabOnly);
                 if (!closed) {
                     System.err.println("無法關閉分心視窗或分頁: " + session.title);
@@ -100,7 +108,7 @@ public class FocusEngine {
             public void onSessionEnded(WindowSession session) {
                 // TODO: (交給隊友寫) 將結束的 session 寫入資料庫的邏輯
                 // 過濾"新分頁", "要翻譯這個網頁嗎？"
-                // 例如：DatabaseCore.insertActivity(session);                
+                // 例如：DatabaseCore.insertActivity(session);
                 System.out.println("🚩 [引擎後台收到報告] 視窗關閉了: " + session.title);
             }
         });
@@ -129,13 +137,23 @@ public class FocusEngine {
     }
 
     public void setDistractionHandlingMode(DistractionHandlingMode distractionHandlingMode) {
-        DistractionHandlingMode validatedMode = Objects.requireNonNull(distractionHandlingMode, "distractionHandlingMode cannot be null");
+        DistractionHandlingMode validatedMode = Objects.requireNonNull(distractionHandlingMode,
+                "distractionHandlingMode cannot be null");
         this.distractionHandlingMode = validatedMode;
         this.distractionModeRepository.saveMode(validatedMode);
     }
 
     public void setDistractionUserNotifier(DistractionUserNotifier distractionUserNotifier) {
-        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier, "distractionUserNotifier cannot be null");
+        this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier,
+                "distractionUserNotifier cannot be null");
+    }
+
+    public void setCurrentSubject(String subject) {
+        this.currentSubject = subject;
+    }
+
+    public String getCurrentSubject() {
+        return currentSubject;
     }
 
     // ==========================================
@@ -152,6 +170,14 @@ public class FocusEngine {
         this.isStopwatch = false;
         this.originalSeconds = seconds;
         this.currentSeconds = seconds;
+
+        this.currentSessionRecord = new FocusSessionRecord();
+        this.currentSessionRecord.sessionId = jfocus.main.FocusApp.getSessionId();
+        this.currentSessionRecord.subject = this.currentSubject;
+        this.currentSessionRecord.startTime = java.time.LocalDateTime.now();
+        this.currentSessionRecord.expectedDurationSeconds = seconds;
+        this.currentSessionRecord.totalIdleSecondsDeducted = 0;
+
         sessionMonitor.start();
         idleDetector.start();
 
@@ -182,6 +208,14 @@ public class FocusEngine {
         this.isPaused = false;
         this.isStopwatch = true;
         this.currentSeconds = 0; // 碼表永遠從 0 開始
+
+        this.currentSessionRecord = new FocusSessionRecord();
+        this.currentSessionRecord.sessionId = jfocus.main.FocusApp.getSessionId();
+        this.currentSessionRecord.subject = this.currentSubject;
+        this.currentSessionRecord.startTime = java.time.LocalDateTime.now();
+        this.currentSessionRecord.expectedDurationSeconds = 0;
+        this.currentSessionRecord.totalIdleSecondsDeducted = 0;
+
         sessionMonitor.start();
         idleDetector.start();
 
@@ -215,6 +249,9 @@ public class FocusEngine {
 
         int deductSeconds = (int) (deductMillis / 1000);
         if (deductSeconds > 0) {
+            if (currentSessionRecord != null) {
+                currentSessionRecord.totalIdleSecondsDeducted += deductSeconds;
+            }
             if (isStopwatch) {
                 currentSeconds -= deductSeconds;
                 if (currentSeconds < 0)
@@ -248,6 +285,24 @@ public class FocusEngine {
         if (currentTask != null && !currentTask.isCancelled()) {
             currentTask.cancel(true);
         }
+
+        if (this.currentSessionRecord != null && this.currentSessionRecord.endTime == null) {
+            this.currentSessionRecord.endTime = java.time.LocalDateTime.now();
+            if (isStopwatch) {
+                this.currentSessionRecord.actualDurationSeconds = currentSeconds;
+            } else {
+                this.currentSessionRecord.actualDurationSeconds = originalSeconds - currentSeconds;
+            }
+
+            // TODO: 將計時 session 數據寫入資料庫
+            // 例如：DatabaseCore.insertFocusSession(this.currentSessionRecord);
+            System.out.println("📝 [引擎後台收到報告] 計時結束準備存入資料庫: Session " + currentSessionRecord.sessionId +
+                    " | 科目: " + currentSessionRecord.subject +
+                    " | 預期: " + currentSessionRecord.expectedDurationSeconds + "s" +
+                    " | 實際執行: " + currentSessionRecord.actualDurationSeconds + "s" +
+                    " | 扣除閒置: " + currentSessionRecord.totalIdleSecondsDeducted + "s");
+        }
+
         sessionMonitor.stop();
         if (idleDetector != null) {
             idleDetector.stop();
