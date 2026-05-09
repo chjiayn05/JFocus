@@ -18,11 +18,10 @@ public class ScreenChangeDetector {
         }
     }
 
-    /**
-     * 檢查畫面是否有變化 (例如是否在播放影片)
-     */
+    // 檢查畫面是否有變化 (例如是否在播放影片)
     public boolean hasScreenChanged() {
-        if (robot == null) return true; // 如果無法截圖，預設回傳 true 避免錯誤地進入閒置
+        if (robot == null)
+            return true; // 如果無法截圖，預設回傳 true 避免錯誤地進入閒置
 
         // 擷取整個螢幕的畫面
         java.awt.Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -65,6 +64,6 @@ public class ScreenChangeDetector {
         // 如果不同的像素比例大於 2%，才認為畫面有顯著變化 (影片等)
         // 若比例很低 (例如閃爍的游標)，則視為畫面靜止
         double diffRatio = (double) diffPixels / totalPixels;
-        return diffRatio < 0.02; 
+        return diffRatio < 0.02;
     }
 }

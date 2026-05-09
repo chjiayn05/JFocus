@@ -30,7 +30,6 @@ public class FocusEngine {
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> currentTask;
 
-    // 💡 變數改名為 currentSeconds，因為它現在可能是「剩餘秒數」，也可能是「已過秒數」
     private int currentSeconds;
     private FocusListener listener;
     private boolean isPaused = false;
@@ -75,13 +74,11 @@ public class FocusEngine {
 
         this.sessionMonitor = new SessionMonitor(new SessionListener() {
 
-            // ==========================================
-            // 🚀 新增：當新視窗一出現時觸發
-            // ==========================================
+            // 新視窗一出現時觸發
             @Override
             public void onSessionStarted(WindowSession session) {
 
-                System.out.println("🟢 [引擎接獲通報] 新視窗開啟: " + session.title);
+                System.out.println("新視窗開啟: " + session.title);
                 session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName,
                         session.title);
                 if (!session.isDistracted) {
@@ -101,15 +98,13 @@ public class FocusEngine {
                 }
             }
 
-            // ==========================================
-            // 原本的：當視窗關閉時觸發
-            // ==========================================
+            // 當視窗關閉時觸發
             @Override
             public void onSessionEnded(WindowSession session) {
-                // TODO: (交給隊友寫) 將結束的 session 寫入資料庫的邏輯
+                // TODO: 將結束的 session 寫入資料庫的邏輯
                 // 過濾"新分頁", "要翻譯這個網頁嗎？"
                 // 例如：DatabaseCore.insertActivity(session);
-                System.out.println("🚩 [引擎後台收到報告] 視窗關閉了: " + session.title);
+                System.out.println("視窗關閉: " + session.title);
             }
         });
 
@@ -126,9 +121,9 @@ public class FocusEngine {
     }
 
     private static void notifyUserToStayFocused(WindowSession session) {
-        // TODO Placeholder: 這裡保留給未來的訊息框函式，現在先透過回呼呼叫點串好。
+        // TODO Placeholder: 保留給未來的訊息框函式，現在先透過回呼呼叫點串好。
         if (session != null) {
-            System.out.println("⚠️ 請勿分心: " + session.title);
+            System.out.println("請勿分心: " + session.title);
         }
     }
 
@@ -156,9 +151,7 @@ public class FocusEngine {
         return currentSubject;
     }
 
-    // ==========================================
-    // 🔽 模式一：倒數計時模式 (番茄鐘/倒數)
-    // ==========================================
+    // 倒數計時模式 (番茄鐘/倒數)
     public void start(int hours, int minutes, int seconds) {
         int totalSecond = (hours * SECONDS_PER_HOUR) + (minutes * SECONDS_PER_MINUTE) + seconds;
         start(totalSecond);
@@ -200,9 +193,7 @@ public class FocusEngine {
         }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
-    // ==========================================
-    // 🔼 模式二：正向計時模式 (碼表)
-    // ==========================================
+    // 正向計時模式 (碼表)
     public void startStopwatch() {
         stop();
         this.isPaused = false;
@@ -232,18 +223,16 @@ public class FocusEngine {
         }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
-    // ==========================================
-    // 🛑 暫停與恢復功能
-    // ==========================================
+    // 暫停與恢復功能
     public void pause() {
         pause(0);
     }
 
     public void pause(long deductMillis) {
         if (deductMillis > 0) {
-            System.out.println("⏸️ [計時暫停] 使用者閒置，中斷計時與紀錄");
+            System.out.println("計時暫停: 使用者閒置，中斷計時與紀錄");
         } else {
-            System.out.println("⏸️ [計時暫停] 使用者手動暫停計時");
+            System.out.println("計時暫停: 使用者手動暫停計時");
         }
         isPaused = true;
 
@@ -273,14 +262,12 @@ public class FocusEngine {
     public void resume() {
         if (!isPaused)
             return;
-        System.out.println("▶️ [計時恢復] 使用者回來了，恢復計時與紀錄");
+        System.out.println("計時恢復: 使用者回來了，恢復計時與紀錄");
         isPaused = false;
         sessionMonitor.resume();
     }
 
-    // ==========================================
-    // 🛑 停止與關閉功能
-    // ==========================================
+    // 停止與關閉功能
     public void stop() {
         if (currentTask != null && !currentTask.isCancelled()) {
             currentTask.cancel(true);
@@ -296,7 +283,7 @@ public class FocusEngine {
 
             // TODO: 將計時 session 數據寫入資料庫
             // 例如：DatabaseCore.insertFocusSession(this.currentSessionRecord);
-            System.out.println("📝 [引擎後台收到報告] 計時結束準備存入資料庫: Session " + currentSessionRecord.sessionId +
+            System.out.println("計時結束準備存入資料庫: Session " + currentSessionRecord.sessionId +
                     " | 科目: " + currentSessionRecord.subject +
                     " | 預期: " + currentSessionRecord.expectedDurationSeconds + "s" +
                     " | 實際執行: " + currentSessionRecord.actualDurationSeconds + "s" +
