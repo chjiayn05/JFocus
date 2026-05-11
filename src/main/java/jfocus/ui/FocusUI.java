@@ -42,6 +42,8 @@ import javafx.stage.Stage;
 import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
+import jfocus.notification.NotificationPayload;
+import jfocus.notification.NotificationSeverity;
 
 public class FocusUI extends Application {
 
@@ -547,8 +549,18 @@ public class FocusUI extends Application {
 
         primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
         primaryStage.setScene(mainScene);
-        primaryStage.setOnCloseRequest(event -> saveUserProgressSafely());
+        primaryStage.setOnCloseRequest(event -> {
+            saveUserProgressSafely();
+            FocusApp.shutdownNotificationService();
+        });
         primaryStage.show();
+
+        FocusApp.getNotificationService().notify(
+                new NotificationPayload(
+                        "JFocus 已啟動",
+                        "通知介面已就緒，可開始串接專注事件。",
+                        NotificationSeverity.INFO,
+                        "ui"));
 
         updatePokemonDisplay(currentPokemonFolder, currentStage);
     }
