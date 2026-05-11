@@ -18,25 +18,16 @@ import jfocus.todo.TodoRepository;
  * 提供活動資料與待辦事項的查詢。
  */
 public class PullData {
-    private final ActivityPullService activityPullService;
-    private final TodoPullService todoPullService;
+    private final ActivityRepository activityRepository;
+    private final TodoRepository todoRepository;
 
     /**
      * 使用預設 JDBC repository 建立查詢服務。
      */
     public PullData() {
-        this(new DefaultActivityPullService(), new DefaultTodoPullService());
-    }
-
-    /**
-     * 以指定服務建立查詢 facade。
-     *
-     * @param activityPullService 活動資料查詢服務
-     * @param todoPullService 待辦事項查詢服務
-     */
-    public PullData(ActivityPullService activityPullService, TodoPullService todoPullService) {
-        this.activityPullService = Objects.requireNonNull(activityPullService, "activityPullService cannot be null");
-        this.todoPullService = Objects.requireNonNull(todoPullService, "todoPullService cannot be null");
+        DatabaseCore databaseCore = new DatabaseCore();
+        this.activityRepository = new JdbcActivityRepository(databaseCore);
+        this.todoRepository = new JdbcTodoRepository(databaseCore);
     }
 
     /**
@@ -45,7 +36,8 @@ public class PullData {
      * @param activityRepository 活動資料 repository
      */
     public PullData(ActivityRepository activityRepository) {
-        this(new DefaultActivityPullService(activityRepository), new DisabledTodoPullService());
+        this.activityRepository = Objects.requireNonNull(activityRepository, "activityRepository cannot be null");
+        this.todoRepository = null;
     }
 
     /**
@@ -54,7 +46,8 @@ public class PullData {
      * @param todoRepository 待辦事項 repository
      */
     public PullData(TodoRepository todoRepository) {
-        this(new DisabledActivityPullService(), new DefaultTodoPullService(todoRepository));
+        this.activityRepository = null;
+        this.todoRepository = Objects.requireNonNull(todoRepository, "todoRepository cannot be null");
     }
 
     /**
@@ -64,7 +57,8 @@ public class PullData {
      * @param todoRepository 待辦事項 repository
      */
     public PullData(ActivityRepository activityRepository, TodoRepository todoRepository) {
-        this(new DefaultActivityPullService(activityRepository), new DefaultTodoPullService(todoRepository));
+        this.activityRepository = Objects.requireNonNull(activityRepository, "activityRepository cannot be null");
+        this.todoRepository = Objects.requireNonNull(todoRepository, "todoRepository cannot be null");
     }
 
     /**
@@ -74,7 +68,7 @@ public class PullData {
      * @return 以應用程式名稱為鍵、總秒數為值的統計結果
      */
     public Map<String, Integer> getAppUsageByDate(String date) {
-        return activityPullService.getAppUsageByDate(parseDate(date, "date"));
+        return requireActivityRepository().getAppUsageByDate(parseDate(date, "date"));
     }
 
     /**
@@ -87,7 +81,7 @@ public class PullData {
         if (sessionId == null || sessionId.isBlank()) {
             throw new IllegalArgumentException("sessionId cannot be null or blank");
         }
-        return activityPullService.getAppUsageBySession(sessionId);
+        return requireActivityRepository().getAppUsageBySession(sessionId);
     }
 
     /**
@@ -100,7 +94,7 @@ public class PullData {
     public Map<String, Integer> getAppUsageByRange(String dateStart, String dateEnd) {
         LocalDate startDate = parseDate(dateStart, "dateStart");
         LocalDate endDate = parseDate(dateEnd, "dateEnd");
-        return activityPullService.getAppUsageByRange(startDate, endDate);
+        return requireActivityRepository().getAppUsageByRange(startDate, endDate);
     }
 
     /**
@@ -109,7 +103,7 @@ public class PullData {
      * @return 所有待辦事項的清單
      */
     public List<TodoRecord> getAllTodos() {
-        return todoPullService.getAllTodos();
+        return requireTodoRepository().getAllTodos();
     }
 
     /**
@@ -119,7 +113,21 @@ public class PullData {
      * @return 若存在則回傳 {@link Optional} 包裹的紀錄，否則回傳 {@link Optional#empty()}
      */
     public Optional<TodoRecord> getTodoById(int id) {
-        return todoPullService.getTodoById(id);
+        return requireTodoRepository().getTodoById(id);
+    }
+
+    private ActivityRepository requireActivityRepository() {
+        if (activityRepository == null) {
+            throw new IllegalStateException("ActivityRepository is not configured");
+        }
+        return activityRepository;
+    }
+
+    private TodoRepository requireTodoRepository() {
+        if (todoRepository == null) {
+            throw new IllegalStateException("TodoRepository is not configured");
+        }
+        return todoRepository;
     }
 
     private LocalDate parseDate(String value, String fieldName) {
@@ -131,98 +139,6 @@ public class PullData {
             return LocalDate.parse(value);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException(fieldName + " must use yyyy-MM-dd format", e);
-        }
-    }
-
-    public interface ActivityPullService {
-        Map<String, Integer> getAppUsageByDate(LocalDate date);
-
-        Map<String, Integer> getAppUsageBySession(String sessionId);
-
-        Map<String, Integer> getAppUsageByRange(LocalDate startDate, LocalDate endDate);
-    }
-
-    public interface TodoPullService {
-        List<TodoRecord> getAllTodos();
-
-        Optional<TodoRecord> getTodoById(int id);
-    }
-
-    private static class DefaultActivityPullService implements ActivityPullService {
-        private final ActivityRepository activityRepository;
-
-        private DefaultActivityPullService() {
-            this(new JdbcActivityRepository(new DatabaseCore()));
-        }
-
-        private DefaultActivityPullService(ActivityRepository activityRepository) {
-            this.activityRepository = Objects.requireNonNull(activityRepository, "activityRepository cannot be null");
-        }
-
-        @Override
-        public Map<String, Integer> getAppUsageByDate(LocalDate date) {
-            return activityRepository.getAppUsageByDate(date);
-        }
-
-        @Override
-        public Map<String, Integer> getAppUsageBySession(String sessionId) {
-            return activityRepository.getAppUsageBySession(sessionId);
-        }
-
-        @Override
-        public Map<String, Integer> getAppUsageByRange(LocalDate startDate, LocalDate endDate) {
-            return activityRepository.getAppUsageByRange(startDate, endDate);
-        }
-    }
-
-    private static class DefaultTodoPullService implements TodoPullService {
-        private final TodoRepository todoRepository;
-
-        private DefaultTodoPullService() {
-            this(new JdbcTodoRepository(new DatabaseCore()));
-        }
-
-        private DefaultTodoPullService(TodoRepository todoRepository) {
-            this.todoRepository = Objects.requireNonNull(todoRepository, "todoRepository cannot be null");
-        }
-
-        @Override
-        public List<TodoRecord> getAllTodos() {
-            return todoRepository.getAllTodos();
-        }
-
-        @Override
-        public Optional<TodoRecord> getTodoById(int id) {
-            return todoRepository.getTodoById(id);
-        }
-    }
-
-    private static class DisabledActivityPullService implements ActivityPullService {
-        @Override
-        public Map<String, Integer> getAppUsageByDate(LocalDate date) {
-            throw new IllegalStateException("ActivityRepository is not configured");
-        }
-
-        @Override
-        public Map<String, Integer> getAppUsageBySession(String sessionId) {
-            throw new IllegalStateException("ActivityRepository is not configured");
-        }
-
-        @Override
-        public Map<String, Integer> getAppUsageByRange(LocalDate startDate, LocalDate endDate) {
-            throw new IllegalStateException("ActivityRepository is not configured");
-        }
-    }
-
-    private static class DisabledTodoPullService implements TodoPullService {
-        @Override
-        public List<TodoRecord> getAllTodos() {
-            throw new IllegalStateException("TodoRepository is not configured");
-        }
-
-        @Override
-        public Optional<TodoRecord> getTodoById(int id) {
-            throw new IllegalStateException("TodoRepository is not configured");
         }
     }
 }
