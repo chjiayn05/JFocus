@@ -126,6 +126,16 @@ public class DatabaseCore {
             );
             """;
 
+        String todosTableSql = """
+            CREATE TABLE IF NOT EXISTS todos (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                task     TEXT    NOT NULL,
+                deadline TEXT,
+                is_done  INTEGER NOT NULL DEFAULT 0,
+                notes    TEXT
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -135,6 +145,7 @@ public class DatabaseCore {
             stmt.execute(unlockedStagesTableSql);
             stmt.execute(distractionRulesTableSql);
             stmt.execute(appSettingsTableSql);
+            stmt.execute(todosTableSql);
             stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
