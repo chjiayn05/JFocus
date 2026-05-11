@@ -127,6 +127,16 @@ public class DatabaseCore {
             );
             """;
 
+        String todosTableSql = """
+            CREATE TABLE IF NOT EXISTS todos (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                task     TEXT    NOT NULL,
+                deadline TEXT,
+                is_done  INTEGER NOT NULL DEFAULT 0,
+                notes    TEXT
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -136,13 +146,11 @@ public class DatabaseCore {
             stmt.execute(unlockedStagesTableSql);
             stmt.execute(distractionRulesTableSql);
             stmt.execute(appSettingsTableSql);
-            
-            // 👇 2. 【新增這行】超級防呆：如果舊資料庫沒有這個欄位，自動補上！
+            stmt.execute(todosTableSql);
+
+            // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");
-            
-            // 👇 1. 【修改這行】初始化時，寫入預設的小火龍 '004'
             stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp, partner_id) VALUES (1, 0, 0, 0, '004')");
-            
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
