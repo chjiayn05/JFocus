@@ -57,34 +57,70 @@ public final class UserData {
     /**
      * 儲存玩家數值資料。
      */
-    public static void savePlayerStats(int coins, int stones, int xp) {
+    /**
+     * 儲存玩家數值資料（包含當前夥伴 ID）。
+     */
+    public static void savePlayerStats(int coins, int stones, int xp, String partnerId) {
+        // 這裡的 SQL 必須包含 partner_id，否則會報錯
         String sql = """
-                INSERT INTO player_stats(id, coins, stones, xp)
-                VALUES (1, ?, ?, ?)
+                INSERT INTO player_stats(id, coins, stones, xp, partner_id)
+                VALUES (1, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     coins = excluded.coins,
                     stones = excluded.stones,
-                    xp = excluded.xp
+                    xp = excluded.xp,
+                    partner_id = excluded.partner_id
                 """;
-
-        int safeCoins = Math.max(0, coins);
-        int safeStones = Math.max(0, stones);
-        int safeXp = Math.max(0, xp);
 
         try (Connection conn = new DatabaseCore().getConnection()) {
             ensureSchema(conn);
 
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, safeCoins);
-                pstmt.setInt(2, safeStones);
-                pstmt.setInt(3, safeXp);
+                pstmt.setInt(1, Math.max(0, coins));
+                pstmt.setInt(2, Math.max(0, stones));
+                pstmt.setInt(3, Math.max(0, xp));
+                pstmt.setString(4, partnerId); // 確保這行有寫入
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
+            // 這就是你看到的報錯來源
             throw new StorageException("儲存玩家數值失敗", e);
         }
     }
+    /**
+     * 從資料庫讀取當前夥伴的 ID。
+     */
+    public static String loadCurrentPartner() {
+        String sql = "SELECT partner_id FROM player_stats WHERE id = 1";
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                 ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("partner_id");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("讀取夥伴 ID 失敗，使用預設值。");
+        }
+        return "004"; // 找不到就給預設值小火龍
+    }
 
+    /**
+     * 將當前夥伴的 ID 存入資料庫。
+     */
+    public static void saveCurrentPartner(String partnerId) {
+        String sql = "UPDATE player_stats SET partner_id = ? WHERE id = 1";
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, partnerId);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new StorageException("儲存夥伴 ID 失敗", e);
+        }
+    }
     /**
      * 載入玩家已解鎖的關卡。
      */
@@ -202,7 +238,8 @@ public final class UserData {
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     coins INTEGER NOT NULL DEFAULT 0,
                     stones INTEGER NOT NULL DEFAULT 0,
-                    xp INTEGER NOT NULL DEFAULT 0
+                    xp INTEGER NOT NULL DEFAULT 0,
+                    partner_id TEXT NOT NULL DEFAULT '004'
                 )
                 """;
 
@@ -224,6 +261,7 @@ public final class UserData {
             stmt.execute(createUnlockedSql);
             stmt.execute(createPokemonXpSql);
             stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
+            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp, partner_id) VALUES (1, 0, 0, 0, '004')");
         }
 
         ensureDefaultUnlockedStages(conn);
