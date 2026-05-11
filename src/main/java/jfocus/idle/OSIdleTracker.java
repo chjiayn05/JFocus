@@ -11,6 +11,7 @@ public class OSIdleTracker {
 
     /**
      * 取得作業系統閒置時間 (毫秒)
+     * 
      * @return 距離上次滑鼠或鍵盤操作經過的毫秒數
      */
     public static long getIdleTimeMillis() {
@@ -19,7 +20,7 @@ public class OSIdleTracker {
         } else if (OS.contains("mac")) {
             return getMacIdleTime();
         }
-        return 0; // 暫不支援其他 OS
+        return 0;
     }
 
     private static long getWindowsIdleTime() {
