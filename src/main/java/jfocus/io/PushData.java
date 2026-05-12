@@ -8,27 +8,55 @@ import jfocus.activity.ActivityRepository;
 import jfocus.activity.JdbcActivityRepository;
 import jfocus.db.DatabaseCore;
 import jfocus.main.FocusApp;
+import jfocus.todo.JdbcTodoRepository;
+import jfocus.todo.TodoRecord;
+import jfocus.todo.TodoRepository;
 
 /**
- * 提供活動資料寫入功能。
+ * 提供活動資料與待辦事項的寫入功能。
  */
 public class PushData {
-    private final ActivityRepository repository;
+    private final ActivityRepository activityRepository;
+    private final TodoRepository todoRepository;
 
     /**
      * 使用預設 JDBC repository 建立寫入服務。
      */
     public PushData() {
-        this(new JdbcActivityRepository(new DatabaseCore()));
+        DatabaseCore databaseCore = new DatabaseCore();
+        this.activityRepository = new JdbcActivityRepository(databaseCore);
+        this.todoRepository = new JdbcTodoRepository(databaseCore);
     }
 
     /**
-     * 使用指定 repository 建立寫入服務。
+     * 使用指定活動資料 repository 建立寫入 facade。
      *
-     * @param repository 活動資料 repository
+     * @param activityRepository 活動資料 repository
      */
-    public PushData(ActivityRepository repository) {
-        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+    public PushData(ActivityRepository activityRepository) {
+        this.activityRepository = Objects.requireNonNull(activityRepository, "activityRepository cannot be null");
+        this.todoRepository = null;
+    }
+
+    /**
+     * 使用指定待辦事項 repository 建立寫入 facade。
+     *
+     * @param todoRepository 待辦事項 repository
+     */
+    public PushData(TodoRepository todoRepository) {
+        this.activityRepository = null;
+        this.todoRepository = Objects.requireNonNull(todoRepository, "todoRepository cannot be null");
+    }
+
+    /**
+     * 使用指定 repository 建立寫入 facade。
+     *
+     * @param activityRepository 活動資料 repository
+     * @param todoRepository 待辦事項 repository
+     */
+    public PushData(ActivityRepository activityRepository, TodoRepository todoRepository) {
+        this.activityRepository = Objects.requireNonNull(activityRepository, "activityRepository cannot be null");
+        this.todoRepository = Objects.requireNonNull(todoRepository, "todoRepository cannot be null");
     }
 
     /**
@@ -43,13 +71,66 @@ public class PushData {
     public void insertActivity(String app, String title, LocalDateTime startTime,
             LocalDateTime endTime, boolean isFocus) {
         ActivityRecord activity = new ActivityRecord(
-                app,
-                title,
-                startTime,
-                endTime,
-                isFocus,
-                FocusApp.getSessionId());
-        repository.saveActivity(activity);
+            app,
+            title,
+            startTime,
+            endTime,
+            isFocus,
+            FocusApp.getSessionId());
+        requireActivityRepository().saveActivity(activity);
         System.out.println("💾 成功存入紀錄: [" + app + "] " + title);
+    }
+
+    /**
+     * 新增一筆待辦事項。
+     *
+     * @param task 待辦事情
+     * @param deadline 時限，可為 null
+     * @param isDone 是否完成
+     * @param notes 備註，可為 null
+     */
+    public void insertTodo(String task, LocalDateTime deadline, boolean isDone, String notes) {
+        TodoRecord todo = new TodoRecord(0, task, deadline, isDone, notes);
+        requireTodoRepository().saveTodo(todo);
+        System.out.println("💾 新增待辦: " + task);
+    }
+
+    /**
+     * 更新一筆待辦事項的所有欄位。
+     *
+     * @param id 待辦事項的 id
+     * @param task 待辦事情
+     * @param deadline 時限，可為 null
+     * @param isDone 是否完成
+     * @param notes 備註，可為 null
+     */
+    public void updateTodo(int id, String task, LocalDateTime deadline, boolean isDone, String notes) {
+        TodoRecord todo = new TodoRecord(id, task, deadline, isDone, notes);
+        requireTodoRepository().updateTodo(todo);
+        System.out.println("✏️ 更新待辦 id=" + id + ": " + task);
+    }
+
+    /**
+     * 刪除一筆待辦事項。
+     *
+     * @param id 待辦事項的 id
+     */
+    public void deleteTodo(int id) {
+        requireTodoRepository().deleteTodo(id);
+        System.out.println("🗑️ 刪除待辦 id=" + id);
+    }
+
+    private ActivityRepository requireActivityRepository() {
+        if (activityRepository == null) {
+            throw new IllegalStateException("ActivityRepository is not configured");
+        }
+        return activityRepository;
+    }
+
+    private TodoRepository requireTodoRepository() {
+        if (todoRepository == null) {
+            throw new IllegalStateException("TodoRepository is not configured");
+        }
+        return todoRepository;
     }
 }

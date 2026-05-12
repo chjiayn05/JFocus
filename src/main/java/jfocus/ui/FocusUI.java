@@ -27,22 +27,20 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
+import jfocus.notification.NotificationPayload;
+import jfocus.notification.NotificationSeverity;
 
 public class FocusUI extends Application {
 
@@ -442,83 +440,82 @@ public class FocusUI extends Application {
         }
         
         tab.setContent(this.timerView);
-        return tab;
+        return tab;}
+@Override
+    public void start(javafx.stage.Stage primaryStage) {
+        jfocus.db.DatabaseCore.initializeDatabase(); 
+        loadPokedexData();
+        loadUserProgressSafely();
+
+        // 1. 初始化 TabPane 與分頁
+        javafx.scene.control.TabPane tabPane = new javafx.scene.control.TabPane();
+
+        Tab focusTab = createTimerTab(); // 👉 綁定你的開機喚醒邏輯
+        focusTab.setClosable(false);
+        Tab pokedexTab = createPokedexTab();
+        pokedexTab.setClosable(false);
+        Tab statsTab = createStatsTab();
+        statsTab.setClosable(false);
+        Tab gachaTab = createGachaTab();
+        gachaTab.setClosable(false);
+
+        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
+
+        // 2. 頂部狀態列 (主題切換 + 貨幣)
+        ChoiceBox<String> themeSelector = new ChoiceBox<>();
+        themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
+        themeSelector.setValue("暗黑電競"); 
+
+        themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            String css = switch (newVal) {
+                case "暗黑電競" -> "PokemonDark.css";
+                case "明亮清新" -> "PokemonLight.css";
+                case "經典紅" -> "PokemonRed.css";
+                case "大師球" -> "PokemonPurple.css";
+                default -> "PokemonDark.css";
+            };
+            switchTheme(css);
+        });
+
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        HBox topBar = new HBox(15, themeSelector, spacer, coinLabel, stoneLabel);
+        topBar.setAlignment(Pos.CENTER);
+        topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 20));
+        topBar.getStyleClass().add("top-bar");
+
+        // 3. 佈局組合：上面是狀態列，下面是分頁內容
+        VBox rootLayout = new VBox(topBar, tabPane);
+        javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
+
+        mainScene = new Scene(rootLayout, 480, 750);
+        switchTheme("PokemonDark.css");
+
+        // 4. 刷新初始狀態
+        setupButtonStyles();
+        refreshCurrencyLabels();
+        refreshXpDisplay();
+
+        // 5. 設定視窗與關閉事件 (保留組員的通知關閉邏輯)
+        primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
+        primaryStage.setScene(mainScene);
+        primaryStage.setOnCloseRequest(event -> {
+            saveUserProgressSafely();
+            FocusApp.shutdownNotificationService(); // 👈 組員的通知服務
+        });
+        primaryStage.show();
+
+        // 6. 啟動歡迎通知 (保留組員的通知系統)
+        FocusApp.getNotificationService().notify(
+                new NotificationPayload(
+                        "JFocus 已啟動",
+                        "通知介面已就緒，可開始串接專注事件。",
+                        NotificationSeverity.INFO,
+                        "ui"));
+
+        updatePokemonDisplay(currentPokemonFolder, currentStage);
     }
-    // start
-   @Override
-public void start(Stage primaryStage) {
-    DatabaseCore.initializeDatabase(); 
-    loadPokedexData();
-    loadUserProgressSafely();
-
-    // 1. 初始化 TabPane
-    TabPane tabPane = new TabPane();
-
-    // ✅ 【關鍵修正】：呼叫你寫好的方法，而不是直接 new！
-    // 這樣才會執行「開機喚醒寶可夢」的邏輯，並把實體存入 this.timerView
-    Tab focusTab = createTimerTab(); 
-    focusTab.setClosable(false);
-
-    Tab pokedexTab = createPokedexTab();
-    pokedexTab.setClosable(false);
-
-    Tab statsTab = createStatsTab();
-    statsTab.setClosable(false);
-
-    Tab gachaTab = createGachaTab();
-    gachaTab.setClosable(false);
-
-    // 按照你想要的順序加入分頁
-    tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
-
-    // --- 頂部狀態列 (主題切換 + 貨幣) ---
-    ChoiceBox<String> themeSelector = new ChoiceBox<>();
-    themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
-    themeSelector.setValue("暗黑電競"); 
-
-    themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-        String css = switch (newVal) {
-            case "暗黑電競" -> "PokemonDark.css";
-            case "明亮清新" -> "PokemonLight.css";
-            case "經典紅" -> "PokemonRed.css";
-            case "大師球" -> "PokemonPurple.css";
-            default -> "PokemonDark.css";
-        };
-        switchTheme(css);
-    });
-
-    Region spacer = new Region();
-    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-    HBox topBar = new HBox(15, themeSelector, spacer, coinLabel, stoneLabel);
-    topBar.setAlignment(Pos.CENTER);
-    topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 20));
-    topBar.getStyleClass().add("top-bar");
-
-    // 2. 佈局組合：上面是狀態列，下面是分頁內容
-    VBox rootLayout = new VBox(topBar, tabPane);
-    VBox.setVgrow(tabPane, Priority.ALWAYS);
-
-    mainScene = new Scene(rootLayout, 480, 750);
-
-    // 3. 初始載入主題 (建議跟 themeSelector 的預設值一致)
-    switchTheme("PokemonDark.css");
-
-    // ❌ 移除這行：handleButtonEvents(); 
-    // 因為計時器的按鈕邏輯已經搬家到 TimerView 裡面了，UI 啟動時不需要在這邊呼叫
-    
-    setupButtonStyles();
-    refreshCurrencyLabels();
-    refreshXpDisplay();
-
-    primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
-    primaryStage.setScene(mainScene);
-    primaryStage.setOnCloseRequest(event -> saveUserProgressSafely());
-    primaryStage.show();
-
-    // 4. 最後更新主畫面的同步顯示
-    updatePokemonDisplay(currentPokemonFolder, currentStage);
-}
 
     // 抽獎動畫 (加入 drawType 參數)
     private void playGachaAnimation(ImageView ballView, String drawType) {
