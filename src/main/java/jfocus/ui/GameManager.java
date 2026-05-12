@@ -173,7 +173,7 @@ public class GameManager {
         this.focusCoins -= 200; // 扣錢
 
         // 這裡我們簡單示範：從所有 ID 裡隨機挑一個
-        String[] pool = { "001_bulbasaur", "004_charmander", "007_squirtle", "092_gastly", "147_dratini" };
+        String[] pool = { "010_caterpie","092_gastly", "147_dratini", };
         int randomIndex = new java.util.Random().nextInt(pool.length);
         String prizeId = pool[randomIndex];
 
@@ -186,7 +186,24 @@ public class GameManager {
 
         return prizeId;
     }
+// ==========================================
+    // 取得指定寶可夢目前的「最高進化階段」(1, 2, 或 3)
+    // ==========================================
+    public int getEvolutionStage(String id) {
+        String pokemonId = normalizePokemonId(id);
+        if (pokemonId == null) {
+            return 1; // 防呆，預設回傳 1
+        }
 
+        // 從最高階段 (3) 往下檢查，如果有解鎖就回傳該階段
+        if (unlockedStageKeys.contains(stageKey(pokemonId, 3))) {
+            return 3; // 已經進化到水箭龜
+        } else if (unlockedStageKeys.contains(stageKey(pokemonId, 2))) {
+            return 2; // 已經進化到卡咪龜
+        }
+        
+        return 1; // 預設是第一階段 (傑尼龜)
+    }
     // Getters
     public int getFocusCoins() {
         return focusCoins;

@@ -1,5 +1,4 @@
 package jfocus.ui;
-
 import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
@@ -9,9 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.gson.Gson; // 在最上方加入這行
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import com.google.gson.JsonElement; // 在最上方加入這行
 import com.google.gson.JsonObject;
 
 import javafx.animation.RotateTransition;
@@ -35,6 +34,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -63,7 +64,7 @@ public class FocusUI extends Application {
     // --- UI 元件 ---
     private Label timerLabel = new Label("25:00");
     private ImageView pokemonImageView = new ImageView();
-    private Label statusLabel = new Label("準備好開始專注了嗎？");
+    private Label statusLabel = new Label("準備好冒險了嗎？");
 
     // 【新增這行】把抽獎訊息標籤變成全域變數
     private Label gachaMessageLabel = new Label("來試試手氣吧！");
@@ -72,13 +73,14 @@ public class FocusUI extends Application {
     private ProgressBar xpBar = new ProgressBar(0.0);
     private Label xpInfoLabel = new Label("XP: 0 / 50 (等級 1)");
 
-    private Button startBtn = new Button("開始專注");
+    private Button startBtn = new Button("開始冒險");
     private Button stopBtn = new Button("停止");
     private ChoiceBox<String> modeSelector = new ChoiceBox<>();
 
     private TextField workInput = new TextField("25");
     private TextField breakInput = new TextField("5");
-
+    // 加在最上面的變數宣告區
+    private TimerView timerView;
     // 圖鑑相關元件
     // private ImageView bigView;
     // private ComboBox<String> stageSelector;
@@ -295,11 +297,11 @@ public class FocusUI extends Application {
     private void showStopSettlementDialog() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.initModality(Modality.APPLICATION_MODAL);
-        alert.setTitle("專注結算");
-        alert.setHeaderText("要繼續專注，還是現在結算？");
+        alert.setTitle("冒險結算");
+        alert.setHeaderText("要繼續冒險，還是現在結算？");
         alert.setContentText("結算會把本輪專注時間換成獎勵。\n你也可以選擇繼續，不進行結算。");
 
-        ButtonType continueButton = new ButtonType("繼續專注");
+        ButtonType continueButton = new ButtonType("繼續專冒險");
         ButtonType settleButton = new ButtonType("立即結算");
         alert.getButtonTypes().setAll(continueButton, settleButton);
 
@@ -312,137 +314,81 @@ public class FocusUI extends Application {
             settleCurrentSession();
         } else if (result.get() == continueButton) {
             timerLabel.setStyle("-fx-font-size: 80px; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
-            statusLabel.setText("已返回專注模式，繼續加油！");
+            statusLabel.setText("已返回冒險模式，繼續加油！");
         }
     }
 
     private void loadPokedexData() {
-    pokedexList.clear();
-    File jsonFile = new File("res/pokemon_data.json");
+        pokedexList.clear();
+        File jsonFile = new File("res/pokemon_data.json");
 
-    if (!jsonFile.exists()) {
-        System.err.println("❌ 找不到數據檔案: " + jsonFile.getAbsolutePath());
-        return;
-    }
-
-    try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
-        JsonObject jsonRoot = new Gson().fromJson(reader, JsonObject.class);
-        JsonArray array = jsonRoot.getAsJsonArray("pokedex");
-
-        for (JsonElement element : array) {
-            JsonObject obj = element.getAsJsonObject();
-
-            // 1. 抓取基本字串資料
-            String id = obj.get("id").getAsString();
-            String folderName = obj.get("folderName").getAsString();
-            String name = obj.get("name").getAsString();
-
-            // 2. 【核心修正】將 "火 / 飛行" 這種字串切開轉成 List<String>
-            // 這是為了解決 String cannot be converted to List<String> 的報錯
-            List<String> types = java.util.Arrays.asList(obj.get("types").getAsString().split(" / "));
-
-            // 3. 抓取描述文字 (JSON 中的 key 是 stages)
-            List<String> descriptions = new ArrayList<>();
-            if (obj.has("stages") && obj.get("stages").isJsonArray()) {
-                for (JsonElement desc : obj.get("stages").getAsJsonArray()) {
-                    descriptions.add(desc.getAsString());
-                }
-            }
-
-            // 4. 抓取各階段名字 (stageNames)
-            List<String> stageNames = new ArrayList<>();
-            if (obj.has("stageNames") && obj.get("stageNames").isJsonArray()) {
-                for (JsonElement n : obj.get("stageNames").getAsJsonArray()) {
-                    stageNames.add(n.getAsString());
-                }
-            } else {
-                // 防呆：沒名字時用基本名字填滿
-                stageNames.addAll(java.util.Arrays.asList(name, name, name));
-            }
-
-            // 5. 所有的參數現在型態都對了 (String, String, String, List, List, List)
-            pokedexList.add(new PokemonData(id, folderName, name, types, descriptions, stageNames));
+        if (!jsonFile.exists()) {
+            System.err.println("❌ 找不到數據檔案: " + jsonFile.getAbsolutePath());
+            return;
         }
-        
-        System.out.println("✅ 數據載入成功！共 " + pokedexList.size() + " 隻。");
 
-    } catch (Exception e) {
-        System.err.println("❌ 解析 JSON 失敗: " + e.getMessage());
-    }
-}
+        try (FileReader reader = new FileReader(jsonFile, StandardCharsets.UTF_8)) {
+            JsonObject jsonRoot = new Gson().fromJson(reader, JsonObject.class);
+            JsonArray array = jsonRoot.getAsJsonArray("pokedex");
 
-    /**
-     * 補上這段手動初始化，讓 pokedexList 不再是空的
-     */
+            for (JsonElement element : array) {
+                JsonObject obj = element.getAsJsonObject();
 
-    /**
-     * 把原本 start 裡的按鈕事件抽出來，程式碼會更整潔
-     */
-    private VBox createTimerLayout() {
-        // 1. 設定計時器主配置
-        VBox timerLayout = new VBox(15);
-        timerLayout.setAlignment(Pos.CENTER);
-        timerLayout.setStyle("-fx-padding: 30;");
+                // 1. 抓取基本字串資料
+                String id = obj.get("id").getAsString();
+                String folderName = obj.get("folderName").getAsString();
+                String name = obj.get("name").getAsString();
 
-        // 2. 組合輸入區域 (工/休時間)
-        HBox inputArea = new HBox(10, new Label("工:") {
-            {
-                setStyle("-fx-text-fill: white;");
+                // 2. 【核心修正】將 "火 / 飛行" 這種字串切開轉成 List<String>
+                // 這是為了解決 String cannot be converted to List<String> 的報錯
+                List<String> types = java.util.Arrays.asList(obj.get("types").getAsString().split(" / "));
+
+                // 3. 抓取描述文字 (JSON 中的 key 是 stages)
+                List<String> descriptions = new ArrayList<>();
+                if (obj.has("stages") && obj.get("stages").isJsonArray()) {
+                    for (JsonElement desc : obj.get("stages").getAsJsonArray()) {
+                        descriptions.add(desc.getAsString());
+                    }
+                }
+
+                // 4. 抓取各階段名字 (stageNames)
+                List<String> stageNames = new ArrayList<>();
+                if (obj.has("stageNames") && obj.get("stageNames").isJsonArray()) {
+                    for (JsonElement n : obj.get("stageNames").getAsJsonArray()) {
+                        stageNames.add(n.getAsString());
+                    }
+                } else {
+                    // 防呆：沒名字時用基本名字填滿
+                    stageNames.addAll(java.util.Arrays.asList(name, name, name));
+                }
+
+                // 5. 所有的參數現在型態都對了 (String, String, String, List, List, List)
+                pokedexList.add(new PokemonData(id, folderName, name, types, descriptions, stageNames));
             }
-        }, workInput,
-                new Label("休:") {
-                    {
-                        setStyle("-fx-text-fill: white;");
-                    }
-                }, breakInput);
-        inputArea.setAlignment(Pos.CENTER);
 
-        // 3. 組合按鈕區域
-        HBox btnBox = new HBox(15, startBtn, stopBtn);
-        btnBox.setAlignment(Pos.CENTER);
+            System.out.println("✅ 數據載入成功！共 " + pokedexList.size() + " 隻。");
 
-        // 4. 設定圖片尺寸
-        pokemonImageView.setFitHeight(200);
-        pokemonImageView.setFitWidth(200);
-        pokemonImageView.setPreserveRatio(true);
-
-        // 5. 設定經驗值條樣式
-        xpBar.setPrefWidth(300);
-        xpBar.setStyle("-fx-accent: #3498db;");
-        xpInfoLabel.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 12px;");
-
-        // 6. 把所有零件塞進垂直佈局
-        timerLayout.getChildren().addAll(
-                new Label("JFocus - 專注衛士") {
-                    {
-                        setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 14px;");
-                    }
-                },
-                modeSelector,
-                inputArea,
-                pokemonImageView,
-                xpBar,
-                xpInfoLabel,
-                statusLabel,
-                timerLabel,
-                btnBox);
-
-        return timerLayout;
+        } catch (Exception e) {
+            System.err.println("❌ 解析 JSON 失敗: " + e.getMessage());
+        }
     }
 
+    // 1. 【修改】把括號裡的 (PokemonData data, int stages) 刪掉！
     private void handleButtonEvents() {
         startBtn.setOnAction(e -> {
             if (validateTimeInputs()) {
-                FocusApp.startNewSession();
+                FocusApp.startNewSession(); // 確保你有這個方法
                 timerLabel.setStyle("-fx-font-size: 80px; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
-                statusLabel.setText("正在與精靈一起努力工作中...");
+
+                // 2. 【修改】直接使用剛剛宣告的 currentPartnerName
+                statusLabel.setText("正在與 " + name + " 一起努力工作中...");
             } else {
                 statusLabel.setText("時間設定需符合：工時至少是休息的兩倍。");
             }
         });
 
         stopBtn.setOnAction(e -> {
-            showStopSettlementDialog();
+            showStopSettlementDialog(); // 確保你有這個方法
         });
     }
 
@@ -462,96 +408,117 @@ public class FocusUI extends Application {
         }
     }
 
-    // start
-    @Override
-    public void start(Stage primaryStage) {
-        DatabaseCore.initializeDatabase(); // 確保資料庫在 UI 啟動前就準備好
-        loadPokedexData();
-        loadUserProgressSafely();
 
-        TabPane tabPane = new TabPane();
+    private Tab createTimerTab () {
+        Tab tab = new Tab("專注計時");
+        tab.setClosable(false);
+        
+        this.timerView = new TimerView(this.gameManager);
+        
+        // 👇 【新增這段：開機喚醒寶可夢！】
+        // 取得當前出戰夥伴的 ID
+        String currentPartnerId = gameManager.getCurrentPokemonId();
+        
+        // 如果有存檔，就去圖鑑列表 (pokedexList) 找這隻寶可夢的資料
+        if (currentPartnerId != null && !currentPartnerId.isEmpty()) {
+            for (PokemonData data : pokedexList) {
+                if (data.getId().equals(currentPartnerId)) {
+                    // 取得它現在進化到第幾階段
+                    int currentStage =  gameManager.getEvolutionStage(data.getId());
 
-        Tab focusTab = new Tab("專注計時", createTimerLayout());
-        focusTab.setClosable(false);
-
-        Tab pokedexTab = createPokedexTab(); // 建立圖鑑
-        pokedexTab.setClosable(false);
-
-        // 確保你有這個方法，否則會報錯
-        Tab statsTab = createStatsTab();
-        statsTab.setClosable(false);
-
-        // 新增：把抽獎分頁也加進去
-        Tab gachaTab = createGachaTab();
-        gachaTab.setClosable(false);
-
-        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
-
-        // --- 右上角加入主題切換下拉選單 ---
-        // --- 頂部狀態列 (主題切換 + 貨幣) ---
-        // 1. 這裡的選項名稱，必須跟下面的 switch 完全一樣！
-        ChoiceBox<String> themeSelector = new ChoiceBox<>();
-        themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
-        themeSelector.setValue("暗黑電競"); // 預設值也要改
-
-        // 2. 你的 switch 邏輯 (保持你原本寫好的就好)
-        themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            String css = switch (newVal) {
-                case "暗黑電競" -> "PokemonDark.css";
-                case "明亮清新" -> "PokemonLight.css";
-                case "經典紅" -> "PokemonRed.css";
-                case "大師球" -> "PokemonPurple.css";
-                default -> "PokemonDark.css";
-            };
-            switchTheme(css);
-        });
-
-        // 建立一個有彈性的空白區域，把下拉選單推到左邊，把金幣推到右邊
-        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
-        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-        // 組合頂部導覽列
-        HBox topBar = new HBox(15, themeSelector, spacer, coinLabel, stoneLabel);
-        topBar.setAlignment(Pos.CENTER);
-        topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 20));
-        topBar.getStyleClass().add("top-bar"); // 綁定 CSS class 讓我們可以幫導覽列上色
-
-        // 使用 VBox 垂直排列：上面是狀態列，下面是分頁內容 (徹底解決重疊問題！)
-        VBox rootLayout = new VBox(topBar, tabPane);
-        javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
-
-        mainScene = new Scene(rootLayout, 480, 750);
-
-        // 預設載入新主題
-        switchTheme("PokemonRed.css");
-
-        // 重新組合右上角 (加入 themeSelector)
-        HBox currencyHeader = new HBox(15, themeSelector, coinLabel, stoneLabel);
-        currencyHeader.setAlignment(Pos.TOP_RIGHT);
-        currencyHeader.setPadding(new javafx.geometry.Insets(15));
-        currencyHeader.setPickOnBounds(false);
-
-        StackPane rootStack = new StackPane(tabPane, currencyHeader);
-
-        // 【注意這裡】我們改用 mainScene 來存取畫面
-        mainScene = new Scene(rootStack, 480, 750);
-
-        // 預設載入暗黑主題
-        switchTheme("PokemonDark.css");
-
-        // --- 重要：一定要呼叫這個，按鈕才會動 ---
-        handleButtonEvents();
-        setupButtonStyles();
-        refreshCurrencyLabels();
-        refreshXpDisplay();
-
-        primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
-        primaryStage.setScene(mainScene);
-        primaryStage.setOnCloseRequest(event -> saveUserProgressSafely());
-        primaryStage.show();
-
-        updatePokemonDisplay(currentPokemonFolder, currentStage);
+                    String partnerName = data.getStageName(currentStage);
+                    
+                    // 組合圖片路徑並載入
+                    String imgPath = "res/pokemon/" + data.getFolderName() + "/stage" + currentStage + ".png";
+                    java.io.File imgFile = new java.io.File(imgPath);
+                    if (imgFile.exists()) {
+                        javafx.scene.image.Image initImage = new javafx.scene.image.Image(imgFile.toURI().toString());
+                        // 把名字和圖片傳給 TimerView！
+                        this.timerView.updatePartnerDisplay(partnerName, initImage);
+                    }
+                    break;
+                }
+            }
+        }
+        
+        tab.setContent(this.timerView);
+        return tab;
     }
+    // start
+   @Override
+public void start(Stage primaryStage) {
+    DatabaseCore.initializeDatabase(); 
+    loadPokedexData();
+    loadUserProgressSafely();
+
+    // 1. 初始化 TabPane
+    TabPane tabPane = new TabPane();
+
+    // ✅ 【關鍵修正】：呼叫你寫好的方法，而不是直接 new！
+    // 這樣才會執行「開機喚醒寶可夢」的邏輯，並把實體存入 this.timerView
+    Tab focusTab = createTimerTab(); 
+    focusTab.setClosable(false);
+
+    Tab pokedexTab = createPokedexTab();
+    pokedexTab.setClosable(false);
+
+    Tab statsTab = createStatsTab();
+    statsTab.setClosable(false);
+
+    Tab gachaTab = createGachaTab();
+    gachaTab.setClosable(false);
+
+    // 按照你想要的順序加入分頁
+    tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
+
+    // --- 頂部狀態列 (主題切換 + 貨幣) ---
+    ChoiceBox<String> themeSelector = new ChoiceBox<>();
+    themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
+    themeSelector.setValue("暗黑電競"); 
+
+    themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+        String css = switch (newVal) {
+            case "暗黑電競" -> "PokemonDark.css";
+            case "明亮清新" -> "PokemonLight.css";
+            case "經典紅" -> "PokemonRed.css";
+            case "大師球" -> "PokemonPurple.css";
+            default -> "PokemonDark.css";
+        };
+        switchTheme(css);
+    });
+
+    Region spacer = new Region();
+    HBox.setHgrow(spacer, Priority.ALWAYS);
+
+    HBox topBar = new HBox(15, themeSelector, spacer, coinLabel, stoneLabel);
+    topBar.setAlignment(Pos.CENTER);
+    topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 20));
+    topBar.getStyleClass().add("top-bar");
+
+    // 2. 佈局組合：上面是狀態列，下面是分頁內容
+    VBox rootLayout = new VBox(topBar, tabPane);
+    VBox.setVgrow(tabPane, Priority.ALWAYS);
+
+    mainScene = new Scene(rootLayout, 480, 750);
+
+    // 3. 初始載入主題 (建議跟 themeSelector 的預設值一致)
+    switchTheme("PokemonDark.css");
+
+    // ❌ 移除這行：handleButtonEvents(); 
+    // 因為計時器的按鈕邏輯已經搬家到 TimerView 裡面了，UI 啟動時不需要在這邊呼叫
+    
+    setupButtonStyles();
+    refreshCurrencyLabels();
+    refreshXpDisplay();
+
+    primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
+    primaryStage.setScene(mainScene);
+    primaryStage.setOnCloseRequest(event -> saveUserProgressSafely());
+    primaryStage.show();
+
+    // 4. 最後更新主畫面的同步顯示
+    updatePokemonDisplay(currentPokemonFolder, currentStage);
+}
 
     // 抽獎動畫 (加入 drawType 參數)
     private void playGachaAnimation(ImageView ballView, String drawType) {
@@ -690,7 +657,7 @@ public class FocusUI extends Application {
         scrollPane.setContent(pokedexFlowGrid);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
-        return new Tab("精靈圖鑑", scrollPane);
+        return new Tab("寶可夢圖鑑", scrollPane);
     }
 
     private void refreshPokedexGrid() {
@@ -707,95 +674,88 @@ public class FocusUI extends Application {
         }
     }
 
-    /**
-     * 建立單個寶可夢卡片
-     */
-    /**
-     * 建立單個寶可夢卡片
-     */
-// FocusUI.java 裡面的 createPokemonCard 方法
+    // FocusUI.java 裡面的 createPokemonCard 方法
 
-private VBox createPokemonCard(PokemonData data, int stages) {
-    VBox card = new VBox(5);
-    card.getStyleClass().add("pokemon-card");
-    card.setPrefSize(70, 90);
-    card.setAlignment(Pos.CENTER);
+    private VBox createPokemonCard(PokemonData data, int stages) {
+        VBox card = new VBox(5);
+        card.getStyleClass().add("pokemon-card");
+        card.setPrefSize(70, 90);
+        card.setAlignment(Pos.CENTER);
 
-    ImageView view = new ImageView();
+        ImageView view = new ImageView();
 
-    // 1. 【安全寫法】：用 File 物件去抓路徑，防呆，確認圖片是否存在
-    String relativePath = "res/pokemon/" + data.getFolderName() + "/stage" + stages + ".png";
-    java.io.File imgFile = new java.io.File(relativePath);
+        // 1. 【安全寫法】：用 File 物件去抓路徑，防呆，確認圖片是否存在
+        String relativePath = "res/pokemon/" + data.getFolderName() + "/stage" + stages + ".png";
+        java.io.File imgFile = new java.io.File(relativePath);
 
-    if (imgFile.exists()) {
-        // 使用 file: 前綴從檔案系統載入圖片
-        Image img = new Image(imgFile.toURI().toString());
-        view.setImage(img);
-        
-        // 確保寬度有設定，且不會因為排版消失
+        if (imgFile.exists()) {
+            // 使用 file: 前綴從檔案系統載入圖片
+            Image img = new Image(imgFile.toURI().toString());
+            view.setImage(img);
+
+            // 確保寬度有設定，且不會因為排版消失
+            view.setFitWidth(55);
+            view.setManaged(true);
+            view.setVisible(true);
+        } else {
+            System.err.println("❌ 找不到圖片: " + relativePath);
+            // 如果找不到圖片，可以設一個預設圖片，防止 UI 空白
+            // view.setImage(new Image("file:res/pokemon/unknown.png"));
+        }
+
         view.setFitWidth(55);
-        view.setManaged(true);
-        view.setVisible(true);
-    } else {
-        System.err.println("❌ 找不到圖片: " + relativePath);
-        // 如果找不到圖片，可以設一個預設圖片，防止 UI 空白
-        // view.setImage(new Image("file:res/pokemon/unknown.png"));
+        view.setPreserveRatio(true);
+
+        // ============================================
+        // 👇 【大修復區塊】：防護網與點擊邏輯 (把黑影裝回來！)
+        // ============================================
+
+        // 從 GameManager 檢查這隻寶可夢的這一個階段是否解鎖
+        boolean isUnlocked = gameManager.isStageUnlocked(data.getId(), stages);
+
+        if (!isUnlocked) {
+            // 🛡️ 【修復黑影】：尚未解鎖：利用 ColorAdjust 變黑！
+            ColorAdjust blackout = new ColorAdjust();
+            blackout.setBrightness(-1.0); // 100% 變黑
+            view.setEffect(blackout);
+
+            // 尚未解鎖：點擊只顯示警告，不跳出詳細視窗
+            card.setOnMouseClicked(e -> {
+                statusLabel.setText("這隻精靈尚未解鎖喔！去補給站試試手氣吧！");
+                statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); // 警告紅字
+            });
+        } else {
+            // ✨ 【修復解鎖】：已經解鎖：正常顯示，點擊跳出詳細視窗
+            view.setEffect(null); // 清除效果
+
+            card.setOnMouseClicked(e -> {
+                // 抓取各階段專屬名字 (例如: 卡咪龜)
+                String realName = data.getStageName(stages);
+
+                // 🛡️ 終極防呆：確保就算沒抓到描述，也不會當機！
+                String safeDescription = "這是一隻神秘的寶可夢，暫無描述。";
+                if (data.getDescriptions() != null && data.getDescriptions().size() >= stages) {
+                    safeDescription = data.getDescriptions().get(stages - 1);
+                }
+
+                // 顯示詳細視窗
+                showDetailView(
+                        data.getId(),
+                        data.getFolderName(),
+                        stages,
+                        realName,
+                        // 防呆：如果沒抓到屬性，顯示 "未知"
+                        data.getTypes() != null ? data.getTypes() : java.util.Arrays.asList("未知"),
+                        safeDescription);
+            });
+        }
+        // ============================================
+
+        // 👇 就是少了這行啦！！！把你的畫家 (view) 掛回畫框 (card) 上去！
+        card.getChildren().add(view);
+
+        return card;
     }
-
-    view.setFitWidth(55);
-    view.setPreserveRatio(true);
-
-    // ============================================
-    // 👇 【大修復區塊】：防護網與點擊邏輯 (把黑影裝回來！)
-    // ============================================
-    
-    // 從 GameManager 檢查這隻寶可夢的這一個階段是否解鎖
-    boolean isUnlocked = gameManager.isStageUnlocked(data.getId(), stages);
-
-    if (!isUnlocked) {
-        // 🛡️ 【修復黑影】：尚未解鎖：利用 ColorAdjust 變黑！
-        ColorAdjust blackout = new ColorAdjust();
-        blackout.setBrightness(-1.0); // 100% 變黑
-        view.setEffect(blackout);
-
-        // 尚未解鎖：點擊只顯示警告，不跳出詳細視窗
-        card.setOnMouseClicked(e -> {
-            statusLabel.setText("這隻精靈尚未解鎖喔！去補給站試試手氣吧！");
-            statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); // 警告紅字
-        });
-    } else {
-        // ✨ 【修復解鎖】：已經解鎖：正常顯示，點擊跳出詳細視窗
-        view.setEffect(null); // 清除效果
-
-        card.setOnMouseClicked(e -> {
-            // 抓取各階段專屬名字 (例如: 卡咪龜)
-            String realName = data.getStageName(stages);
-
-            // 🛡️ 終極防呆：確保就算沒抓到描述，也不會當機！
-            String safeDescription = "這是一隻神秘的寶可夢，暫無描述。";
-            if (data.getDescriptions() != null && data.getDescriptions().size() >= stages) {
-                safeDescription = data.getDescriptions().get(stages - 1);
-            }
-
-            // 顯示詳細視窗
-            showDetailView(
-                data.getId(),
-                data.getFolderName(),
-                stages,
-                realName,
-                // 防呆：如果沒抓到屬性，顯示 "未知"
-                data.getTypes() != null ? data.getTypes() : java.util.Arrays.asList("未知"),
-                safeDescription 
-            );
-        });
-    }
-    // ============================================
-
-    //👇 就是少了這行啦！！！把你的畫家 (view) 掛回畫框 (card) 上去！
-    card.getChildren().add(view);
-
-    return card;
-}
 
     // 在 FocusApp.java 類別中
 
@@ -862,7 +822,8 @@ private VBox createPokemonCard(PokemonData data, int stages) {
             this.currentStage = stages;
             updatePokemonDisplay(folder, stages);
             refreshXpDisplay();
-
+            // 替換掉你截圖裡報錯的那一行：
+            this.timerView.updatePartnerDisplay(name, bigView.getImage());
             detailStage.close();
         });
 

@@ -32,7 +32,7 @@ public class FocusEngine {
 
     private int currentSeconds;
     private FocusListener listener;
-    private boolean isPaused = false;
+
     private boolean isStopwatch = false;
     private int originalSeconds;
     private final DistractionClassifier distractionClassifier;
@@ -46,6 +46,9 @@ public class FocusEngine {
 
     private final SessionMonitor sessionMonitor;
     private final IdleDetector idleDetector;
+    // 兩個核心控制開關 (使用 volatile 確保跨執行緒讀取安全)
+    private volatile boolean isRunning = false; 
+    private volatile boolean isPaused = false;
 
     public FocusEngine(FocusListener listener) {
         this(listener,
@@ -155,7 +158,11 @@ public class FocusEngine {
     public void start(int hours, int minutes, int seconds) {
         int totalSecond = (hours * SECONDS_PER_HOUR) + (minutes * SECONDS_PER_MINUTE) + seconds;
         start(totalSecond);
+        isRunning = true;
+        isPaused = false; // 每次開始時重置暫停狀態
     }
+
+
 
     public void start(int seconds) {
         stop();
@@ -225,6 +232,7 @@ public class FocusEngine {
 
     // 暫停與恢復功能
     public void pause() {
+        isPaused = true;
         pause(0);
     }
 
@@ -259,12 +267,18 @@ public class FocusEngine {
         sessionMonitor.pause(deductMillis);
     }
 
+// ✅ 正確的恢復計時邏輯
     public void resume() {
-        if (!isPaused)
-            return;
+        if (!isPaused) {
+            return; // 如果根本沒有暫停，就什麼都不做
+        }
+        
         System.out.println("計時恢復: 使用者回來了，恢復計時與紀錄");
-        isPaused = false;
-        sessionMonitor.resume();
+        isPaused = false; // 解除暫停狀態
+        
+        if (sessionMonitor != null) {
+            sessionMonitor.resume(); // 恢復視窗監控
+        }
     }
 
     // 停止與關閉功能
@@ -296,11 +310,16 @@ public class FocusEngine {
         }
     }
 
-    // 確保程式關閉時，資源能正確釋放
+
+// 關閉引擎
+// ✅ 正確的徹底關閉引擎方法 (放在 FocusEngine.java 最下面)
     public void shutdown() {
-        stop();
+        // 先呼叫組員寫好的 stop() 來結算資料和停止監控
+        stop(); 
+        
+        // 徹底關閉背景排程器，防止記憶體外洩
         if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
+            scheduler.shutdownNow(); 
         }
     }
 }
