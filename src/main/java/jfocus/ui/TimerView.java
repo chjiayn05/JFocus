@@ -62,7 +62,25 @@ public class TimerView extends VBox implements FocusListener {
         modeSelector = new ComboBox<>();
         modeSelector.getItems().addAll("番茄鐘模式", "正向碼表");
         modeSelector.setValue("番茄鐘模式");
-
+        // 👇 【新增這段】：監聽下拉選單的切換
+        modeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if ("正向碼表".equals(newVal)) {
+                // 碼表模式：鎖定輸入框，時間歸零
+                workInput.setDisable(true);
+                breakInput.setDisable(true);
+                timerLabel.setText("00:00"); 
+            } else {
+                // 番茄鐘模式：解鎖輸入框，恢復預設時間
+                workInput.setDisable(false);
+                breakInput.setDisable(false);
+                try {
+                    int m = Integer.parseInt(workInput.getText().trim());
+                    timerLabel.setText(String.format("%02d:00", Math.max(0, m)));
+                } catch (NumberFormatException ex) {
+                    timerLabel.setText("25:00");
+                }
+            }
+        });
         pokemonImageView = new ImageView();
         pokemonImageView.setFitHeight(200);
         pokemonImageView.setFitWidth(200);
@@ -119,18 +137,38 @@ public class TimerView extends VBox implements FocusListener {
 
 startBtn.setOnAction(e -> {
             try {
-                int minutes = Integer.parseInt(workInput.getText());
+                String selectedMode = modeSelector.getValue();
+                int minutes = 0;
+
+                // 🛡️ 提前檢查番茄鐘模式的輸入 (防呆：擋下 0 或負數)
+                if (!"正向碼表".equals(selectedMode)) {
+                    minutes = Integer.parseInt(workInput.getText().trim());
+                    if (minutes <= 0) {
+                        statusLabel.setText("⚠️ 時間必須大於 0 分鐘喔！");
+                        resetUI(); 
+                        return; // 直接中斷，不讓計時器啟動
+                    }
+                }
+
+                // 切換 UI 狀態 (鎖死開始鍵，解鎖暫停與放棄鍵)
                 startBtn.setDisable(true);
-                pauseBtn.setDisable(false); // 開始計時後，暫停按鈕解鎖
+                pauseBtn.setDisable(false);
                 stopBtn.setDisable(false);
-                statusLabel.setText("專注中，請保持專心！");
-                
                 isPaused = false;
                 pauseBtn.setText("暫停");
-                
-                engine.start(minutes * 60);
+
+                // 🚀 根據模式啟動不同的引擎邏輯
+                if ("正向碼表".equals(selectedMode)) {
+                    statusLabel.setText("正在與 " + currentPartnerName + " 一起冒險 (碼表模式) ...");
+                    engine.startStopwatch(); // 呼叫組員的碼表引擎
+                } else {
+                    statusLabel.setText("正在與 " + currentPartnerName + " 一起冒險中...");
+                    engine.start(minutes * 60); // 呼叫番茄鐘引擎倒數
+                }
+
             } catch (NumberFormatException ex) {
-                statusLabel.setText("請輸入有效的數字！");
+                statusLabel.setText("⚠️ 請輸入有效的數字！");
+                resetUI(); 
             }
         });
 
@@ -140,7 +178,7 @@ startBtn.setOnAction(e -> {
             if (!isPaused) {
                 isPaused = true;
                 pauseBtn.setText("繼續冒險");
-                statusLabel.setText("計時已暫停，快回來吧！");
+                statusLabel.setText("計時已暫停，等你回來！");
                 
                 engine.pause(); // 呼叫引擎的暫停
             } else {

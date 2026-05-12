@@ -22,6 +22,10 @@ public class GameManager {
     // 保底計數器
     private int pokeBallPity = 0;
     private int masterBallPity = 0;
+    // 1. 定義分級獎池 (這裡放的是資料夾名稱或 ID)
+    private static final List<String> STANDARD_POOL = Arrays.asList("010_caterpie", "013_weedle", "016_pidgey", "019_rattata");
+    private static final List<String> RARE_POOL = Arrays.asList("001_bulbasaur", "004_charmander", "007_squirtle", "025_pikachu");
+    private static final List<String> SUPER_RARE_POOL = Arrays.asList("147_dratini", "092_gastly", "063_abra");
 
     // 已解鎖關卡，格式: ddd_s (例如 004_2)
     private final Set<String> unlockedStageKeys = new LinkedHashSet<>(
@@ -164,20 +168,43 @@ public class GameManager {
 
     // 抽獎
 
-    // 假設這是在 GameManager.java 內
-    public String performPokeBallDraw(String drawType) {
-        if (this.focusCoins < 200) {
-            return "INSUFFICIENT_FUNDS";
+public String performPokeBallDraw(String ballType) {
+if ("MASTERBALL".equals(ballType)) {
+            if (this.masterStones < 1) { // 假設大師球一次消耗 1 顆大師晶石 (請依你企劃修改)
+                return "INSUFFICIENT_FUNDS";
+            }
+            this.masterStones -= 1; // 扣除大師晶石
+            System.out.println("💎 消耗 1 顆大師晶石！剩餘：" + this.masterStones);
+        } else {
+            if (this.focusCoins < 200) {
+                return "INSUFFICIENT_FUNDS";
+            }
+            this.focusCoins -= 200; // 扣除專注幣
+            System.out.println("🪙 消耗 200 枚專注幣！剩餘：" + this.focusCoins);
         }
 
-        this.focusCoins -= 200; // 扣錢
+        // 2. 決定抽到哪個等級 (隨機 0.0 ~ 1.0)
+        double rand = Math.random();
+        List<String> selectedPool;
+        
+        if (ballType.equals("MASTERBALL")) {
+            // 大師球：20% 超稀有, 80% 稀有
+            selectedPool = (rand < 0.20) ? SUPER_RARE_POOL : RARE_POOL;
+        } else {
+            // 普通球：1% 超稀有, 14% 稀有, 85% 普通
+            if (rand < 0.01) {
+                selectedPool = SUPER_RARE_POOL;
+            } else if (rand < 0.15) {
+                selectedPool = RARE_POOL;
+            } else {
+                selectedPool = STANDARD_POOL;
+            }
+        }
 
-        // 這裡我們簡單示範：從所有 ID 裡隨機挑一個
-        String[] pool = { "010_caterpie","092_gastly", "147_dratini", };
-        int randomIndex = new java.util.Random().nextInt(pool.length);
-        String prizeId = pool[randomIndex];
+        // 3. 從選定的池子裡隨機抽一隻
+        String prizeId = selectedPool.get(new java.util.Random().nextInt(selectedPool.size()));
 
-        // 抽到新精靈時只解鎖第一階段
+        // 4. 解鎖邏輯 (原本的邏輯)
         String pokemonId = normalizePokemonId(prizeId);
         if (pokemonId != null) {
             unlockedStageKeys.add(stageKey(pokemonId, 1));

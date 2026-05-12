@@ -576,7 +576,7 @@ public class FocusUI extends Application {
         layout.setAlignment(Pos.CENTER);
         layout.setStyle("-fx-background-color: #34495e; -fx-padding: 40;");
 
-        Label title = new Label("精靈補給站");
+        Label title = new Label("寶可夢孵育中心");
         title.setStyle("-fx-text-fill: #f1c40f; -fx-font-size: 32px; -fx-font-weight: bold;");
 
         // 顯示貨幣
