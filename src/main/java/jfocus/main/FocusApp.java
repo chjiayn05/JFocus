@@ -7,6 +7,7 @@ import jfocus.db.DatabaseCore;
 import jfocus.notification.NoOpNotificationService;
 import jfocus.notification.NotificationService;
 import jfocus.notification.SystemNotificationService;
+import jfocus.ai.ModelTrainer;
 
 /**
  * 應用程式主入口，負責啟動 UI
@@ -43,8 +44,13 @@ public final class FocusApp {
         notificationService = new NoOpNotificationService();
     }
 
+    public static synchronized void startModelTraining(){
+        ModelTrainer.trainModel();
+    }
+
     public static void main(String[] args) {
         DatabaseCore.initializeDatabase();
+        startModelTraining();
         initializeNotificationService();
         try {
             Application.launch(jfocus.ui.FocusUI.class, args);

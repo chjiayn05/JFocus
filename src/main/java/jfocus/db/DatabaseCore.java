@@ -18,8 +18,6 @@ import java.util.Set;
 public class DatabaseCore {
     private static final String DB_URL_PROPERTY = "jfocus.db.url";
     private static final String DB_URL_ENV = "JFOCUS_DB_URL";
-    private static final String DB_AUTO_INIT_PROPERTY = "jfocus.db.auto-init";
-    private static final String DB_AUTO_INIT_ENV = "JFOCUS_DB_AUTO_INIT";
 
     private final String url;
 
@@ -55,24 +53,6 @@ public class DatabaseCore {
      */
     public static void initializeDatabase() {
         new DatabaseCore().initialize();
-    }
-
-    /**
-     * 取得是否啟用 repository 建構時自動初始化資料庫。
-     *
-     * 預設為 true，可透過 jfocus.db.auto-init 或 JFOCUS_DB_AUTO_INIT 覆蓋。
-     */
-    public static boolean isAutoInitializeEnabled() {
-        String configured = System.getProperty(DB_AUTO_INIT_PROPERTY);
-        if (configured == null || configured.isBlank()) {
-            configured = System.getenv(DB_AUTO_INIT_ENV);
-        }
-
-        if (configured == null || configured.isBlank()) {
-            return true;
-        }
-
-        return parseBoolean(configured.trim(), true);
     }
 
     /**
@@ -183,17 +163,7 @@ public class DatabaseCore {
         return "jdbc:sqlite:" + AppPaths.getDatabasePath();
     }
 
-    private static boolean parseBoolean(String value, boolean defaultValue) {
-        if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("1")
-                || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("on")) {
-            return true;
-        }
-        if (value.equalsIgnoreCase("false") || value.equalsIgnoreCase("0")
-                || value.equalsIgnoreCase("no") || value.equalsIgnoreCase("off")) {
-            return false;
-        }
-        return defaultValue;
-    }
+
 
     private void ensureDatabaseDirectory() {
         if (!url.startsWith("jdbc:sqlite:")) {

@@ -16,9 +16,6 @@ public class JdbcDistractionModeRepository implements DistractionModeRepository 
 
     public JdbcDistractionModeRepository(DatabaseCore databaseCore) {
         this.databaseCore = Objects.requireNonNull(databaseCore, "databaseCore cannot be null");
-        if (DatabaseCore.isAutoInitializeEnabled()) {
-            this.databaseCore.initialize();
-        }
     }
 
     @Override

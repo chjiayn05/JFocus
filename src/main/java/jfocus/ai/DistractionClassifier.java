@@ -24,11 +24,6 @@ import opennlp.tools.doccat.DocumentCategorizerME;
 public class DistractionClassifier {
     private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
-    private static final Set<String> DEFAULT_APP_BLACKLIST = Set.of(
-            "netflix",
-            "steam",
-            "league of legends",
-            "genshinimpact");
     private static final Set<String> BROWSER_APPS = Set.of(
             "google chrome",
             "safari",
@@ -190,23 +185,7 @@ public class DistractionClassifier {
     }
 
     private boolean matchesBlacklistRule(String app, String title) {
-        if (isBuiltInBlacklistedApp(app)) {
-            return true;
-        }
         return ruleRepository.matches(RuleListType.BLACKLIST, app, title);
-    }
-
-    private boolean isBuiltInBlacklistedApp(String app) {
-        if (app.isBlank()) {
-            return false;
-        }
-
-        for (String keyword : DEFAULT_APP_BLACKLIST) {
-            if (app.contains(keyword)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean isYoutubeHomePage(String app, String title) {

@@ -27,9 +27,6 @@ public class JdbcTodoRepository implements TodoRepository {
      */
     public JdbcTodoRepository(DatabaseCore db) {
         this.db = Objects.requireNonNull(db, "db cannot be null");
-        if (DatabaseCore.isAutoInitializeEnabled()) {
-            db.initialize();
-        }
     }
 
     @Override

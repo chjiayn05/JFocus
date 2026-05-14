@@ -442,8 +442,7 @@ public class FocusUI extends Application {
         tab.setContent(this.timerView);
         return tab;}
 @Override
-    public void start(javafx.stage.Stage primaryStage) {
-        jfocus.db.DatabaseCore.initializeDatabase(); 
+    public void start(javafx.stage.Stage primaryStage) { 
         loadPokedexData();
         loadUserProgressSafely();
 

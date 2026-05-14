@@ -27,3 +27,4 @@ target/
 */test/
 jfocus-data/
 .DS_Store
+.idea/*

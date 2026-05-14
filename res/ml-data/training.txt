@@ -1,0 +1,70 @@
+STUDY j a v a   p r o g r a m m i n g   t u t o r i a l
+STUDY c o d i n g   c o u r s e   f o r   b e g i n n e r s
+STUDY 機器學習   m a c h i n e   l e a r n i n g   基 礎
+STUDY 演 算 法   a l g o r i t h m s   教 學
+STUDY 離 散 數 學   d i s c r e t e   m a t h
+STUDY j a v a f x   d e s k t o p   a p p   d e v e l o p m e n t
+STUDY d e e p   l e a r n i n g   f e a t u r e   e x t r a c t i o n
+STUDY y o l o   v 8   o p e n c v   實 作
+STUDY 0 - 1   k n a p s a c k   p r o b l e m   動 態 規 劃
+STUDY p y t h o n   d a t a   s c i e n c e   l i b r a r y
+STUDY i n t e l l i j   i d e a   快速 鍵   技巧
+STUDY 伺 服 器 架 設   n g i n x   c o n f i g u r a t i o n
+STUDY r a s p b e r r y   p i   專 案   實 務
+STUDY m q t t   通 訊   協 定   教 學
+STUDY e s p 3 2   c 3   微 控 制 器   開 發
+STUDY 數據 分析   d a t a   a n a l y s i s
+STUDY 網 頁 開 發   h t m l   c s s   j a v a s c r i p t
+STUDY s t a b l e   m a t c h i n g   p r o b l e m
+STUDY 概 率 與 統 計   p r o b a b i l i t y
+STUDY c   c p p   p r o g r a m m i n g   g u i d e
+STUDY g i t   h u b   版本 控制
+STUDY d o c k e r   c o n t a i n e r   基 礎
+STUDY 軟 體 工程   s o f t w a r e   e n g i n e e r i n g
+STUDY 系統 設計   s y s t e m   d e s i g n
+STUDY l e e t c o d e   解 題   思路
+STUDY m a t l a b   矩 陣   運 算
+STUDY 數 位 電 路   v h d l   實 作
+STUDY c l e a n   c o d e   重 構   技巧
+STUDY 英文 聽力   練習
+STUDY 科技 新知   a i   編譯器   重 寫
+PLAY m i n e c r a f t   h a r d c o r e   生存
+PLAY 英雄 聯 盟   l o l   精 華   剪 輯
+PLAY 綜 藝   玩 很 大   全 集
+PLAY 遊戲   實 況   g a m e p l a y
+PLAY m v   音 樂   錄 影 帶   官方
+PLAY 迷 因   m e m e   爆 笑   精 選
+PLAY v l o g   辦 公 室   日 常
+PLAY 開 箱   r t x   5 0 7 0   t i   顯 卡
+PLAY 旅 遊   日 本   食 記
+PLAY 電 影   預 告   m o v i e   t r a i l e r
+PLAY 抽 獎   直 播
+PLAY 動 漫   推 薦   必 追
+PLAY 恐怖 遊戲   尖 叫   實 況
+PLAY 搞笑   短 片   t i k t o k
+PLAY n b a   籃 球   精 華
+PLAY 韓 國   綜 藝   r u n n i n g   m a n
+PLAY 特 斯拉   t e s l a   快 訊   馬 斯 克
+PLAY 手 機   遊戲   試 玩
+PLAY 卡 牌   開 封   v i d e o
+PLAY 美 食   排 隊   名 店
+PLAY 明星   專 訪   花 絮
+PLAY 鬼 滅 之 刃   動 畫   剪 輯
+PLAY 翻 唱   c o v e r   流行 曲
+PLAY 吃 播   m u k b a n g   大 胃 王
+PLAY 奇 葩   設計   系列
+PLAY 恐怖   都市 傳說
+PLAY 超 級   瑪 利 歐   歡 樂
+PLAY 穿 搭   投 影   日 常
+PLAY 密 室   逃 脫   解 謎
+PLAY 實 境   秀   比 賽
+PLAY 網 紅   互 槓   懶 人 包
+PLAY 兩 性   話題   聊天
+PLAY 寵 物   貓 咪   萌 寵
+PLAY 潮流   球 鞋   蒐 藏
+PLAY 直 播   存 檔   閒 聊
+PLAY 遊 樂 園   必 玩   攻略
+PLAY 劇 場 版   特 報
+PLAY 跨 年   晚 會   現場
+PLAY 重 金 屬   搖 滾   音 樂
+PLAY 動作 片   精彩   武 打
