@@ -41,6 +41,16 @@ public class NoOpNotificationService implements NotificationService {
     }
 
     @Override
+    public String getBackendName() {
+        return "noop";
+    }
+
+    @Override
+    public String getLastFailure() {
+        return "No notification backend is available.";
+    }
+
+    @Override
     public void shutdown() {
         scheduledNotificationIds.clear();
     }

@@ -25,6 +25,7 @@ public class MacOSNotificationService implements NotificationService {
     private final ScheduledExecutorService scheduler;
     private final Map<String, ScheduledFuture<?>> scheduledTasks;
     private volatile boolean enabled = true;
+    private volatile String lastFailure = "";
 
     public MacOSNotificationService() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -34,7 +35,7 @@ public class MacOSNotificationService implements NotificationService {
 
     @Override
     public boolean isAvailable() {
-        return true; // Always available on macOS
+        return new java.io.File("/usr/bin/osascript").canExecute();
     }
 
     @Override
@@ -118,12 +119,15 @@ public class MacOSNotificationService implements NotificationService {
 
             int exitCode = process.waitFor();
             if (exitCode == 0) {
+                lastFailure = "";
                 System.out.println("[MacOSNotificationService] Notification displayed: " + title);
             } else {
+                lastFailure = "osascript exited with code: " + exitCode;
                 System.err.println("[MacOSNotificationService] osascript exited with code: " + exitCode);
                 logError(process);
             }
         } catch (Exception ex) {
+            lastFailure = "osascript notification failed: " + ex.getMessage();
             System.err.println("[MacOSNotificationService] Error: " + ex.getMessage());
             // Graceful fallback: just log to stdout
             System.out.println("[NOTIFICATION] " + payload.getTitle() + ": " + payload.getMessage());
@@ -155,6 +159,21 @@ public class MacOSNotificationService implements NotificationService {
             case URGENT -> "🔴";
         };
         return emoji + " " + payload.getTitle();
+    }
+
+    @Override
+    public String getBackendName() {
+        return "macos-osascript";
+    }
+
+    @Override
+    public String getLastFailure() {
+        return lastFailure;
+    }
+
+    @Override
+    public String getUserGuidance() {
+        return "macOS: Check System Settings > Notifications > JFocus and Focus mode.";
     }
 
     private static long secondsUntilNext(LocalTime triggerTime) {

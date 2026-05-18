@@ -13,5 +13,17 @@ public interface NotificationService {
 
     boolean isEnabled();
 
+    default String getBackendName() {
+        return getClass().getSimpleName();
+    }
+
+    default String getLastFailure() {
+        return "";
+    }
+
+    default String getUserGuidance() {
+        return "";
+    }
+
     void shutdown();
 }

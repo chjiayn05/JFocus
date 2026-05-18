@@ -28,6 +28,7 @@ public class TrayNotificationService implements NotificationService {
     private final Map<String, ScheduledFuture<?>> scheduledTasks;
     private TrayIcon trayIcon;
     private volatile boolean enabled = true;
+    private volatile String lastFailure = "";
 
     public TrayNotificationService() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -51,6 +52,7 @@ public class TrayNotificationService implements NotificationService {
         }
         
         if (trayIcon == null) {
+            lastFailure = "AWT tray icon is unavailable.";
             System.out.println("[TrayNotificationService] TrayIcon is null, notification skipped.");
             return;
         }
@@ -61,8 +63,10 @@ public class TrayNotificationService implements NotificationService {
             trayIcon.displayMessage("[" + payload.getSeverity().name() + "] " + payload.getTitle(),
                     payload.getMessage(),
                     mapMessageType(payload.getSeverity()));
+            lastFailure = "";
             System.out.println("[TrayNotificationService] Notification displayed successfully.");
         } catch (Exception ex) {
+            lastFailure = "AWT tray notification failed: " + ex.getMessage();
             System.err.println("[TrayNotificationService] Error displaying notification: " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -107,6 +111,21 @@ public class TrayNotificationService implements NotificationService {
     }
 
     @Override
+    public String getBackendName() {
+        return "awt-tray";
+    }
+
+    @Override
+    public String getLastFailure() {
+        return lastFailure;
+    }
+
+    @Override
+    public String getUserGuidance() {
+        return "Windows: Check Settings > System > Notifications, Do not disturb, and the taskbar notification area.";
+    }
+
+    @Override
     public void shutdown() {
         for (ScheduledFuture<?> future : scheduledTasks.values()) {
             future.cancel(false);
@@ -139,6 +158,7 @@ public class TrayNotificationService implements NotificationService {
 
     private TrayIcon createTrayIcon() {
         if (!SystemTray.isSupported()) {
+            lastFailure = "SystemTray.isSupported() returned false.";
             System.out.println("[TrayNotificationService] SystemTray.isSupported() returned false.");
             return null;
         }
@@ -148,13 +168,16 @@ public class TrayNotificationService implements NotificationService {
             TrayIcon icon = new TrayIcon(createCircleImage(NotificationSeverity.INFO), "JFocus Notification");
             icon.setImageAutoSize(true);
             SystemTray.getSystemTray().add(icon);
+            lastFailure = "";
             System.out.println("[TrayNotificationService] TrayIcon created successfully.");
             return icon;
         } catch (AWTException ex) {
+            lastFailure = "Failed to create AWT tray icon: " + ex.getMessage();
             System.err.println("[TrayNotificationService] Failed to create TrayIcon: " + ex.getMessage());
             ex.printStackTrace();
             return null;
         } catch (Exception ex) {
+            lastFailure = "Unexpected AWT tray error: " + ex.getMessage();
             System.err.println("[TrayNotificationService] Unexpected error: " + ex.getMessage());
             ex.printStackTrace();
             return null;

@@ -24,13 +24,13 @@ public class SystemNotificationService implements NotificationService {
         boolean isTraySupported = SystemTray.isSupported();
         System.out.println("[NotificationService] OS: " + osName + ", SystemTray.isSupported(): " + isTraySupported);
         
-        // macOS: use AppleScript-based notifications
+        // macOS: use AppleScript notifications via Java Process.
         if (osName.contains(MAC_TOKEN)) {
-            System.out.println("[NotificationService] Using MacOSNotificationService for native notifications.");
+            System.out.println("[NotificationService] Using MacOSNotificationService.");
             return new MacOSNotificationService();
         }
         
-        // Windows: use AWT SystemTray
+        // Windows: use Java AWT SystemTray.
         if (osName.contains(WINDOWS_TOKEN) && isTraySupported) {
             System.out.println("[NotificationService] Using TrayNotificationService for Windows.");
             return new TrayNotificationService();
@@ -68,6 +68,21 @@ public class SystemNotificationService implements NotificationService {
     @Override
     public boolean isEnabled() {
         return delegate.isEnabled();
+    }
+
+    @Override
+    public String getBackendName() {
+        return delegate.getBackendName();
+    }
+
+    @Override
+    public String getLastFailure() {
+        return delegate.getLastFailure();
+    }
+
+    @Override
+    public String getUserGuidance() {
+        return delegate.getUserGuidance();
     }
 
     @Override
