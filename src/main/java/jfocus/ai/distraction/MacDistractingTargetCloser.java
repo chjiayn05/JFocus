@@ -11,6 +11,34 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
     private static final String COMMAND_KEY = "command down";
     private static final int APPLESCRIPT_SUCCESS_EXIT_CODE = 0;
 
+    private static final String TARGETED_CLOSE_SCRIPT_TEMPLATE = """
+            tell application "System Events"
+                tell process "%s"
+                    set frontmost to true
+                    try
+                        perform action "AXRaise" of window "%s"
+                        click button 1 of window "%s"
+                        return "closed"
+                    on error
+                        keystroke "%s" using {%s}
+                        return "fallback"
+                    end try
+                end tell
+            end tell
+            """;
+
+    private static final String TARGETED_TAB_CLOSE_SCRIPT_TEMPLATE = """
+            tell application "System Events"
+                tell process "%s"
+                    set frontmost to true
+                    try
+                        perform action "AXRaise" of window "%s"
+                    end try
+                    keystroke "%s" using {%s}
+                end tell
+            end tell
+            """;
+
     private static final String CLOSE_TAB_SCRIPT_TEMPLATE = """
             tell application "%s"
                 activate
@@ -40,9 +68,19 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
         }
 
         String escapedProcessName = escapeForAppleScript(session.processName.trim());
-        String script = closeTabOnly
-                ? CLOSE_TAB_SCRIPT_TEMPLATE.formatted(escapedProcessName, TAB_CLOSE_KEY, COMMAND_KEY)
-                : CLOSE_WINDOW_SCRIPT_TEMPLATE.formatted(escapedProcessName, TAB_CLOSE_KEY, COMMAND_KEY);
+        String escapedTitle = session.title == null ? "" : escapeForAppleScript(session.title.trim());
+        String script;
+        if (!escapedTitle.isBlank()) {
+            script = closeTabOnly
+                    ? TARGETED_TAB_CLOSE_SCRIPT_TEMPLATE.formatted(escapedProcessName, escapedTitle, TAB_CLOSE_KEY,
+                            COMMAND_KEY)
+                    : TARGETED_CLOSE_SCRIPT_TEMPLATE.formatted(escapedProcessName, escapedTitle, escapedTitle,
+                            TAB_CLOSE_KEY, COMMAND_KEY);
+        } else {
+            script = closeTabOnly
+                    ? CLOSE_TAB_SCRIPT_TEMPLATE.formatted(escapedProcessName, TAB_CLOSE_KEY, COMMAND_KEY)
+                    : CLOSE_WINDOW_SCRIPT_TEMPLATE.formatted(escapedProcessName, TAB_CLOSE_KEY, COMMAND_KEY);
+        }
 
         return executeAppleScript(script);
     }

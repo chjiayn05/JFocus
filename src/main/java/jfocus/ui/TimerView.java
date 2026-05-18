@@ -10,6 +10,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import jfocus.ai.distraction.DistractionHandlingMode;
 import jfocus.engine.FocusEngine;
 import jfocus.engine.FocusListener;
 
@@ -223,6 +224,12 @@ stopBtn.setOnAction(e -> {
         // 如果你的 TimerView 裡面有 pokemonImageView，順便把圖片也更新了！
         if (this.pokemonImageView != null && image != null) {
             this.pokemonImageView.setImage(image);
+        }
+    }
+
+    public void setDistractionHandlingMode(DistractionHandlingMode mode) {
+        if (engine != null) {
+            engine.setDistractionHandlingMode(mode);
         }
     }
     // ==========================================
