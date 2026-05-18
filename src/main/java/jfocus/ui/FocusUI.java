@@ -15,8 +15,11 @@ import com.google.gson.JsonObject;
 
 import javafx.animation.RotateTransition;
 import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -28,6 +31,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -35,8 +39,15 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import jfocus.ai.distraction.DistractionHandlingMode;
+import jfocus.ai.distraction.JdbcDistractionModeRepository;
+import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
 import jfocus.notification.NotificationPayload;
@@ -854,6 +865,14 @@ public class FocusUI extends Application {
         Button btnAdd = new Button("DEBUG: 增加資源 200");
         Button btnAdd1 = new Button("DEBUG: 增加資源 100");
         Button btnAdd2 = new Button("DEBUG: 增加資源 50");
+        JdbcDistractionModeRepository modeRepository = new JdbcDistractionModeRepository(new DatabaseCore());
+        DistractionHandlingMode currentMode = modeRepository.loadMode(DistractionHandlingMode.WARN_USER);
+        Label modeStatusLabel = new Label("目前分心處理模式: " + currentMode.name());
+        ToggleButton modeSwitch = createDistractionModeSwitch(currentMode, modeStatusLabel, modeRepository);
+        Label warnLabel = new Label("提醒");
+        Label closeLabel = new Label("關閉");
+        HBox modeSwitchRow = new HBox(12, warnLabel, modeSwitch, closeLabel);
+        modeSwitchRow.setAlignment(Pos.CENTER);
 
         btnAdd.setOnAction(e -> {
             gameManager.addFocusTime(200, getCurrentPokemonId()); // 模擬加錢
@@ -882,10 +901,71 @@ public class FocusUI extends Application {
         layout.getChildren().addAll(
                 new Label("數據統計區"),
                 new Separator(),
+                modeStatusLabel,
+                modeSwitchRow,
+                new Separator(),
                 btnAdd,
                 btnAdd1,
                 btnAdd2);
         return new Tab("數據分析", layout);
+    }
+
+    private ToggleButton createDistractionModeSwitch(
+            DistractionHandlingMode initialMode,
+            Label modeStatusLabel,
+            JdbcDistractionModeRepository modeRepository) {
+        ToggleButton toggle = new ToggleButton();
+        toggle.setSelected(initialMode == DistractionHandlingMode.CLOSE_DISTRACTION);
+        toggle.setCursor(Cursor.HAND);
+        toggle.setFocusTraversable(true);
+        toggle.setMinSize(66, 40);
+        toggle.setPrefSize(66, 40);
+        toggle.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+
+        Rectangle track = new Rectangle(60, 34);
+        track.setArcWidth(34);
+        track.setArcHeight(34);
+
+        Circle thumb = new Circle(14);
+        thumb.setFill(Color.WHITE);
+        thumb.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 5, 0, 0, 1);");
+
+        StackPane switchGraphic = new StackPane(track, thumb);
+        switchGraphic.setPadding(new Insets(3));
+        switchGraphic.setAlignment(Pos.CENTER_LEFT);
+        toggle.setGraphic(switchGraphic);
+
+        updateSlidingSwitchVisual(toggle, track, thumb, false);
+
+        toggle.selectedProperty().addListener((obs, oldValue, selected) -> {
+            DistractionHandlingMode selectedMode = selected
+                    ? DistractionHandlingMode.CLOSE_DISTRACTION
+                    : DistractionHandlingMode.WARN_USER;
+            modeRepository.saveMode(selectedMode);
+            if (timerView != null) {
+                timerView.setDistractionHandlingMode(selectedMode);
+            }
+            modeStatusLabel.setText("目前分心處理模式: " + selectedMode.name());
+            updateSlidingSwitchVisual(toggle, track, thumb, true);
+            System.out.println("[DEBUG][Distraction] Stats tab switch mode: " + selectedMode.name());
+        });
+
+        return toggle;
+    }
+
+    private void updateSlidingSwitchVisual(ToggleButton toggle, Rectangle track, Circle thumb, boolean animated) {
+        boolean selected = toggle.isSelected();
+        track.setFill(selected ? Color.web("#27ae60") : Color.web("#7f8c8d"));
+
+        double targetX = selected ? 29 : 3;
+        if (!animated) {
+            thumb.setTranslateX(targetX);
+            return;
+        }
+
+        TranslateTransition transition = new TranslateTransition(Duration.millis(160), thumb);
+        transition.setToX(targetX);
+        transition.play();
     }
 
 }

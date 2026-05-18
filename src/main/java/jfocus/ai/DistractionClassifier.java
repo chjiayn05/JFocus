@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import jfocus.ai.rules.AppWindowRule;
 import jfocus.ai.rules.DistractionRuleRepository;
@@ -24,6 +25,7 @@ import opennlp.tools.doccat.DocumentCategorizerME;
 public class DistractionClassifier {
     private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
+    private static final Pattern NOTIFICATION_BADGE_PATTERN = Pattern.compile("^\\(\\d+\\)\\s*");
     private static final Set<String> BROWSER_APPS = Set.of(
             "google chrome",
             "safari",
@@ -203,9 +205,33 @@ public class DistractionClassifier {
             return false;
         }
 
-        return "youtube".equals(title)
-                || "youtube.com".equals(title)
-                || "www.youtube.com".equals(title);
+        String normalizedTitle = stripBrowserSuffix(title);
+        return "youtube".equals(normalizedTitle)
+                || "youtube 首頁".equals(normalizedTitle)
+                || "首頁 youtube".equals(normalizedTitle)
+                || "youtube home".equals(normalizedTitle)
+                || "youtube.com".equals(normalizedTitle)
+                || "www.youtube.com".equals(normalizedTitle)
+                || "https://www.youtube.com".equals(normalizedTitle);
+    }
+
+    private String stripBrowserSuffix(String title) {
+        String normalizedTitle = normalize(title);
+        normalizedTitle = NOTIFICATION_BADGE_PATTERN.matcher(normalizedTitle).replaceFirst("");
+        String[] browserSuffixes = {
+                " - google chrome",
+                " - chrome",
+                " - safari",
+                " - microsoft edge",
+                " - edge"
+        };
+
+        for (String suffix : browserSuffixes) {
+            if (normalizedTitle.endsWith(suffix)) {
+                return normalizedTitle.substring(0, normalizedTitle.length() - suffix.length()).trim();
+            }
+        }
+        return normalizedTitle;
     }
 
     private boolean isBrowserApp(String app) {
