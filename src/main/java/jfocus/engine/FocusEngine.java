@@ -178,6 +178,8 @@ public class FocusEngine {
         this.currentSessionRecord.expectedDurationSeconds = seconds;
         this.currentSessionRecord.totalIdleSecondsDeducted = 0;
 
+        System.out.println("[DEBUG][Distraction] Starting session monitor. mode="
+                + this.distractionHandlingMode.name());
         sessionMonitor.start();
         idleDetector.start();
 
@@ -214,6 +216,8 @@ public class FocusEngine {
         this.currentSessionRecord.expectedDurationSeconds = 0;
         this.currentSessionRecord.totalIdleSecondsDeducted = 0;
 
+        System.out.println("[DEBUG][Distraction] Starting session monitor. mode="
+                + this.distractionHandlingMode.name());
         sessionMonitor.start();
         idleDetector.start();
 

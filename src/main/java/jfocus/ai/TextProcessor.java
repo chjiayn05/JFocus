@@ -37,7 +37,7 @@ public class TextProcessor {
 
         String text = rawText.toLowerCase();
         text = NOTIFY_PATTERN.matcher(text).replaceAll("");
-        text = NON_TEXT_PATTERN.matcher(text).replaceAll("");
+        text = NON_TEXT_PATTERN.matcher(text).replaceAll(" ");
 
         // SEARCH 模式會切出較細的詞，較適合後續特徵提取。
         List<SegToken> tokens = segmenter.process(text, JiebaSegmenter.SegMode.SEARCH);

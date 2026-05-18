@@ -72,15 +72,30 @@ public class ModelTrainer {
     private static void checkAndTrainModel(Path txtPath, Path modelPath, int latestId) {
         int lastTrainedId = TrainingMetadata.getLastTrainedId(txtPath);
         boolean isModelMissing = !Files.exists(modelPath);
+        boolean isTrainingDataNewer = isTrainingDataNewerThanModel(txtPath, modelPath);
 
-        if (latestId - lastTrainedId >= TRAIN_BATCH_SIZE || isModelMissing) {
-            System.out.println("🚀 累積新資料筆數 (" + (latestId - lastTrainedId) + ") 已達批次大小 " + TRAIN_BATCH_SIZE + (isModelMissing ? " 或找不到模型" : "") + "，開始訓練模型...");
+        if (latestId - lastTrainedId >= TRAIN_BATCH_SIZE || isModelMissing || isTrainingDataNewer) {
+            System.out.println("🚀 累積新資料筆數 (" + (latestId - lastTrainedId) + ") 已達批次大小 " + TRAIN_BATCH_SIZE
+                    + (isModelMissing ? " 或找不到模型" : "")
+                    + (isTrainingDataNewer ? " 或訓練資料已更新" : "")
+                    + "，開始訓練模型...");
             boolean success = trainModel(txtPath, modelPath);
             if (success) {
                 TrainingMetadata.setLastTrainedId(txtPath, latestId);
             }
         } else {
             System.out.println("⏳ 累積新資料筆數 (" + (latestId - lastTrainedId) + ") 未達批次大小 " + TRAIN_BATCH_SIZE + "，略過模型訓練。");
+        }
+    }
+
+    private static boolean isTrainingDataNewerThanModel(Path txtPath, Path modelPath) {
+        try {
+            return Files.exists(txtPath)
+                    && Files.exists(modelPath)
+                    && Files.getLastModifiedTime(txtPath).compareTo(Files.getLastModifiedTime(modelPath)) > 0;
+        } catch (IOException e) {
+            System.err.println("⚠️ 無法比較訓練資料與模型時間，將略過時間檢查: " + e.getMessage());
+            return false;
         }
     }
 

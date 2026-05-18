@@ -133,20 +133,25 @@ public class DistractionClassifier {
     public boolean isDistracting(String appName, String windowTitle) {
         String app = normalize(appName);
         String title = normalize(extractWindowTitle(windowTitle));
+        System.out.println("[DEBUG][Distraction] App=" + app + " | Title=" + title);
 
         if (matchesWhitelistRule(app, title)) {
+            System.out.println("[DEBUG][Distraction] Whitelist rule.");
             return false;
         }
 
         if (matchesBlacklistRule(app, title)) {
+            System.out.println("[DEBUG][Distraction] Blacklist rule.");
             return true;
         }
 
         if (isYoutubeHomePage(app, title)) {
+            System.out.println("[DEBUG][Distraction] YouTube homepage.");
             return false;
         }
 
         if (categorizer == null) {
+            System.out.println("[DEBUG][Distraction] Mo model; Treating as focused.");
             return false;
         }
 
@@ -155,6 +160,7 @@ public class DistractionClassifier {
             cleanedTitle = TextProcessor.cleanText(app);
         }
         if (cleanedTitle.isBlank()) {
+            System.out.println("[DEBUG][Distraction] Text is blank; Treating as focused.");
             return false;
         }
 
@@ -164,8 +170,12 @@ public class DistractionClassifier {
 
         int categoryIndex = categorizer.getIndex(category);
         double probability = categoryIndex >= 0 ? outcomes[categoryIndex] : 0.0;
+        boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= playThreshold;
+        System.out.println("[DEBUG][Distraction] Result. CleanedText=\"" + cleanedTitle
+                + "\" | Category=" + category + " | Probability=" + probability + " | Threshold=" + playThreshold
+                + " | Distracted=" + distracted);
 
-        return "PLAY".equalsIgnoreCase(category) && probability >= playThreshold;
+        return distracted;
     }
 
     private static DocumentCategorizerME loadCategorizer(Path modelPath) {

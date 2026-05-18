@@ -28,7 +28,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -38,9 +37,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import jfocus.ai.distraction.DistractionHandlingMode;
-import jfocus.ai.distraction.JdbcDistractionModeRepository;
-import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
 import jfocus.notification.NotificationPayload;
@@ -858,24 +854,6 @@ public class FocusUI extends Application {
         Button btnAdd = new Button("DEBUG: 增加資源 200");
         Button btnAdd1 = new Button("DEBUG: 增加資源 100");
         Button btnAdd2 = new Button("DEBUG: 增加資源 50");
-        JdbcDistractionModeRepository modeRepository = new JdbcDistractionModeRepository(new DatabaseCore());
-        DistractionHandlingMode currentMode = modeRepository.loadMode(DistractionHandlingMode.WARN_USER);
-        Label modeStatusLabel = new Label("目前分心處理模式: " + currentMode.name());
-        ToggleButton closeDistractionSwitch = new ToggleButton();
-        closeDistractionSwitch.setMinSize(150, 44);
-        closeDistractionSwitch.setSelected(currentMode == DistractionHandlingMode.CLOSE_DISTRACTION);
-        updateDistractionModeToggle(closeDistractionSwitch, currentMode);
-        closeDistractionSwitch.setOnAction(e -> {
-            DistractionHandlingMode selectedMode = closeDistractionSwitch.isSelected()
-                    ? DistractionHandlingMode.CLOSE_DISTRACTION
-                    : DistractionHandlingMode.WARN_USER;
-            modeRepository.saveMode(selectedMode);
-            if (timerView != null) {
-                timerView.setDistractionHandlingMode(selectedMode);
-            }
-            modeStatusLabel.setText("目前分心處理模式: " + selectedMode.name());
-            updateDistractionModeToggle(closeDistractionSwitch, selectedMode);
-        });
 
         btnAdd.setOnAction(e -> {
             gameManager.addFocusTime(200, getCurrentPokemonId()); // 模擬加錢
@@ -904,26 +882,10 @@ public class FocusUI extends Application {
         layout.getChildren().addAll(
                 new Label("數據統計區"),
                 new Separator(),
-                modeStatusLabel,
-                new Label("DEBUG 分心模式切換"),
-                closeDistractionSwitch,
-                new Separator(),
                 btnAdd,
                 btnAdd1,
                 btnAdd2);
         return new Tab("數據分析", layout);
-    }
-
-    private void updateDistractionModeToggle(ToggleButton toggle, DistractionHandlingMode mode) {
-        if (mode == DistractionHandlingMode.CLOSE_DISTRACTION) {
-            toggle.setText("ON  自動關閉");
-            toggle.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;"
-                    + " -fx-background-radius: 22; -fx-padding: 8 18;");
-        } else {
-            toggle.setText("OFF  只提醒");
-            toggle.setStyle("-fx-background-color: #7f8c8d; -fx-text-fill: white; -fx-font-weight: bold;"
-                    + " -fx-background-radius: 22; -fx-padding: 8 18;");
-        }
     }
 
 }
