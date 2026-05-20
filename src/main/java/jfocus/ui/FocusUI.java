@@ -856,8 +856,6 @@ public class FocusUI extends Application {
         Button btnAdd1 = new Button("DEBUG: 增加資源 100");
         Button btnAdd2 = new Button("DEBUG: 增加資源 50");
         Button testNotificationBtn = new Button("測試系統通知");
-        Label notificationStatusLabel = new Label(buildNotificationStatusText());
-        notificationStatusLabel.setWrapText(true);
 
         testNotificationBtn.setOnAction(e -> {
             NotificationService service = FocusApp.getNotificationService();
@@ -866,7 +864,6 @@ public class FocusUI extends Application {
                     "如果你看到這則通知，代表目前通知 backend 已可送出。",
                     NotificationSeverity.INFO,
                     "diagnostics"));
-            notificationStatusLabel.setText(buildNotificationStatusText());
         });
 
         btnAdd.setOnAction(e -> {
@@ -900,28 +897,7 @@ public class FocusUI extends Application {
                 btnAdd1,
                 btnAdd2,
                 new Separator(),
-                testNotificationBtn,
-                notificationStatusLabel);
+                testNotificationBtn);
         return new Tab("數據分析", layout);
     }
-
-    private String buildNotificationStatusText() {
-        NotificationService service = FocusApp.getNotificationService();
-        StringBuilder text = new StringBuilder();
-        text.append("通知 backend: ").append(service.getBackendName());
-        text.append("\n可用狀態: ").append(service.isAvailable() ? "可用" : "不可用");
-
-        String lastFailure = service.getLastFailure();
-        if (lastFailure != null && !lastFailure.isBlank()) {
-            text.append("\n最後錯誤: ").append(lastFailure);
-        }
-
-        String guidance = service.getUserGuidance();
-        if (guidance != null && !guidance.isBlank()) {
-            text.append("\n系統設定提示: ").append(guidance);
-        }
-
-        return text.toString();
-    }
-
 }
