@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jfocus.ui.FocusUI.PokemonData;
+
 public class GameManager {
     private static final int STAGE_2_XP_REQUIREMENT = 50;
     private static final int STAGE_3_XP_REQUIREMENT = 200;
@@ -167,7 +169,27 @@ public class GameManager {
     }
 
     // 抽獎
+// 在 GameManager 裡準備三個空箱子
+    private final List<String> standardPool = new ArrayList<>();
+    private final List<String> rarePool = new ArrayList<>();
+    private final List<String> superRarePool = new ArrayList<>();
 
+
+    // 寫一個方法接收名單
+    public void buildGachaPools(List<PokemonData> allPokemon) {
+        for (PokemonData data : allPokemon) {
+            String fullId = data.getId() + "_" + data.getFolderName().split("_")[1]; // 假設組出 "147_dratini"
+            
+            if ("SUPER_RARE".equals(data.getRarity())) {
+                superRarePool.add(fullId);
+            } else if ("RARE".equals(data.getRarity())) {
+                rarePool.add(fullId);
+            } else {
+                standardPool.add(fullId); // 預設都是普通
+            }
+        }
+        System.out.println("🎰 抽獎池建立完成！超稀有: " + superRarePool.size() + " 隻");
+    }
 public String performPokeBallDraw(String ballType) {
 if ("MASTERBALL".equals(ballType)) {
             if (this.masterStones < 1) { // 假設大師球一次消耗 1 顆大師晶石 (請依你企劃修改)

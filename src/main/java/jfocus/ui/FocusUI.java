@@ -1,4 +1,5 @@
 package jfocus.ui;
+
 import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
@@ -85,7 +86,9 @@ public class FocusUI extends Application {
     // private Label pokemonNameLabel;
     // private String selectedPokemonId;
     // private String selectedPokemonName;
-
+    // 記錄抽獎區是否正在展示寶可夢，用來阻擋 Hover 動畫
+    private boolean isShowingPrize = false;
+    String rarity;
     // Json
     // 1. 宣告清單變數
     private List<PokemonData> pokedexList = new ArrayList<>();
@@ -101,8 +104,14 @@ public class FocusUI extends Application {
         private List<String> types;
         private List<String> descriptions; // 負責裝描述文字
         private List<String> stageNames; // 負責裝各階段專屬名稱
-
+        private String rarity; // 👈 新增這個變數來接 JSON 裡面的資料
         // 建構子 (Constructor)
+
+        public String getRarity() {
+            // 加個防呆：如果 JSON 裡面忘記寫，預設就是普通 (STANDARD)
+            return this.rarity == null ? "STANDARD" : this.rarity;
+        }
+
         public PokemonData(String id, String folderName, String name, List<String> types,
                 List<String> descriptions, List<String> stageNames) {
             this.id = id;
@@ -111,6 +120,7 @@ public class FocusUI extends Application {
             this.types = types;
             this.descriptions = descriptions;
             this.stageNames = stageNames;
+
         }
 
         // ==========================================
@@ -406,26 +416,25 @@ public class FocusUI extends Application {
         }
     }
 
-
-    private Tab createTimerTab () {
+    private Tab createTimerTab() {
         Tab tab = new Tab("專注計時");
         tab.setClosable(false);
-        
+
         this.timerView = new TimerView(this.gameManager);
-        
+
         // 👇 【新增這段：開機喚醒寶可夢！】
         // 取得當前出戰夥伴的 ID
         String currentPartnerId = gameManager.getCurrentPokemonId();
-        
+
         // 如果有存檔，就去圖鑑列表 (pokedexList) 找這隻寶可夢的資料
         if (currentPartnerId != null && !currentPartnerId.isEmpty()) {
             for (PokemonData data : pokedexList) {
                 if (data.getId().equals(currentPartnerId)) {
                     // 取得它現在進化到第幾階段
-                    int currentStage =  gameManager.getEvolutionStage(data.getId());
+                    int currentStage = gameManager.getEvolutionStage(data.getId());
 
                     String partnerName = data.getStageName(currentStage);
-                    
+
                     // 組合圖片路徑並載入
                     String imgPath = "res/pokemon/" + data.getFolderName() + "/stage" + currentStage + ".png";
                     java.io.File imgFile = new java.io.File(imgPath);
@@ -438,18 +447,20 @@ public class FocusUI extends Application {
                 }
             }
         }
-        
+
         tab.setContent(this.timerView);
-        return tab;}
-@Override
+        return tab;
+    }
+
+    @Override
     public void start(javafx.stage.Stage primaryStage) {
-        jfocus.db.DatabaseCore.initializeDatabase(); 
+        jfocus.db.DatabaseCore.initializeDatabase();
         loadPokedexData();
         loadUserProgressSafely();
 
         // 1. 初始化 TabPane 與分頁
         javafx.scene.control.TabPane tabPane = new javafx.scene.control.TabPane();
-
+        gameManager.buildGachaPools(this.pokedexList);
         Tab focusTab = createTimerTab(); // 👉 綁定你的開機喚醒邏輯
         focusTab.setClosable(false);
         Tab pokedexTab = createPokedexTab();
@@ -464,7 +475,7 @@ public class FocusUI extends Application {
         // 2. 頂部狀態列 (主題切換 + 貨幣)
         ChoiceBox<String> themeSelector = new ChoiceBox<>();
         themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
-        themeSelector.setValue("暗黑電競"); 
+        themeSelector.setValue("暗黑電競");
 
         themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             String css = switch (newVal) {
@@ -518,7 +529,19 @@ public class FocusUI extends Application {
     }
 
     // 抽獎動畫 (加入 drawType 參數)
-    private void playGachaAnimation(ImageView ballView, String drawType) {
+private void playGachaAnimation(ImageView ballView, String drawType) {
+        // 🛡️ [防護工事 1] 重置 UI：每次開播前，確保圖片狀態乾淨
+        // 拔掉 Hover 鎖定，讓動畫可以變更圖片
+        this.isShowingPrize = false; 
+        ballView.setOpacity(1.0); // 確保球是亮著的
+        ballView.setScaleX(1.0); // 重置比例
+        ballView.setScaleY(1.0);
+        ballView.setRotate(0); // 重置角度
+
+        // 初始化中獎訊息 (預設)
+        gachaMessageLabel.setText("孵化中...");
+        gachaMessageLabel.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 16px;");
+
         // 1. 晃動動畫 (Shake)
         RotateTransition shake = new RotateTransition(javafx.util.Duration.millis(100), ballView);
         shake.setFromAngle(-15);
@@ -527,35 +550,61 @@ public class FocusUI extends Application {
         shake.setAutoReverse(true);
 
         shake.setOnFinished(event -> {
+            // ❌ 原本寫在這裡的 ballView.setOpacity(0) 要刪掉！
+
             // 2. 隨機決定中獎的寶可夢
             String resultId = gameManager.performPokeBallDraw(drawType);
 
+            // 🛑 [防護工事 2] 邏輯檢查：確認是否成功抽獎
             if ("INSUFFICIENT_FUNDS".equals(resultId)) {
+                // 錢不夠：顯示警告，什麼都不做 (保持精靈球的樣子)
                 gachaMessageLabel.setText("資源不夠啦！再去專注幾分鐘吧！");
                 gachaMessageLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 16px; -fx-font-weight: bold;");
-                return;
+                
+                // ✅ 解鎖 Hover：讓玩家可以滑鼠經過按鈕，看到球換回普通球或大師球
+                this.isShowingPrize = false; 
+                return; // 直接中斷
             }
 
-            // 3. 換圖並噴發效果
-            ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
+            // 🛡️ [防護工事 3] 如果你有寫圖片淡出效果，請把它搬到這裡 (確定錢夠才淡出)：
+            // ballView.setOpacity(0); // 讓球淡出 (如果你喜歡原本消失一下的感覺)
 
+            // 換上寶可夢的圖片
+            ballView.setImage(new javafx.scene.image.Image("file:res/pokemon/" + resultId + "/stage1.png"));
+            
+            // 🔒 [防護工事 4] 上鎖！告訴系統：「現在展示的是夥伴，不要 Hover」
+            this.isShowingPrize = true; 
+
+            // 3. 進場噴發效果 (Scale)
             ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
             pop.setFromX(0.5);
             pop.setFromY(0.5);
-            pop.setToX(1.5);
+            pop.setToX(1.5); // 寶可夢蹦出來變大
             pop.setToY(1.5);
+            
+            // 如果你有寫淡出，這裡要淡入：
+            // FadeTransition fadeIn = new FadeTransition(javafx.util.Duration.millis(200), ballView);
+            // fadeIn.setToValue(1.0);
+            // ParallelTransition prizeAppear = new ParallelTransition(pop, fadeIn);
+            // prizeAppear.play();
+
+            // 如果沒淡出，就直接播 pop：
             pop.play();
 
+            // 更新數據
             refreshCurrencyLabels();
+            // 如果你有 Gacha 頁面獨立的貨幣標籤，也要更新它：
+            // gachaCurrencyLabel.setText("我的專注幣: " + gameManager.getFocusCoins());
             refreshXpDisplay();
-            refreshPokedexGrid();
+            refreshPokedexGrid(); 
             saveUserProgressSafely();
 
-            // --- 【新增】從 pokedexList 找出中文名稱 ---
+            // --- 找出中文名稱 (已優化容錯率) ---
             String caughtName = "未知精靈";
             for (PokemonData data : pokedexList) {
-                if (data.getId().equals(resultId)) {
-                    caughtName = data.getName();
+                // resultId 可能是 "147_dratini"，data.getId() 是 "147"
+                if (resultId.contains(data.getId())) { 
+                    caughtName = data.getStageName(1); // 抓第一階段中文名
                     break;
                 }
             }
@@ -602,13 +651,33 @@ public class FocusUI extends Application {
         HBox btnBox = new HBox(20, normalBtn, premiumBtn);
         btnBox.setAlignment(Pos.CENTER);
 
-        // 滑鼠懸停切換精靈球圖片
-        normalBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_ball.png")));
-        premiumBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_masterball.png")));
+        // --- 【修改區塊：雙按鈕與互動邏輯】 ---
 
-        // 點擊事件：呼叫動畫並傳入對應標籤
-        normalBtn.setOnAction(e -> playGachaAnimation(ballView, "normal"));
-        premiumBtn.setOnAction(e -> playGachaAnimation(ballView, "premium"));
+        // (前面宣告按鈕的程式碼不變...)
+
+        // 🛡️ 加上防護罩：只有在「沒有展示獎品」的時候，Hover 才會切換精靈球圖片！
+        normalBtn.setOnMouseEntered(e -> {
+            if (!isShowingPrize) {
+                ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
+            }
+        });
+
+        premiumBtn.setOnMouseEntered(e -> {
+            if (!isShowingPrize) {
+                ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));
+            }
+        });
+
+        // 點擊事件
+        normalBtn.setOnAction(e -> {
+            isShowingPrize = false; // 開始抽獎，允許動畫變更圖片
+            playGachaAnimation(ballView, "POKEBALL");
+        });
+
+        premiumBtn.setOnAction(e -> {
+            isShowingPrize = false; // 開始抽獎，允許動畫變更圖片
+            playGachaAnimation(ballView, "MASTERBALL"); // 注意字串要跟 GameManager 對齊
+        });
         // ------------------------------------
 
         layout.getChildren().addAll(title, gachaCurrencyLabel, gachaDisplay, btnBox);
