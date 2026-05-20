@@ -4,15 +4,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import jfocus.ai.rules.AppWindowRule;
 import jfocus.ai.rules.DistractionRuleRepository;
 import jfocus.ai.rules.JdbcDistractionRuleRepository;
+import jfocus.ai.rules.KeywordRule;
 import jfocus.ai.rules.RuleListType;
 import jfocus.db.AppPaths;
 import jfocus.db.DatabaseCore;
@@ -25,13 +27,33 @@ import opennlp.tools.doccat.DocumentCategorizerME;
 public class DistractionClassifier {
     private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
+    private static final int MAX_KEYWORD_CANDIDATES = 6;
+    private static final int MAX_KEYWORD_LENGTH = 30;
     private static final Pattern NOTIFICATION_BADGE_PATTERN = Pattern.compile("^\\(\\d+\\)\\s*");
+    private static final Pattern BRACKETED_TEXT_PATTERN = Pattern.compile("[\\[【(（]([^\\]】)）]{2,30})[\\]】)）]");
+    private static final Pattern TITLE_SEPARATOR_PATTERN = Pattern.compile("\\s*(?:[-|｜·•—–_:：]+)\\s*");
     private static final Set<String> BROWSER_APPS = Set.of(
             "google chrome",
             "safari",
             "microsoft edge",
             "chrome",
             "edge");
+    private static final Set<String> LOW_VALUE_KEYWORDS = Set.of(
+            "google chrome",
+            "chrome",
+            "safari",
+            "microsoft edge",
+            "edge",
+            "首頁",
+            "home",
+            "登入",
+            "login",
+            "搜尋",
+            "search",
+            "新分頁",
+            "new tab",
+            "google 搜尋",
+            "起始頁面");
 
     private final DocumentCategorizerME categorizer;
     private final double playThreshold;
@@ -51,6 +73,10 @@ public class DistractionClassifier {
         this(categorizer, playThreshold, new JdbcDistractionRuleRepository(new DatabaseCore()));
     }
 
+    public DistractionClassifier(DistractionRuleRepository ruleRepository) {
+        this(null, DEFAULT_PLAY_THRESHOLD, ruleRepository);
+    }
+
     DistractionClassifier(DocumentCategorizerME categorizer, double playThreshold,
             DistractionRuleRepository ruleRepository) {
         this.categorizer = categorizer;
@@ -59,63 +85,79 @@ public class DistractionClassifier {
     }
 
     /**
-     * 儲存白名單規則到資料庫。
+     * 儲存白名單關鍵字到資料庫。
      */
-    public void addWhitelistRule(String appName, String windowTitle) {
-        ruleRepository.saveRule(RuleListType.WHITELIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    public void addWhitelistRule(String keyword) {
+        ruleRepository.saveRule(RuleListType.WHITELIST, new KeywordRule(keyword));
     }
 
     /**
-     * 儲存黑名單規則到資料庫。
+     * 儲存黑名單關鍵字到資料庫。
      */
-    public void addBlacklistRule(String appName, String windowTitle) {
-        ruleRepository.saveRule(RuleListType.BLACKLIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    public void addBlacklistRule(String keyword) {
+        ruleRepository.saveRule(RuleListType.BLACKLIST, new KeywordRule(keyword));
     }
 
     /**
-     * 移除白名單規則。
+     * 產生可供 UI 顯示的黑白名單關鍵字候選。
      */
-    public void removeWhitelistRule(String appName, String windowTitle) {
-        ruleRepository.deleteRule(RuleListType.WHITELIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    public List<String> suggestRuleKeywords(String appName, String windowTitle) {
+        String app = normalize(appName);
+        String title = stripBrowserSuffix(extractWindowTitle(windowTitle));
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+
+        addBracketedCandidates(candidates, title);
+        addTitlePartCandidates(candidates, removeBracketedText(title));
+
+        if (!isBrowserApp(app)) {
+            addKeywordCandidate(candidates, app);
+        }
+
+        return new ArrayList<>(candidates).stream()
+                .limit(MAX_KEYWORD_CANDIDATES)
+                .toList();
     }
 
     /**
-     * 移除黑名單規則。
+     * 移除白名單關鍵字。
      */
-    public void removeBlacklistRule(String appName, String windowTitle) {
-        ruleRepository.deleteRule(RuleListType.BLACKLIST, new AppWindowRule(appName, extractWindowTitle(windowTitle)));
+    public void removeWhitelistRule(String keyword) {
+        ruleRepository.deleteRule(RuleListType.WHITELIST, new KeywordRule(keyword));
+    }
+
+    /**
+     * 移除黑名單關鍵字。
+     */
+    public void removeBlacklistRule(String keyword) {
+        ruleRepository.deleteRule(RuleListType.BLACKLIST, new KeywordRule(keyword));
     }
 
     /**
      * 取得所有白名單規則。
      */
-    public List<AppWindowRule> getWhitelistRules() {
+    public List<KeywordRule> getWhitelistRules() {
         return ruleRepository.getRules(RuleListType.WHITELIST);
     }
 
     /**
      * 取得所有黑名單規則。
      */
-    public List<AppWindowRule> getBlacklistRules() {
+    public List<KeywordRule> getBlacklistRules() {
         return ruleRepository.getRules(RuleListType.BLACKLIST);
     }
 
     /**
-     * 使用 appName + windowTitle 判斷是否命中白名單。
+     * 使用單一關鍵字規則判斷是否命中白名單。
      */
     public boolean isWhitelisted(String appName, String windowTitle) {
-        String app = normalize(appName);
-        String title = normalize(extractWindowTitle(windowTitle));
-        return matchesWhitelistRule(app, title);
+        return matchesWhitelistRule(toSearchText(appName, extractWindowTitle(windowTitle)));
     }
 
     /**
-     * 使用 appName + windowTitle 判斷是否命中黑名單。
+     * 使用單一關鍵字規則判斷是否命中黑名單。
      */
     public boolean isBlacklisted(String appName, String windowTitle) {
-        String app = normalize(appName);
-        String title = normalize(extractWindowTitle(windowTitle));
-        return matchesBlacklistRule(app, title);
+        return matchesBlacklistRule(toSearchText(appName, extractWindowTitle(windowTitle)));
     }
 
     /**
@@ -135,14 +177,15 @@ public class DistractionClassifier {
     public boolean isDistracting(String appName, String windowTitle) {
         String app = normalize(appName);
         String title = normalize(extractWindowTitle(windowTitle));
+        String searchableText = toSearchText(app, title);
         System.out.println("[DEBUG][Distraction] App=" + app + " | Title=" + title);
 
-        if (matchesWhitelistRule(app, title)) {
+        if (matchesWhitelistRule(searchableText)) {
             System.out.println("[DEBUG][Distraction] Whitelist rule.");
             return false;
         }
 
-        if (matchesBlacklistRule(app, title)) {
+        if (matchesBlacklistRule(searchableText)) {
             System.out.println("[DEBUG][Distraction] Blacklist rule.");
             return true;
         }
@@ -192,12 +235,12 @@ public class DistractionClassifier {
         }
     }
 
-    private boolean matchesWhitelistRule(String app, String title) {
-        return ruleRepository.matches(RuleListType.WHITELIST, app, title);
+    private boolean matchesWhitelistRule(String text) {
+        return ruleRepository.matches(RuleListType.WHITELIST, text);
     }
 
-    private boolean matchesBlacklistRule(String app, String title) {
-        return ruleRepository.matches(RuleListType.BLACKLIST, app, title);
+    private boolean matchesBlacklistRule(String text) {
+        return ruleRepository.matches(RuleListType.BLACKLIST, text);
     }
 
     private boolean isYoutubeHomePage(String app, String title) {
@@ -258,6 +301,53 @@ public class DistractionClassifier {
             return windowTitle.substring(titleStartIndex);
         }
         return windowTitle;
+    }
+
+    private static String toSearchText(String appName, String windowTitle) {
+        String app = normalize(appName);
+        String title = normalize(windowTitle);
+        if (app.isBlank()) {
+            return title;
+        }
+        if (title.isBlank()) {
+            return app;
+        }
+        return app + " " + title;
+    }
+
+    private static void addBracketedCandidates(Set<String> candidates, String title) {
+        var matcher = BRACKETED_TEXT_PATTERN.matcher(normalize(title));
+        while (matcher.find()) {
+            addKeywordCandidate(candidates, matcher.group(1));
+        }
+    }
+
+    private static String removeBracketedText(String title) {
+        return BRACKETED_TEXT_PATTERN.matcher(normalize(title)).replaceAll("");
+    }
+
+    private static void addTitlePartCandidates(Set<String> candidates, String title) {
+        String[] parts = TITLE_SEPARATOR_PATTERN.split(normalize(title));
+        for (String part : parts) {
+            addKeywordCandidate(candidates, part);
+        }
+    }
+
+    private static void addKeywordCandidate(Set<String> candidates, String value) {
+        String keyword = normalize(value);
+        if (isUsefulKeyword(keyword)) {
+            candidates.add(keyword);
+        }
+    }
+
+    private static boolean isUsefulKeyword(String keyword) {
+        if (keyword.isBlank()
+                || keyword.length() < 2
+                || keyword.length() > MAX_KEYWORD_LENGTH
+                || LOW_VALUE_KEYWORDS.contains(keyword)) {
+            return false;
+        }
+        return keyword.chars().anyMatch(Character::isLetterOrDigit);
     }
 
     private static String normalize(String value) {

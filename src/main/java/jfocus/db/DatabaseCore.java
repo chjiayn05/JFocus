@@ -92,10 +92,9 @@ public class DatabaseCore {
             CREATE TABLE IF NOT EXISTS distraction_rules (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 list_type TEXT NOT NULL,
-                app_name TEXT NOT NULL DEFAULT '',
-                window_title TEXT NOT NULL DEFAULT '',
+                keyword TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                UNIQUE(list_type, app_name, window_title)
+                UNIQUE(list_type, keyword)
             );
             """;
 
@@ -134,6 +133,7 @@ public class DatabaseCore {
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
+            ensureKeywordOnlyDistractionRulesTable(conn);
             ensureIndexes(stmt);
             System.out.println("✅ DatabaseCore: SQLite 資料庫與資料表已就緒！");
         } catch (SQLException e) {
@@ -162,9 +162,7 @@ public class DatabaseCore {
 
         return "jdbc:sqlite:" + AppPaths.getDatabasePath();
     }
-
-
-
+    
     private void ensureDatabaseDirectory() {
         if (!url.startsWith("jdbc:sqlite:")) {
             return;
@@ -211,5 +209,67 @@ public class DatabaseCore {
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_end_time ON activities(end_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_session_id ON activities(session_id)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_distraction_rules_type ON distraction_rules(list_type)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_distraction_rules_type_keyword ON distraction_rules(list_type, keyword)");
+    }
+
+    private void ensureKeywordOnlyDistractionRulesTable(Connection conn) throws SQLException {
+        Set<String> columns = getColumns(conn, "distraction_rules");
+        if (columns.contains("keyword")
+                && !columns.contains("app_name")
+                && !columns.contains("window_title")) {
+            return;
+        }
+
+        String migrationSql = """
+            CREATE TABLE IF NOT EXISTS distraction_rules_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_type TEXT NOT NULL,
+                keyword TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(list_type, keyword)
+            )
+            """;
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(migrationSql);
+            if (columns.contains("keyword")) {
+                stmt.executeUpdate("""
+                    INSERT OR IGNORE INTO distraction_rules_new(list_type, keyword, created_at)
+                    SELECT list_type, trim(keyword), created_at
+                    FROM distraction_rules
+                    WHERE trim(keyword) <> ''
+                    """);
+            } else if (columns.contains("app_name") || columns.contains("window_title")) {
+                stmt.executeUpdate("""
+                    INSERT OR IGNORE INTO distraction_rules_new(list_type, keyword, created_at)
+                    SELECT list_type,
+                           trim(
+                               CASE
+                                   WHEN app_name <> '' AND window_title <> '' THEN app_name || ' ' || window_title
+                                   WHEN app_name <> '' THEN app_name
+                                   ELSE window_title
+                               END
+                           ),
+                           created_at
+                    FROM distraction_rules
+                    WHERE trim(app_name) <> '' OR trim(window_title) <> ''
+                    """);
+            }
+            stmt.execute("DROP TABLE distraction_rules");
+            stmt.execute("ALTER TABLE distraction_rules_new RENAME TO distraction_rules");
+        }
+    }
+
+    private Set<String> getColumns(Connection conn, String tableName) throws SQLException {
+        Set<String> columns = new HashSet<>();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + tableName + ")")) {
+            while (rs.next()) {
+                columns.add(rs.getString("name"));
+            }
+        }
+
+        return columns;
     }
 }

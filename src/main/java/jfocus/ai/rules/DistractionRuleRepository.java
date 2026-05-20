@@ -6,11 +6,11 @@ import java.util.List;
  * Storage abstraction for distraction rules.
  */
 public interface DistractionRuleRepository {
-    void saveRule(RuleListType listType, AppWindowRule rule);
+    void saveRule(RuleListType listType, KeywordRule rule);
 
-    void deleteRule(RuleListType listType, AppWindowRule rule);
+    void deleteRule(RuleListType listType, KeywordRule rule);
 
-    boolean matches(RuleListType listType, String appName, String windowTitle);
+    boolean matches(RuleListType listType, String text);
 
-    List<AppWindowRule> getRules(RuleListType listType);
+    List<KeywordRule> getRules(RuleListType listType);
 }

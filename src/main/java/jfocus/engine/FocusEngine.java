@@ -1,5 +1,6 @@
 package jfocus.engine;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -93,9 +94,7 @@ public class FocusEngine {
                     return;
                 }
 
-                boolean closeTabOnly = FocusEngine.this.distractionClassifier.isWebsiteActivity(session.processName,
-                        session.title);
-                boolean closed = FocusEngine.this.distractingTargetCloser.closeDistractingTarget(session, closeTabOnly);
+                boolean closed = FocusEngine.this.closeDistractingTarget(session);
                 if (!closed) {
                     System.err.println("無法關閉分心視窗或分頁: " + session.title);
                 }
@@ -144,6 +143,21 @@ public class FocusEngine {
     public void setDistractionUserNotifier(DistractionUserNotifier distractionUserNotifier) {
         this.distractionUserNotifier = Objects.requireNonNull(distractionUserNotifier,
                 "distractionUserNotifier cannot be null");
+    }
+
+    public List<String> suggestWhitelistKeywordsForSession(WindowSession session) {
+        WindowSession validatedSession = Objects.requireNonNull(session, "session cannot be null");
+        return distractionClassifier.suggestRuleKeywords(validatedSession.processName, validatedSession.title);
+    }
+
+    public void addWhitelistRule(String keyword) {
+        distractionClassifier.addWhitelistRule(keyword);
+    }
+
+    public boolean closeDistractingTarget(WindowSession session) {
+        WindowSession validatedSession = Objects.requireNonNull(session, "session cannot be null");
+        boolean closeTabOnly = distractionClassifier.isWebsiteActivity(validatedSession.processName, validatedSession.title);
+        return distractingTargetCloser.closeDistractingTarget(validatedSession, closeTabOnly);
     }
 
     public void setCurrentSubject(String subject) {
