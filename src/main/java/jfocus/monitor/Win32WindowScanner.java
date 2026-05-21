@@ -42,6 +42,20 @@ public class Win32WindowScanner implements WindowScanner {
         Map<String, WindowSession> currentScan = new HashMap<>();
         final Area seenArea = new Area(); // 用來記錄已經被上層視窗蓋住的畫布區域
 
+        // 先把 Windows 工作列 (Taskbar) 的範圍加入已遮蔽區域，避免背景視窗穿透工作列而被偵測
+        HWND primaryTaskbar = User32.INSTANCE.FindWindow("Shell_TrayWnd", null);
+        if (primaryTaskbar != null && User32.INSTANCE.IsWindowVisible(primaryTaskbar)) {
+            RECT rect = new RECT();
+            User32.INSTANCE.GetWindowRect(primaryTaskbar, rect);
+            seenArea.add(new Area(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)));
+        }
+        HWND secondaryTaskbar = User32.INSTANCE.FindWindow("Shell_SecondaryTrayWnd", null);
+        if (secondaryTaskbar != null && User32.INSTANCE.IsWindowVisible(secondaryTaskbar)) {
+            RECT rect = new RECT();
+            User32.INSTANCE.GetWindowRect(secondaryTaskbar, rect);
+            seenArea.add(new Area(new Rectangle(rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top)));
+        }
+
         User32.INSTANCE.EnumWindows((hWnd, arg1) -> {
             if (isValidWindow(hWnd)) {
                 // 取得視窗的範圍
@@ -54,8 +68,9 @@ public class Win32WindowScanner implements WindowScanner {
                 // 拿視窗的形狀，去扣除目前已經被上層視窗擋住的形狀
                 windowArea.subtract(seenArea);
 
-                // 如果扣除後面積為 0，代表它被前面的視窗完全擋住了
-                if (windowArea.isEmpty()) {
+                // 如果扣除後面積太小 (長或寬小於 50 像素)，代表它被完全或幾乎完全擋住，或是只剩下細條邊框
+                Rectangle visibleBounds = windowArea.getBounds();
+                if (visibleBounds.isEmpty() || visibleBounds.width < 50 || visibleBounds.height < 50) {
                     return true; // 直接跳過，不記錄這個視窗
                 }
 
