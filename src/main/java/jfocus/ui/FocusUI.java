@@ -507,7 +507,8 @@ public static class PokemonData {
                 refreshDrawBtnStatus();
         });
         
-        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
+        Tab settingsTab = createSettingsTab();
+        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab, settingsTab);
 
         // 2. 頂部狀態列 (主題切換 + 貨幣)
         ChoiceBox<String> themeSelector = new ChoiceBox<>();
@@ -628,16 +629,21 @@ public static class PokemonData {
         shake.setAutoReverse(true);
 
         shake.setOnFinished(event -> {
-            // 3. 換圖並噴發效果
-            if (drawType .equals("NORMAL")) {
-                ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
-            } else {
-                ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));  
+            String caughtName = "未知精靈";
+            String drawnPokemonId = null;
+            for (PokemonData data : pokedexList) {
+                if (data.getFolderName().equals(resultId)) {
+                    caughtName = data.getName();
+                    drawnPokemonId = data.getId();
+                    break;
+                }
             }
+            final String finalCaughtName = caughtName;
+            final String finalDrawnId = drawnPokemonId;
 
             ScaleTransition ballExpand = new ScaleTransition(javafx.util.Duration.millis(250), ballView);
-            ballExpand.setFromX(0.7);
-            ballExpand.setFromY(0.7);
+            ballExpand.setFromX(0.8);
+            ballExpand.setFromY(0.8);
             ballExpand.setToX(1.4);
             ballExpand.setToY(1.4);
             ballExpand.setOnFinished(e2 -> {
@@ -649,34 +655,24 @@ public static class PokemonData {
                     ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
                     settle.setToX(1.0);
                     settle.setToY(1.0);
+                    settle.setOnFinished(e4 -> {
+                        refreshCurrencyLabels();
+                        timerView.refreshXpDisplay();
+                        new Thread(this::saveUserProgressSafely).start();
+                    });
                     settle.play();
                 });
                 ballShrink.play();
             });
             ballExpand.play();
 
-            refreshCurrencyLabels();
-            timerView.refreshXpDisplay();
-            refreshPokedexGrid();
-            saveUserProgressSafely();
-
-            // --- 【新增】從 pokedexList 找出中文名稱 ---
-            String caughtName = "未知精靈";
-            for (PokemonData data : pokedexList) {
-                if (data.getFolderName().equals(resultId)) {
-                    caughtName = data.getName();
-                    break;
-                }
-            }
-
-            // 4. 動畫結束，顯示超有成就感的中獎訊息！
-            gachaMessageLabel.setText("恭喜！收服了：" + caughtName + "！");
+            // 4. 動畫啟動前只更新輕量 UI
+            gachaMessageLabel.setText("恭喜！收服了：" + finalCaughtName + "！");
             gachaMessageLabel.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
 
             startBorderCountdown(3.5);
             PauseTransition delay = new PauseTransition(Duration.seconds(3.5));
             delay.setOnFinished(e -> {
-                refreshDrawBtnStatus();
                 ScaleTransition ballExpandBack = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
                 ballExpandBack.setToX(0);
                 ballExpandBack.setToY(0);
@@ -688,6 +684,9 @@ public static class PokemonData {
                     settleBack.play();
                 });
                 ballExpandBack.play();
+                if (finalDrawnId != null) refreshPokedexGrid(finalDrawnId);
+                else refreshPokedexGrid();
+                refreshDrawBtnStatus();
             });
             delay.play();
         });
@@ -916,8 +915,28 @@ public static class PokemonData {
 
     // FocusUI.java 裡面的 createPokemonCard 方法
 
+    void refreshPokedexGrid(String pokemonId) {
+        if (pokedexFlowGrid == null) return;
+        PokemonData target = null;
+        for (PokemonData d : pokedexList) {
+            if (d.getId().equals(pokemonId)) { target = d; break; }
+        }
+        if (target == null) return;
+        int displayStage = getDisplayStageForPokemon(target.getId());
+        VBox newCard = createPokemonCard(target, displayStage);
+        for (int i = 0; i < pokedexFlowGrid.getChildren().size(); i++) {
+            if (pokemonId.equals(pokedexFlowGrid.getChildren().get(i).getUserData())) {
+                pokedexFlowGrid.getChildren().set(i, newCard);
+                return;
+            }
+        }
+        // 找不到舊卡（理論上不會），退回全量刷新
+        refreshPokedexGrid();
+    }
+
     private VBox createPokemonCard(PokemonData data, int stages) {
         VBox card = new VBox();
+        card.setUserData(data.getId());
         card.getStyleClass().add("pokemon-card");
         if (data.getId().equals(gameManager.getCurrentPokemonId())) {
             card.getStyleClass().add("active-partner");
@@ -1173,6 +1192,14 @@ public static class PokemonData {
                 statsView.refreshCurrentView();
             }
         });
+        return tab;
+    }
+
+    private Tab createSettingsTab() {
+        SettingsView settingsView = new SettingsView(this);
+        Tab tab = new Tab("設定", settingsView);
+        tab.setClosable(false);
+        tab.setOnSelectionChanged(e -> { if (tab.isSelected()) settingsView.refresh(); });
         return tab;
     }
 

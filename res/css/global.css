@@ -182,15 +182,25 @@
 /* 捲軸 */
 .scroll-bar .thumb {
     -fx-background-color: -my-secondary-color;
-    -fx-background-insets: 3;
+    -fx-background-insets: 4;
     -fx-background-radius: 5;
 }
 .scroll-bar,
 .scroll-bar .track,
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button,
 .scroll-bar .corner {
+    -fx-background-insets: 2;
+    -fx-background-radius: 5;
     -fx-background-color: -my-primary-color;
+}
+
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button {
+    -fx-padding: 0;
+    -fx-pref-width: 15;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+    -fx-opacity: 0;
 }
 
 /* 詳細視窗 */
@@ -448,4 +458,114 @@
 
 .stats-view .label {
     -fx-text-fill: -my-stats-label-color;
+}
+
+.settings-card {
+    -fx-background-color: derive(-my-heatmap-1, -5%);
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, -my-stats-card-shadow-color, 5, 0, 0, 2);
+    -fx-border-color: -my-stats-card-border-color;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8;
+}
+
+/* 設定頁 ListView */
+.label.settings {
+    -fx-text-fill: -my-text-color;
+    -fx-font-size: 18px; 
+    -fx-font-weight: bold;
+}
+.settings-list {
+    -fx-pref-height: 212;
+    -fx-background-color: derive(-my-heatmap-2, -20%);
+    -fx-background-insets: 0;
+    -fx-border-color: -my-border-color;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+}
+.settings-list .list-cell {
+    -fx-background-color: derive(-my-heatmap-2, -10%);
+    -fx-text-fill: -my-text-color;
+    -fx-font-size: 14px;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+    -fx-background-radius: 6;
+    -fx-background-insets: 1;
+    -fx-border-width: 0;
+}
+.settings-list .list-cell:odd {
+    -fx-background-color: derive(-my-heatmap-2, -25%);
+}
+.settings-list .list-cell:selected {
+    -fx-background-color: -my-border-color, derive(-my-btn-primary-color, -10%);
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 7, 5;
+}
+.settings-list .list-cell:selected:hover {
+    -fx-background-color: -my-border-color, -my-btn-primary-hover-color;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 7, 5;
+}
+/* Settings toggle section */
+.label.settings-toggle-label {
+    -fx-text-fill: -my-text-color;
+    -fx-font-size: 14px;
+}
+.segment-btn {
+    -fx-background-color: derive(-my-heatmap-2, -10%);
+    -fx-text-fill: -my-text-color;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-effect: none;
+    -fx-padding: 5 14;
+    -fx-cursor: hand;
+    -fx-border-color: -my-border-color;
+    -fx-border-width: 1.5;
+    -fx-translate-y: 0;
+    -fx-opacity: 0.5;
+}
+.segment-btn-left {
+    -fx-background-radius: 8 0 0 8;
+    -fx-border-radius: 8 0 0 8;
+}
+.segment-btn-right {
+    -fx-background-radius: 0 8 8 0;
+    -fx-border-radius: 0 8 8 0;
+}
+.segment-btn:selected {
+    -fx-background-color: derive(-my-heatmap-2, 35%);
+    -fx-opacity: 1.0;
+}
+.segment-btn:hover {
+    -fx-translate-y: 0;
+    -fx-opacity: 0.75;
+}
+.segment-btn:selected:hover {
+    -fx-background-color: derive(-my-heatmap-2, 45%);
+    -fx-translate-y: 0;
+    -fx-opacity: 1.0;
+}
+.toggle-switch .toggle-track {
+    -fx-background-color: #555;
+    -fx-background-radius: 13;
+}
+.toggle-switch:selected .toggle-track {
+    -fx-background-color: -my-btn-primary-color;
+}
+.toggle-switch .toggle-thumb {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 4, 0, 0, 1);
+}
+.settings-list-row-even {
+    -fx-background-color: derive(-my-heatmap-2, -10%);
+    -fx-background-radius: 6;
+    -fx-background-insets: 1;
+}
+.settings-list-row-odd {
+    -fx-background-color: derive(-my-heatmap-2, -25%);
+    -fx-background-radius: 6;
+    -fx-background-insets: 1;
 }
