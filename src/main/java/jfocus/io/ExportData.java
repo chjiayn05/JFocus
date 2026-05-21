@@ -15,6 +15,7 @@ import java.util.function.UnaryOperator;
 import jfocus.activity.ActivityRecord;
 import jfocus.activity.ActivityRepository;
 import jfocus.activity.JdbcActivityRepository;
+import jfocus.ai.BrowserTitleCleaner;
 import jfocus.ai.TextProcessor;
 import jfocus.ai.TrainingMetadata;
 import jfocus.db.AppPaths;
@@ -159,8 +160,12 @@ public class ExportData {
     }
 
     private String toTrainingLine(ActivityRecord activity) {
-        String cleanApp = textCleaner.apply(activity.appName());
-        String cleanTitle = textCleaner.apply(activity.windowTitle());
+        boolean browserActivity = BrowserTitleCleaner.isBrowserApp(activity.appName());
+        String rawTitle = browserActivity
+                ? BrowserTitleCleaner.extractImportantTitle(activity.appName(), activity.windowTitle())
+                : activity.windowTitle();
+        String cleanApp = browserActivity ? "" : textCleaner.apply(activity.appName());
+        String cleanTitle = textCleaner.apply(rawTitle);
 
         if (cleanApp.isBlank() && cleanTitle.isBlank()) {
             return "";
