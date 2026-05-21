@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import time  # 👈 【新增】確認最上面有這行
 
 # 設定路徑
 BASE_SAVE_PATH = "./res/pokemon"
@@ -60,19 +61,49 @@ def fetch_metadata():
             with open(os.path.join(folder_path, f"stage{i}.png"), 'wb') as f:
                 f.write(img_data)
 
-            # 2. 抓取描述 (PokeAPI)
+# 2. 抓取描述與名稱 (PokeAPI) - 大小寫通殺版
             try:
-                species_url = f"https://pokeapi.co/api/v2/pokemon-species/{pkmn_id}/"
-                res = requests.get(species_url).json()
-                # 尋找繁體中文描述
-                desc = next((entry['flavor_text'] for entry in res['flavor_text_entries'] 
-                            if entry['language']['name'] == 'zh-Hant'), "這是一隻神秘的寶可夢。")
-                family_entry["stages"].append(desc.replace('\n', ' '))
+                real_id = int(pkmn_id) 
+                species_url = f"https://pokeapi.co/api/v2/pokemon-species/{real_id}/"
+                
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                response = requests.get(species_url, headers=headers, timeout=10)
+                response.raise_for_status() 
+                res = response.json()
+                
+                # --- 【關鍵修正】把 API 給的語言標籤強制轉小寫 (.lower()) ---
+                names_dict = { n['language']['name'].lower(): n['name'] for n in res.get('names', []) }
+                
+                # 這裡改用全小寫去字典裡面撈資料！
+                zh_name = names_dict.get('zh-hant', names_dict.get('zh-hans', '未知精靈'))
+                
+                if "stageNames" not in family_entry:
+                    family_entry["stageNames"] = []
+                family_entry["stageNames"].append(zh_name)
+
+                if i == 1:
+                    family_entry["name"] = zh_name 
+                    print(f"  ✅ 成功抓到家族: {zh_name}")
+                else:
+                    print(f"  ✨ 階段 {i} 專屬名稱: {zh_name}") 
+
+                # --- 抓取描述 (一樣強制轉小寫) ---
+                desc_dict = {}
+                for desc_info in res.get('flavor_text_entries', []):
+                    lang = desc_info['language']['name'].lower() 
+                    if 'zh' in lang:
+                        desc_dict[lang] = desc_info['flavor_text'].replace('\n', '').replace('\f', '')
+                        
+                zh_desc = desc_dict.get('zh-hant', desc_dict.get('zh-hans', "這是一隻神秘的寶可夢。"))
+                family_entry["stages"].append(zh_desc)
+
+                time.sleep(0.5) 
+
             except Exception as e:
-                print(f"⚠️ 讀取 {pkmn_id} 描述失敗: {e}")
+                print(f"  ⚠️ API 讀取失敗: {e}")
+                if "stageNames" not in family_entry: family_entry["stageNames"] = []
+                family_entry["stageNames"].append("未知精靈")
                 family_entry["stages"].append("資料讀取失敗。")
-            
-            print(f"已完成: {folder_name} Stage {i}")
 
         pokedex_data.append(family_entry)
 

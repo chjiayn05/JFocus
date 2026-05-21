@@ -1,0 +1,95 @@
+/* ==========================================
+   PokemonDark.css (純淨深色 + 白底卡片)
+   ========================================== */
+
+   
+.root {
+    -fx-background-color: #1a1a1a; /* 純淨深色背景 */
+    -fx-font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+}
+.label { -fx-text-fill: #726464; }
+
+/* 頂部狀態列 */
+.top-bar { -fx-background-color: #121212; }
+.top-bar .label { -fx-text-fill: #ffffff; -fx-font-weight: bold; }
+
+/* 分頁標籤 */
+.tab-pane .tab-header-area .tab-header-background { -fx-background-color: #0a0a0a; }
+.tab {
+    -fx-background-color: #2a2a2a;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 8 20;
+}
+.tab .tab-label { -fx-text-fill: #888888; -fx-font-weight: bold; }
+.tab:selected { -fx-background-color: #FFCB05; }
+.tab:selected .tab-label { -fx-text-fill: #1a1a1a; }
+
+/* 按鈕 */
+.button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-background-radius: 20;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);
+}
+.button:hover { -fx-background-color: #2980b9; -fx-translate-y: -2px; }
+
+/* ==========================================
+   【關鍵修復】拔除 ScrollPane 的刺眼白底
+   ========================================== */
+.scroll-pane, .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* 黃底卡片 (浮在深色背景上) */
+.pokemon-card {
+    -fx-background-color: #f1e0b1; 
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 10, 0, 0, 4); /* 加深陰影，讓卡片更立體 */
+}
+.pokemon-card:hover {
+    -fx-border-color: #FFCB05; 
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+}
+
+/* 經驗條 */
+.progress-bar .track { -fx-background-color: #2a2a2a; -fx-background-radius: 10; }
+.progress-bar .bar { -fx-background-color: #FFCB05; -fx-background-radius: 8; }
+
+/* 屬性標籤 */
+.type-tag { -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 12px; }
+.fire { -fx-background-color: #e84118; }
+.water { -fx-background-color: #00a8ff; }
+.grass { -fx-background-color: #4cd137; }
+.electric { -fx-background-color: #fbc531; -fx-text-fill: #2f3640; }
+.normal { -fx-background-color: #7f8fa6; }
+
+/* ==========================================
+   【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
+   讓最底層 (.root) 的漂亮背景色完美透出來
+   ========================================== */
+.tab-pane,
+.tab-pane .tab-content-area,
+.scroll-pane, 
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* 讓屬性變成一個漂亮的圓角標籤 */
+.type-badge {
+    -fx-background-color: #3498db; /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
+    -fx-background-radius: 15;     /* 圓角 */
+    -fx-padding: 5 15 5 15;        /* 內邊距，讓它看起來像一顆膠囊 */
+}
+
+/* 確保裡面的字永遠是白色且清晰 */
+.type-text {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}

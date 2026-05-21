@@ -18,8 +18,6 @@ import java.util.Set;
 public class DatabaseCore {
     private static final String DB_URL_PROPERTY = "jfocus.db.url";
     private static final String DB_URL_ENV = "JFOCUS_DB_URL";
-    private static final String DB_AUTO_INIT_PROPERTY = "jfocus.db.auto-init";
-    private static final String DB_AUTO_INIT_ENV = "JFOCUS_DB_AUTO_INIT";
 
     private final String url;
 
@@ -58,24 +56,6 @@ public class DatabaseCore {
     }
 
     /**
-     * 取得是否啟用 repository 建構時自動初始化資料庫。
-     *
-     * 預設為 true，可透過 jfocus.db.auto-init 或 JFOCUS_DB_AUTO_INIT 覆蓋。
-     */
-    public static boolean isAutoInitializeEnabled() {
-        String configured = System.getProperty(DB_AUTO_INIT_PROPERTY);
-        if (configured == null || configured.isBlank()) {
-            configured = System.getenv(DB_AUTO_INIT_ENV);
-        }
-
-        if (configured == null || configured.isBlank()) {
-            return true;
-        }
-
-        return parseBoolean(configured.trim(), true);
-    }
-
-    /**
      * 建立系統所需的資料表，並補齊既有資料庫缺少的欄位。
      */
     public void initialize() {
@@ -92,18 +72,59 @@ public class DatabaseCore {
             );
             """;
 
-        String playerStatsTableSql = """
+       String playerStatsTableSql = """
             CREATE TABLE IF NOT EXISTS player_stats (
                 id INTEGER PRIMARY KEY CHECK (id = 1),
                 coins INTEGER NOT NULL DEFAULT 0,
                 stones INTEGER NOT NULL DEFAULT 0,
-                xp INTEGER NOT NULL DEFAULT 0
+                xp INTEGER NOT NULL DEFAULT 0,
+                partner_id TEXT NOT NULL DEFAULT '004' -- 👈 【新增】夥伴記憶欄位
             );
             """;
 
         String unlockedStagesTableSql = """
             CREATE TABLE IF NOT EXISTS unlocked_stages (
                 stage_key TEXT PRIMARY KEY
+            );
+            """;
+
+        String distractionRulesTableSql = """
+            CREATE TABLE IF NOT EXISTS distraction_rules (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_type TEXT NOT NULL,
+                keyword TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(list_type, keyword)
+            );
+            """;
+
+        String appSettingsTableSql = """
+            CREATE TABLE IF NOT EXISTS app_settings (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            """;
+
+        String todosTableSql = """
+            CREATE TABLE IF NOT EXISTS todos (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                task     TEXT    NOT NULL,
+                deadline TEXT,
+                is_done  INTEGER NOT NULL DEFAULT 0,
+                notes    TEXT
+            );
+            """;
+
+        String focusSessionsTableSql = """
+            CREATE TABLE IF NOT EXISTS focus_sessions (
+                session_id TEXT PRIMARY KEY,
+                subject TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                expected_duration_seconds INTEGER,
+                actual_duration_seconds INTEGER,
+                total_idle_seconds_deducted INTEGER NOT NULL DEFAULT 0
             );
             """;
 
@@ -114,10 +135,18 @@ public class DatabaseCore {
             stmt.execute(activityTableSql);
             stmt.execute(playerStatsTableSql);
             stmt.execute(unlockedStagesTableSql);
-            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
+            stmt.execute(distractionRulesTableSql);
+            stmt.execute(appSettingsTableSql);
+            stmt.execute(todosTableSql);
+            stmt.execute(focusSessionsTableSql);
+
+            // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
+            ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");
+            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp, partner_id) VALUES (1, 0, 0, 0, '004')");
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
+            ensureKeywordOnlyDistractionRulesTable(conn);
             ensureIndexes(stmt);
             System.out.println("✅ DatabaseCore: SQLite 資料庫與資料表已就緒！");
         } catch (SQLException e) {
@@ -146,19 +175,7 @@ public class DatabaseCore {
 
         return "jdbc:sqlite:" + AppPaths.getDatabasePath();
     }
-
-    private static boolean parseBoolean(String value, boolean defaultValue) {
-        if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("1")
-                || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("on")) {
-            return true;
-        }
-        if (value.equalsIgnoreCase("false") || value.equalsIgnoreCase("0")
-                || value.equalsIgnoreCase("no") || value.equalsIgnoreCase("off")) {
-            return false;
-        }
-        return defaultValue;
-    }
-
+    
     private void ensureDatabaseDirectory() {
         if (!url.startsWith("jdbc:sqlite:")) {
             return;
@@ -204,5 +221,68 @@ public class DatabaseCore {
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_start_time ON activities(start_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_end_time ON activities(end_time)");
         stmt.execute("CREATE INDEX IF NOT EXISTS idx_activities_session_id ON activities(session_id)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_distraction_rules_type ON distraction_rules(list_type)");
+        stmt.execute("CREATE INDEX IF NOT EXISTS idx_distraction_rules_type_keyword ON distraction_rules(list_type, keyword)");
+    }
+
+    private void ensureKeywordOnlyDistractionRulesTable(Connection conn) throws SQLException {
+        Set<String> columns = getColumns(conn, "distraction_rules");
+        if (columns.contains("keyword")
+                && !columns.contains("app_name")
+                && !columns.contains("window_title")) {
+            return;
+        }
+
+        String migrationSql = """
+            CREATE TABLE IF NOT EXISTS distraction_rules_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                list_type TEXT NOT NULL,
+                keyword TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(list_type, keyword)
+            )
+            """;
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(migrationSql);
+            if (columns.contains("keyword")) {
+                stmt.executeUpdate("""
+                    INSERT OR IGNORE INTO distraction_rules_new(list_type, keyword, created_at)
+                    SELECT list_type, trim(keyword), created_at
+                    FROM distraction_rules
+                    WHERE trim(keyword) <> ''
+                    """);
+            } else if (columns.contains("app_name") || columns.contains("window_title")) {
+                stmt.executeUpdate("""
+                    INSERT OR IGNORE INTO distraction_rules_new(list_type, keyword, created_at)
+                    SELECT list_type,
+                           trim(
+                               CASE
+                                   WHEN app_name <> '' AND window_title <> '' THEN app_name || ' ' || window_title
+                                   WHEN app_name <> '' THEN app_name
+                                   ELSE window_title
+                               END
+                           ),
+                           created_at
+                    FROM distraction_rules
+                    WHERE trim(app_name) <> '' OR trim(window_title) <> ''
+                    """);
+            }
+            stmt.execute("DROP TABLE distraction_rules");
+            stmt.execute("ALTER TABLE distraction_rules_new RENAME TO distraction_rules");
+        }
+    }
+
+    private Set<String> getColumns(Connection conn, String tableName) throws SQLException {
+        Set<String> columns = new HashSet<>();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + tableName + ")")) {
+            while (rs.next()) {
+                columns.add(rs.getString("name"));
+            }
+        }
+
+        return columns;
     }
 }

@@ -16,6 +16,7 @@ import jfocus.activity.ActivityRecord;
 import jfocus.activity.ActivityRepository;
 import jfocus.activity.JdbcActivityRepository;
 import jfocus.ai.TextProcessor;
+import jfocus.ai.TrainingMetadata;
 import jfocus.db.AppPaths;
 import jfocus.db.DatabaseCore;
 import jfocus.db.StorageException;
@@ -23,7 +24,6 @@ import jfocus.db.StorageException;
 /* 匯出資料庫內容供模型訓練使用。 */
 public class ExportData {
     private static final int DEFAULT_BATCH_SIZE = 1000;
-    private static final String META_SUFFIX = ".lastid";
 
     private final ActivityRepository repository;
     private final UnaryOperator<String> textCleaner;
@@ -70,11 +70,10 @@ public class ExportData {
      */
     public int exportNewDataToTxt(String filePath) {
         Path outputPath = validateAndGetOutputPath(filePath);
-        Path metaPath = resolveMetaPath(outputPath);
 
-        int lastExportedId = readLastExportedId(metaPath);
+        int lastExportedId = TrainingMetadata.getLastExportedId(outputPath);
         int currentMaxId = exportNewDataToTxt(lastExportedId, filePath);
-        writeLastExportedId(metaPath, currentMaxId);
+        TrainingMetadata.setLastExportedId(outputPath, currentMaxId);
         return currentMaxId;
     }
 
@@ -91,6 +90,9 @@ public class ExportData {
         }
 
         int currentMaxId = lastExportedId;
+        int processed = 0;
+        int written = 0;
+        int skipped = 0;
         Path outputPath = validateAndGetOutputPath(filePath);
         createParentDirectories(outputPath);
 
@@ -107,13 +109,16 @@ public class ExportData {
                 }
 
                 for (ActivityRecord activity : activities) {
+                    processed++;
                     String line = toTrainingLine(activity);
                     currentMaxId = activity.id();
                     if (line.isEmpty()) {
+                        skipped++;
                         continue;
                     }
                     writer.write(line);
                     writer.newLine();
+                    written++;
                 }
 
                 if (activities.size() < DEFAULT_BATCH_SIZE) {
@@ -122,6 +127,12 @@ public class ExportData {
             }
         } catch (IOException e) {
             throw new StorageException("匯出失敗", e);
+        }
+
+        if (processed == 0) {
+            System.out.println("ℹ️ 無新活動資料可匯出。lastId=" + lastExportedId + ", 輸出檔=" + outputPath);
+        } else {
+            System.out.println("📊 匯出摘要 -> 處理: " + processed + ", 寫入: " + written + ", 略過: " + skipped + ", 最新ID: " + currentMaxId);
         }
 
         return currentMaxId;
@@ -145,66 +156,6 @@ public class ExportData {
             throw new IllegalArgumentException("filePath cannot be null or blank");
         }
         return Path.of(filePath);
-    }
-
-    private Path resolveMetaPath(Path outputPath) {
-        Path normalized = outputPath.toAbsolutePath().normalize();
-        Path fileName = normalized.getFileName();
-        if (fileName == null) {
-            throw new IllegalArgumentException("filePath must point to a file");
-        }
-
-        return normalized.resolveSibling(fileName + META_SUFFIX);
-    }
-
-    private int readLastExportedId(Path metaPath) {
-        if (!Files.exists(metaPath)) {
-            return 0;
-        }
-
-        try {
-            String raw = Files.readString(metaPath, StandardCharsets.UTF_8).trim();
-            if (raw.isEmpty()) {
-                return 0;
-            }
-
-            int lastExportedId = Integer.parseInt(raw);
-            if (lastExportedId < 0) {
-                throw new StorageException("lastExportedId meta 檔不可為負數: " + metaPath, null);
-            }
-            return lastExportedId;
-        } catch (NumberFormatException e) {
-            throw new StorageException("lastExportedId meta 檔格式錯誤: " + metaPath, e);
-        } catch (IOException e) {
-            throw new StorageException("讀取 lastExportedId meta 檔失敗", e);
-        }
-    }
-
-    private void writeLastExportedId(Path metaPath, int id) {
-        if (id < 0) {
-            throw new IllegalArgumentException("id cannot be negative");
-        }
-
-        createParentDirectories(metaPath);
-        Path tempPath = metaPath.resolveSibling(metaPath.getFileName().toString() + ".tmp");
-
-        try {
-            Files.writeString(
-                    tempPath,
-                    Integer.toString(id),
-                    StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-
-            try {
-                Files.move(tempPath, metaPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tempPath, metaPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            throw new StorageException("寫入 lastExportedId meta 檔失敗", e);
-        }
     }
 
     private String toTrainingLine(ActivityRecord activity) {

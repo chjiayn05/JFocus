@@ -39,9 +39,6 @@ public class JdbcActivityRepository implements ActivityRepository {
      */
     public JdbcActivityRepository(DatabaseCore databaseCore) {
         this.databaseCore = Objects.requireNonNull(databaseCore, "databaseCore cannot be null");
-        if (DatabaseCore.isAutoInitializeEnabled()) {
-            this.databaseCore.initialize();
-        }
     }
 
     @Override
