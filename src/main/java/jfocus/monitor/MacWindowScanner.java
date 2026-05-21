@@ -17,21 +17,35 @@ public class MacWindowScanner implements WindowScanner {
                 "    repeat with p in (every process whose visible is true)\n" +
                 "        set pName to name of p\n" +
                 "        try\n" +
-                "            repeat with w in (every window of p)\n" +
+                "            set winList to every window of p\n" +
+                "        on error\n" +
+                "            set winList to {}\n" +
+                "        end try\n" +
+                "        repeat with w in winList\n" +
+                "            try\n" +
                 "                set isMini to false\n" +
                 "                try\n" +
-                "                    set isMini to miniaturized of w\n" +
+                "                    set attrVal to value of attribute \"AXMinimized\" of w\n" +
+                "                    if attrVal is not missing value then\n" +
+                "                        set isMini to attrVal\n" +
+                "                    else\n" +
+                "                        try\n" +
+                "                            set isMini to miniaturized of w\n" +
+                "                        end try\n" +
+                "                    end if\n" +
                 "                on error\n" +
-                "                    set isMini to false\n" +
+                "                    try\n" +
+                "                        set isMini to miniaturized of w\n" +
+                "                    end try\n" +
                 "                end try\n" +
-                "                if isMini is false then\n" +
+                "                if isMini is not true then\n" +
                 "                    set wName to name of w\n" +
                 "                    if wName is not \"\" then\n" +
                 "                        set windowList to windowList & pName & \"::\" & wName & \"\\n\"\n" +
                 "                    end if\n" +
                 "                end if\n" +
-                "            end repeat\n" +
-                "        end try\n" +
+                "            end try\n" +
+                "        end repeat\n" +
                 "    end repeat\n" +
                 "    return windowList\n" +
                 "end tell";
