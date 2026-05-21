@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import jfocus.ai.BrowserTitleCleaner;
 import jfocus.ai.DistractionClassifier;
 import jfocus.ai.distraction.DistractingTargetCloser;
 import jfocus.ai.distraction.DistractionHandlingMode;
@@ -16,12 +17,15 @@ import jfocus.ai.distraction.JdbcDistractionModeRepository;
 import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
 import jfocus.db.DatabaseCore;
 import jfocus.io.PushData;
+import jfocus.main.FocusApp;
 
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
 import jfocus.monitor.WindowSession;
 import jfocus.idle.IdleDetector;
 import jfocus.idle.IdleListener;
+import jfocus.notification.NotificationPayload;
+import jfocus.notification.NotificationSeverity;
 
 public class FocusEngine {
     private static final int SECONDS_PER_HOUR = 3600;
@@ -169,7 +173,21 @@ public class FocusEngine {
     public boolean closeDistractingTarget(WindowSession session) {
         WindowSession validatedSession = Objects.requireNonNull(session, "session cannot be null");
         boolean closeTabOnly = distractionClassifier.isWebsiteActivity(validatedSession.processName, validatedSession.title);
-        return distractingTargetCloser.closeDistractingTarget(validatedSession, closeTabOnly);
+        boolean closed = distractingTargetCloser.closeDistractingTarget(validatedSession, closeTabOnly);
+        if (closed) {
+            String title = BrowserTitleCleaner.extractImportantTitle(
+                    validatedSession.processName,
+                    validatedSession.title);
+            if (title.isBlank()) {
+                title = "分心視窗";
+            }
+            FocusApp.getNotificationService().notify(new NotificationPayload(
+                    "已關閉分心視窗",
+                    "應用程式: " + validatedSession.processName + "\n視窗名稱: " + title,
+                    NotificationSeverity.URGENT,
+                    "FocusEngine"));
+        }
+        return closed;
     }
 
     public void setCurrentSubject(String subject) {
