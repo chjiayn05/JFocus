@@ -68,17 +68,38 @@ public class Win32WindowScanner implements WindowScanner {
                 // 拿視窗的形狀，去扣除目前已經被上層視窗擋住的形狀
                 windowArea.subtract(seenArea);
 
-                // 如果扣除後面積太小 (長或寬小於 50 像素)，代表它被完全或幾乎完全擋住，或是只剩下細條邊框
+                // 1. 基礎大小過濾：如果扣除後的包絡矩形小於 50x50 像素，直接判定為不可見
                 Rectangle visibleBounds = windowArea.getBounds();
                 if (visibleBounds.isEmpty() || visibleBounds.width < 50 || visibleBounds.height < 50) {
                     return true; // 直接跳過，不記錄這個視窗
+                }
+
+                // 2. 網格採樣比例過濾：使用 20x20 的格點均勻抽樣原始視窗區域，計算可見面積比例
+                // 解決 Windows 最大化視窗微小像素位移差 (如 Chrome -9 像素 vs IDE -8 像素) 扣除後產生 1 像素空心口字形框的誤判
+                int gridCount = 20;
+                int visiblePoints = 0;
+                int totalPoints = 0;
+                double stepX = windowRect.width / (double) gridCount;
+                double stepY = windowRect.height / (double) gridCount;
+                for (int i = 0; i < gridCount; i++) {
+                    double px = windowRect.x + (i + 0.5) * stepX;
+                    for (int j = 0; j < gridCount; j++) {
+                        double py = windowRect.y + (j + 0.5) * stepY;
+                        totalPoints++;
+                        if (windowArea.contains(px, py)) {
+                            visiblePoints++;
+                        }
+                    }
+                }
+                double visibleRatio = (double) visiblePoints / totalPoints;
+                if (visibleRatio < 0.15) {
+                    return true; // 剩餘可見面積小於 15% 則跳過，不記錄這個視窗
                 }
 
                 // 如果沒有被完全遮住，就記錄下來
                 long handleValue = Pointer.nativeValue(hWnd.getPointer());
                 String hwndKey = Long.toUnsignedString(handleValue);
                 String title = getWindowTitle(hWnd);
-                
                 IntByReference pidRef = new IntByReference();
                 User32.INSTANCE.GetWindowThreadProcessId(hWnd, pidRef);
                 long processId = pidRef.getValue();
