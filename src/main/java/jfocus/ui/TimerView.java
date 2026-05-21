@@ -11,13 +11,17 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import jfocus.ai.distraction.DistractionHandlingMode;
+import jfocus.db.DatabaseCore;
 import jfocus.engine.FocusEngine;
 import jfocus.engine.FocusListener;
+import jfocus.settings.JdbcTimerSettingsRepository;
+import jfocus.settings.TimerSettings;
 
 public class TimerView extends VBox implements FocusListener {
 
     private GameManager gameManager;
     private FocusEngine engine;
+    private final JdbcTimerSettingsRepository timerSettingsRepository;
 
     // --- 將原本 FocusUI 中的零件搬到這裡 ---
     private Label timerLabel;
@@ -39,6 +43,7 @@ public class TimerView extends VBox implements FocusListener {
     public TimerView(GameManager gameManager) {
 
         this.gameManager = gameManager;
+        this.timerSettingsRepository = new JdbcTimerSettingsRepository(new DatabaseCore());
         // 原本的 startBtn 和 stopBtn
         startBtn = new Button("開始冒險");
         stopBtn = new Button("放棄");
@@ -52,12 +57,14 @@ public class TimerView extends VBox implements FocusListener {
         // 👇 【修改】把 pauseBtn 一起塞進 HBox 裡面
         HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn);
         // 1. 實例化所有 UI 零件
-        timerLabel = new Label("25:00");
+        TimerSettings timerSettings = loadTimerSettingsSafely();
+
+        timerLabel = new Label(String.format("%02d:00", timerSettings.workMinutes()));
         timerLabel.setStyle("-fx-font-size: 60px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        workInput = new TextField("25");
+        workInput = new TextField(String.valueOf(timerSettings.workMinutes()));
         workInput.setPrefWidth(50);
-        breakInput = new TextField("5");
+        breakInput = new TextField(String.valueOf(timerSettings.breakMinutes()));
         breakInput.setPrefWidth(50);
 
         modeSelector = new ComboBox<>();
@@ -74,12 +81,13 @@ public class TimerView extends VBox implements FocusListener {
                 // 番茄鐘模式：解鎖輸入框，恢復預設時間
                 workInput.setDisable(false);
                 breakInput.setDisable(false);
-                try {
-                    int m = Integer.parseInt(workInput.getText().trim());
-                    timerLabel.setText(String.format("%02d:00", Math.max(0, m)));
-                } catch (NumberFormatException ex) {
-                    timerLabel.setText("25:00");
-                }
+                updateTimerLabelFromWorkInput();
+            }
+        });
+        workInput.setOnAction(e -> updateTimerLabelFromWorkInput());
+        workInput.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                updateTimerLabelFromWorkInput();
             }
         });
         pokemonImageView = new ImageView();
@@ -143,12 +151,14 @@ public class TimerView extends VBox implements FocusListener {
 
                 // 🛡️ 提前檢查番茄鐘模式的輸入 (防呆：擋下 0 或負數)
                 if (!"正向碼表".equals(selectedMode)) {
-                    minutes = Integer.parseInt(workInput.getText().trim());
-                    if (minutes <= 0) {
+                    minutes = parsePositiveMinutes(workInput.getText());
+                    int breakMinutes = parsePositiveMinutes(breakInput.getText());
+                    if (minutes <= 0 || breakMinutes <= 0) {
                         statusLabel.setText("⚠️ 時間必須大於 0 分鐘喔！");
                         resetUI(); 
                         return; // 直接中斷，不讓計時器啟動
                     }
+                    saveTimerSettingsSafely(minutes, breakMinutes);
                 }
 
                 // 切換 UI 狀態 (鎖死開始鍵，解鎖暫停與放棄鍵)
@@ -232,6 +242,44 @@ public class TimerView extends VBox implements FocusListener {
             engine.setDistractionHandlingMode(mode);
         }
     }
+
+    private TimerSettings loadTimerSettingsSafely() {
+        try {
+            return timerSettingsRepository.loadSettings();
+        } catch (RuntimeException ex) {
+            System.err.println("讀取計時器設定失敗，使用預設值: " + ex.getMessage());
+            return TimerSettings.defaults();
+        }
+    }
+
+    private void saveTimerSettingsSafely(int workMinutes, int breakMinutes) {
+        try {
+            timerSettingsRepository.saveSettings(new TimerSettings(workMinutes, breakMinutes));
+        } catch (RuntimeException ex) {
+            statusLabel.setText("計時器設定儲存失敗，但本次冒險仍會開始。");
+            System.err.println("儲存計時器設定失敗: " + ex.getMessage());
+        }
+    }
+
+    private int parsePositiveMinutes(String text) {
+        try {
+            int value = Integer.parseInt(text.trim());
+            return value > 0 ? value : -1;
+        } catch (NumberFormatException ex) {
+            return -1;
+        }
+    }
+
+    private void updateTimerLabelFromWorkInput() {
+        if ("正向碼表".equals(modeSelector.getValue()) || startBtn.isDisable()) {
+            return;
+        }
+
+        int minutes = parsePositiveMinutes(workInput.getText());
+        if (minutes > 0) {
+            timerLabel.setText(String.format("%02d:00", minutes));
+        }
+    }
     // ==========================================
     // 實作 FocusListener (接收引擎每秒的回傳)
     // ==========================================
@@ -261,7 +309,11 @@ public class TimerView extends VBox implements FocusListener {
     }
 
     private void resetUI() {
-        int m = Integer.parseInt(workInput.getText());
+        int m = parsePositiveMinutes(workInput.getText());
+        if (m <= 0) {
+            m = TimerSettings.DEFAULT_WORK_MINUTES;
+            workInput.setText(String.valueOf(m));
+        }
         timerLabel.setText(String.format("%02d:00", m));
         startBtn.setDisable(false);
         pauseBtn.setDisable(true); // 鎖死暫停按鈕
