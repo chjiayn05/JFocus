@@ -91,7 +91,7 @@ class DistractedAlert {
 
         Button ignoreButton = createButton("忽略");
         ignoreButton.setOnAction(event -> {
-            // TODO: Ignore this window/session for current focus session.
+            engine.ignoreWindow(session);
             stage.close();
         });
 
