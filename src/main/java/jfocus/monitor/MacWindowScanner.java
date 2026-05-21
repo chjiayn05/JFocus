@@ -16,6 +16,7 @@ public class MacWindowScanner implements WindowScanner {
                 "    set windowList to \"\"\n" +
                 "    repeat with p in (every process whose visible is true)\n" +
                 "        set pName to name of p\n" +
+                "        set pId to unix id of p\n" +
                 "        try\n" +
                 "            set winList to every window of p\n" +
                 "        on error\n" +
@@ -41,7 +42,7 @@ public class MacWindowScanner implements WindowScanner {
                 "                if isMini is not true then\n" +
                 "                    set wName to name of w\n" +
                 "                    if wName is not \"\" then\n" +
-                "                        set windowList to windowList & pName & \"::\" & wName & \"\\n\"\n" +
+                "                        set windowList to windowList & pName & \"::\" & pId & \"::\" & wName & \"\\n\"\n" +
                 "                    end if\n" +
                 "                end if\n" +
                 "            end try\n" +
@@ -58,13 +59,16 @@ public class MacWindowScanner implements WindowScanner {
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty())
                     continue;
-                String[] parts = line.split("::", 2);
-                if (parts.length == 2) {
+                String[] parts = line.split("::", 3);
+                if (parts.length == 3) {
                     String processName = parts[0].trim();
-                    String title = parts[1].trim();
+                    long pid = Long.parseLong(parts[1].trim());
+                    String title = parts[2].trim();
                     // 把 "ProcessName::WindowTitle" 當成唯一識別碼
                     String windowKey = processName + "::" + title;
-                    currentScan.put(windowKey, new WindowSession(windowKey, processName, title));
+                    WindowSession session = new WindowSession(windowKey, processName, title);
+                    session.pid = pid;
+                    currentScan.put(windowKey, session);
                 }
             }
             p.waitFor();

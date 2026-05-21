@@ -78,9 +78,16 @@ public class Win32WindowScanner implements WindowScanner {
                 long handleValue = Pointer.nativeValue(hWnd.getPointer());
                 String hwndKey = Long.toUnsignedString(handleValue);
                 String title = getWindowTitle(hWnd);
+                
+                IntByReference pidRef = new IntByReference();
+                User32.INSTANCE.GetWindowThreadProcessId(hWnd, pidRef);
+                long processId = pidRef.getValue();
+                
                 String processName = getProcessName(hWnd);
 
-                currentScan.put(hwndKey, new WindowSession(hwndKey, processName, title));
+                WindowSession session = new WindowSession(hwndKey, processName, title);
+                session.pid = processId;
+                currentScan.put(hwndKey, session);
 
                 // 最後，把這個視窗的完整形狀疊加到「已遮蔽畫布」上，讓下一個底層視窗進行比對
                 seenArea.add(new Area(windowRect));

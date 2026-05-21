@@ -93,6 +93,9 @@ public class SessionMonitor {
 
         Map<String, WindowSession> currentScan = scanner.scanWindows();
 
+        // 核心過濾：排除專案本身的視窗（如主畫面、分心提醒、冒險結算、放棄冒險等）
+        currentScan.entrySet().removeIf(entry -> isJFocusWindow(entry.getValue()));
+
         activeSessions.entrySet().removeIf(entry -> {
             if (!currentScan.containsKey(entry.getKey())) {
                 WindowSession endedSession = entry.getValue();
@@ -118,5 +121,41 @@ public class SessionMonitor {
                 System.out.println("監控啟動: 偵測到新視窗: " + session.title);
             }
         });
+    }
+
+    private boolean isJFocusWindow(WindowSession session) {
+        if (session == null) {
+            return false;
+        }
+
+        // 1. 優先比對 Process ID：如果是當前 JFocus JVM 進程產生的所有視窗，一律直接過濾排除
+        try {
+            long currentPid = ProcessHandle.current().pid();
+            if (session.pid == currentPid) {
+                return true;
+            }
+        } catch (Exception e) {
+            // 忽略取得 PID 的例外，繼續使用下方的特徵名稱 Fallback 判斷
+        }
+
+        // 2. Fallback 機制：比對進程名稱與 JFocus 專屬視窗標題特徵
+        if (session.processName == null || session.title == null) {
+            return false;
+        }
+        String proc = session.processName.toLowerCase();
+        String title = session.title.toLowerCase();
+
+        boolean isJava = proc.contains("java") || proc.contains("jfocus");
+        boolean isJFocusTitle = title.contains("jfocus")
+                || title.contains("pokemon")
+                || title.contains("sentinel")
+                || title.contains("分心")
+                || title.contains("冒險")
+                || title.contains("結束")
+                || title.contains("提醒")
+                || title.contains("結算")
+                || title.contains("放棄");
+
+        return isJava && isJFocusTitle;
     }
 }
