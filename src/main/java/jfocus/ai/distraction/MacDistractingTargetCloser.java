@@ -28,14 +28,16 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
             """;
 
     private static final String TARGETED_TAB_CLOSE_SCRIPT_TEMPLATE = """
+            tell application "%s" to activate
+            delay 0.2
             tell application "System Events"
                 tell process "%s"
                     set frontmost to true
                     try
                         perform action "AXRaise" of window "%s"
                     end try
-                    keystroke "%s" using {%s}
                 end tell
+                keystroke "%s" using {%s}
             end tell
             """;
 
@@ -72,8 +74,8 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
         String script;
         if (!escapedTitle.isBlank()) {
             script = closeTabOnly
-                    ? TARGETED_TAB_CLOSE_SCRIPT_TEMPLATE.formatted(escapedProcessName, escapedTitle, TAB_CLOSE_KEY,
-                            COMMAND_KEY)
+                    ? TARGETED_TAB_CLOSE_SCRIPT_TEMPLATE.formatted(escapedProcessName, escapedProcessName,
+                            escapedTitle, TAB_CLOSE_KEY, COMMAND_KEY)
                     : TARGETED_CLOSE_SCRIPT_TEMPLATE.formatted(escapedProcessName, escapedTitle, escapedTitle,
                             TAB_CLOSE_KEY, COMMAND_KEY);
         } else {

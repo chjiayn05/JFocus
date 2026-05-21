@@ -3,6 +3,7 @@ package jfocus.ui;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -15,6 +16,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleButton;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -24,6 +27,7 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import jfocus.engine.FocusEngine;
 import jfocus.monitor.WindowSession;
 
@@ -32,6 +36,7 @@ public class DistractedAlert {
     private static final double WINDOW_WIDTH = 460;
     private static final double PANEL_HEIGHT = 380;
     private static final double CONTENT_WRAP_WIDTH = 390;
+    private static final Duration FOREGROUND_WATCHDOG_INTERVAL = Duration.seconds(1.5);
     private static final Set<String> ACTIVE_ALERT_KEYS = new HashSet<>();
 
     private final FocusEngine engine;
@@ -39,6 +44,7 @@ public class DistractedAlert {
     private final Stage stage;
     private final List<Stage> blockerStages = new ArrayList<>();
     private final StackPane overlay;
+    private Timeline foregroundWatchdog;
     private final String alertKey;
 
     public DistractedAlert(FocusEngine engine, WindowSession session) {
@@ -65,12 +71,14 @@ public class DistractedAlert {
         }
         showWarningPanel();
         stage.setOnHidden(event -> {
+            stopForegroundWatchdog();
             closeBlockerStages();
             unregisterActiveAlert();
         });
         showBlockerStages();
         stage.show();
-        stage.toFront();
+        startForegroundWatchdog();
+        forceAlertToForeground();
     }
 
     private void showWarningPanel() {
@@ -91,6 +99,9 @@ public class DistractedAlert {
 
         Button closeButton = createButton("關閉視窗");
         closeButton.setOnAction(event -> {
+            stopForegroundWatchdog();
+            stage.hide();
+            closeBlockerStages();
             boolean closed = engine.closeDistractingTarget(session);
             if (!closed) {
                 System.err.println("無法關閉分心視窗或分頁: " + safeText(session.title));
@@ -330,6 +341,65 @@ public class DistractedAlert {
             blocker.close();
         }
         blockerStages.clear();
+    }
+
+    private void startForegroundWatchdog() {
+        stopForegroundWatchdog();
+        foregroundWatchdog = new Timeline(new KeyFrame(FOREGROUND_WATCHDOG_INTERVAL, event -> forceAlertToForeground()));
+        foregroundWatchdog.setCycleCount(Timeline.INDEFINITE);
+        foregroundWatchdog.play();
+    }
+
+    private void stopForegroundWatchdog() {
+        if (foregroundWatchdog != null) {
+            foregroundWatchdog.stop();
+            foregroundWatchdog = null;
+        }
+    }
+
+    private void forceAlertToForeground() {
+        stage.setAlwaysOnTop(true);
+        stage.toFront();
+        stage.requestFocus();
+        Platform.runLater(() -> {
+            stage.toFront();
+            stage.requestFocus();
+        });
+
+        if (isMacOS()) {
+            bringCurrentProcessToFrontOnMac();
+        }
+    }
+
+    private void bringCurrentProcessToFrontOnMac() {
+        Thread foregroundThread = new Thread(() -> {
+            long pid = ProcessHandle.current().pid();
+            String script = """
+                    tell application "System Events"
+                        set frontmost of first application process whose unix id is %d to true
+                    end tell
+                    """.formatted(pid);
+
+            try {
+                Process process = new ProcessBuilder("/usr/bin/osascript", "-e", script).start();
+                process.waitFor();
+            } catch (Exception e) {
+                System.err.println("無法將分心提醒切到前景: " + e.getMessage());
+            }
+
+            Platform.runLater(() -> {
+                stage.toFront();
+                stage.requestFocus();
+            });
+        }, "jfocus-alert-foreground");
+        foregroundThread.setDaemon(true);
+        foregroundThread.start();
+    }
+
+    private boolean isMacOS() {
+        return System.getProperty("os.name", "")
+                .toLowerCase(Locale.ROOT)
+                .contains("mac");
     }
 
     private String safeText(String value) {
