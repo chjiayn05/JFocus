@@ -70,6 +70,13 @@ public final class BrowserTitleCleaner {
         return isUsefulTitlePart(title) ? title : "";
     }
 
+    public static String cleanForStorage(String appName, String windowTitle) {
+        if (isBrowserApp(appName)) {
+            return extractImportantTitle(appName, windowTitle);
+        }
+        return trimToEmpty(windowTitle);
+    }
+
     public static String stripBrowserSuffix(String title) {
         String normalizedTitle = normalize(title);
         normalizedTitle = NOTIFICATION_BADGE_PATTERN.matcher(normalizedTitle).replaceFirst("").trim();
@@ -88,5 +95,12 @@ public final class BrowserTitleCleaner {
             return "";
         }
         return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String trimToEmpty(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim();
     }
 }
