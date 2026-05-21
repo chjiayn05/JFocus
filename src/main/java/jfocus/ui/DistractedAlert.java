@@ -1,5 +1,6 @@
 package jfocus.ui;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +32,7 @@ import javafx.util.Duration;
 import jfocus.engine.FocusEngine;
 import jfocus.monitor.WindowSession;
 
-public class DistractedAlert {
+class DistractedAlert {
     private static final int MAX_SELECTED_KEYWORDS = 3;
     private static final double WINDOW_WIDTH = 460;
     private static final double PANEL_HEIGHT = 380;
@@ -322,11 +323,11 @@ public class DistractedAlert {
         blocker.initStyle(StageStyle.TRANSPARENT);
         blocker.setAlwaysOnTop(true);
 
-        StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(15, 23, 42, 0.45);");
+        StackPane blockerOverlay = new StackPane();
+        blockerOverlay.setStyle("-fx-background-color: rgba(15, 23, 42, 0.45);");
 
         var bounds = screen.getVisualBounds();
-        Scene scene = new Scene(overlay, bounds.getWidth(), bounds.getHeight());
+        Scene scene = new Scene(blockerOverlay, bounds.getWidth(), bounds.getHeight());
         scene.setFill(Color.TRANSPARENT);
         blocker.setScene(scene);
         blocker.setX(bounds.getMinX());
@@ -383,7 +384,10 @@ public class DistractedAlert {
             try {
                 Process process = new ProcessBuilder("/usr/bin/osascript", "-e", script).start();
                 process.waitFor();
-            } catch (Exception e) {
+            } catch (IOException e) {
+                System.err.println("無法將分心提醒切到前景: " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 System.err.println("無法將分心提醒切到前景: " + e.getMessage());
             }
 
