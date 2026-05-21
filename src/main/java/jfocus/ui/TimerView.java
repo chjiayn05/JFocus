@@ -142,7 +142,7 @@ public class TimerView extends VBox implements FocusListener {
         );
 
         // 4. 掛載組員寫的引擎與按鈕事件
-        this.engine = new FocusEngine(this);
+        this.engine = createFocusEngine();
 
         startBtn.setOnAction(e -> {
             try {
@@ -216,7 +216,7 @@ public class TimerView extends VBox implements FocusListener {
             if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
                 // 玩家按下「確定」：執行原本的停止邏輯
                 engine.shutdown();
-                engine = new FocusEngine(this); // 重新建立引擎準備下次使用
+                engine = createFocusEngine(); // 重新建立引擎準備下次使用
                 resetUI();
                 statusLabel.setText("冒險已取消。");
             } else {
@@ -224,6 +224,13 @@ public class TimerView extends VBox implements FocusListener {
                 System.out.println("玩家取消了放棄操作。");
             }
         });
+    }
+
+    private FocusEngine createFocusEngine() {
+        FocusEngine newEngine = new FocusEngine(this);
+        newEngine.setDistractionUserNotifier(session ->
+                Platform.runLater(() -> DistractedAlert.showIfNotShowing(newEngine, session)));
+        return newEngine;
     }
 
 

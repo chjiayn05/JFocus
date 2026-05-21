@@ -1,3 +1,4 @@
+STUDY jfocus pokemon focus sentinel
 STUDY java programming tutorial
 STUDY javafx desktop app development
 STUDY python data science library

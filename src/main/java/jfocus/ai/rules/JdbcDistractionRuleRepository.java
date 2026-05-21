@@ -23,18 +23,17 @@ public class JdbcDistractionRuleRepository implements DistractionRuleRepository 
     }
 
     @Override
-    public void saveRule(RuleListType listType, AppWindowRule rule) {
+    public void saveRule(RuleListType listType, KeywordRule rule) {
         Objects.requireNonNull(listType, "listType cannot be null");
         Objects.requireNonNull(rule, "rule cannot be null");
 
-        String sql = "INSERT INTO distraction_rules(list_type, app_name, window_title) VALUES(?,?,?) "
-                + "ON CONFLICT(list_type, app_name, window_title) DO NOTHING";
+        String sql = "INSERT INTO distraction_rules(list_type, keyword) VALUES(?, ?) "
+                + "ON CONFLICT(list_type, keyword) DO NOTHING";
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, listType.name());
-            pstmt.setString(2, normalize(rule.appName()));
-            pstmt.setString(3, normalize(rule.windowTitle()));
+            pstmt.setString(2, normalize(rule.keyword()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("寫入分心規則失敗", e);
@@ -42,17 +41,16 @@ public class JdbcDistractionRuleRepository implements DistractionRuleRepository 
     }
 
     @Override
-    public void deleteRule(RuleListType listType, AppWindowRule rule) {
+    public void deleteRule(RuleListType listType, KeywordRule rule) {
         Objects.requireNonNull(listType, "listType cannot be null");
         Objects.requireNonNull(rule, "rule cannot be null");
 
-        String sql = "DELETE FROM distraction_rules WHERE list_type = ? AND app_name = ? AND window_title = ?";
+        String sql = "DELETE FROM distraction_rules WHERE list_type = ? AND keyword = ?";
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, listType.name());
-            pstmt.setString(2, normalize(rule.appName()));
-            pstmt.setString(3, normalize(rule.windowTitle()));
+            pstmt.setString(2, normalize(rule.keyword()));
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("刪除分心規則失敗", e);
@@ -60,23 +58,20 @@ public class JdbcDistractionRuleRepository implements DistractionRuleRepository 
     }
 
     @Override
-    public boolean matches(RuleListType listType, String appName, String windowTitle) {
+    public boolean matches(RuleListType listType, String text) {
         Objects.requireNonNull(listType, "listType cannot be null");
 
-        String normalizedApp = normalize(appName);
-        String normalizedTitle = normalize(windowTitle);
+        String normalizedText = normalize(text);
 
         String sql = "SELECT 1 FROM distraction_rules "
                 + "WHERE list_type = ? "
-                + "AND (app_name = '' OR instr(?, app_name) > 0) "
-                + "AND (window_title = '' OR instr(?, window_title) > 0) "
+                + "AND instr(?, keyword) > 0 "
                 + "LIMIT 1";
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, listType.name());
-            pstmt.setString(2, normalizedApp);
-            pstmt.setString(3, normalizedTitle);
+            pstmt.setString(2, normalizedText);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next();
@@ -87,19 +82,19 @@ public class JdbcDistractionRuleRepository implements DistractionRuleRepository 
     }
 
     @Override
-    public List<AppWindowRule> getRules(RuleListType listType) {
+    public List<KeywordRule> getRules(RuleListType listType) {
         Objects.requireNonNull(listType, "listType cannot be null");
 
-        String sql = "SELECT app_name, window_title FROM distraction_rules WHERE list_type = ? ORDER BY id ASC";
+        String sql = "SELECT keyword FROM distraction_rules WHERE list_type = ? ORDER BY id ASC";
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, listType.name());
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                List<AppWindowRule> rules = new ArrayList<>();
+                List<KeywordRule> rules = new ArrayList<>();
                 while (rs.next()) {
-                    rules.add(new AppWindowRule(rs.getString("app_name"), rs.getString("window_title")));
+                    rules.add(new KeywordRule(rs.getString("keyword")));
                 }
                 return rules;
             }
