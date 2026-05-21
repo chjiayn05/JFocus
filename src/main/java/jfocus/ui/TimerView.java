@@ -136,7 +136,7 @@ public class TimerView extends VBox implements FocusListener {
         // 4. 掛載組員寫的引擎與按鈕事件
         this.engine = new FocusEngine(this);
 
-startBtn.setOnAction(e -> {
+        startBtn.setOnAction(e -> {
             try {
                 String selectedMode = modeSelector.getValue();
                 int minutes = 0;
@@ -174,7 +174,7 @@ startBtn.setOnAction(e -> {
         });
 
         // 👇 【新增】暫停與繼續的切換邏輯
-// 在 TimerView.java 裡面：
+        // 在 TimerView.java 裡面：
         pauseBtn.setOnAction(e -> {
             if (!isPaused) {
                 isPaused = true;
@@ -192,7 +192,7 @@ startBtn.setOnAction(e -> {
         });
 
 
-stopBtn.setOnAction(e -> {
+        stopBtn.setOnAction(e -> {
             // 1. 建立一個確認視窗 (Confirmation Dialog)
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
             alert.setTitle("放棄冒險");
@@ -217,7 +217,7 @@ stopBtn.setOnAction(e -> {
     }
 
 
-// 給 FocusUI 呼叫的方法：用來更新出戰夥伴的圖片和名字
+    // 給 FocusUI 呼叫的方法：用來更新出戰夥伴的圖片和名字
     public void updatePartnerDisplay(String name, javafx.scene.image.Image image) {
         this.currentPartnerName = name; // 更新名字記憶
         
@@ -260,7 +260,7 @@ stopBtn.setOnAction(e -> {
         });
     }
 
-private void resetUI() {
+    private void resetUI() {
         int m = Integer.parseInt(workInput.getText());
         timerLabel.setText(String.format("%02d:00", m));
         startBtn.setDisable(false);

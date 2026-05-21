@@ -14,6 +14,7 @@ import jfocus.ai.distraction.DistractionUserNotifier;
 import jfocus.ai.distraction.JdbcDistractionModeRepository;
 import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
 import jfocus.db.DatabaseCore;
+import jfocus.io.PushData;
 
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
@@ -43,17 +44,22 @@ public class FocusEngine {
 
     private String currentSubject = "未分類";
     private FocusSessionRecord currentSessionRecord;
+    private final PushData pushData;
 
     private final SessionMonitor sessionMonitor;
     private final IdleDetector idleDetector;
     // 兩個核心控制開關 (使用 volatile 確保跨執行緒讀取安全)
-    private volatile boolean isRunning = false; 
+    private volatile boolean isRunning = false;
     private volatile boolean isPaused = false;
 
     public FocusEngine(FocusListener listener) {
         this(listener,
                 new DistractionClassifier(),
-                FocusEngine::notifyUserToStayFocused,
+                session -> {
+                    if (session != null) {
+                        System.out.println("請勿分心: " + session.title);
+                    }
+                },
                 new SystemAwareDistractingTargetCloser(),
                 new JdbcDistractionModeRepository(new DatabaseCore()));
     }
@@ -74,6 +80,7 @@ public class FocusEngine {
         this.distractionModeRepository = Objects.requireNonNull(distractionModeRepository,
                 "distractionModeRepository cannot be null");
         this.distractionHandlingMode = this.distractionModeRepository.loadMode(DistractionHandlingMode.WARN_USER);
+        this.pushData = new PushData();
 
         this.sessionMonitor = new SessionMonitor(new SessionListener() {
 
@@ -104,10 +111,22 @@ public class FocusEngine {
             // 當視窗關閉時觸發
             @Override
             public void onSessionEnded(WindowSession session) {
-                // TODO: 將結束的 session 寫入資料庫的邏輯
-                // 過濾"新分頁", "要翻譯這個網頁嗎？"
-                // 例如：DatabaseCore.insertActivity(session);
                 System.out.println("視窗關閉: " + session.title);
+                if (session.title == null || session.title.isBlank() ||
+                        session.title.equals("新分頁") || session.title.equals("要翻譯這個網頁嗎？")) {
+                    return;
+                }
+                try {
+                    FocusEngine.this.pushData.insertActivity(
+                            session.processName,
+                            session.title,
+                            session.startTime,
+                            session.endTime,
+                            !session.isDistracted);
+                } catch (Exception e) {
+                    System.err.println("儲存活動明細失敗: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -121,13 +140,6 @@ public class FocusEngine {
                 }
             }
         });
-    }
-
-    private static void notifyUserToStayFocused(WindowSession session) {
-        // TODO Placeholder: 保留給未來的訊息框函式，現在先透過回呼呼叫點串好。
-        if (session != null) {
-            System.out.println("請勿分心: " + session.title);
-        }
     }
 
     public DistractionHandlingMode getDistractionHandlingMode() {
@@ -162,8 +174,6 @@ public class FocusEngine {
         isPaused = false; // 每次開始時重置暫停狀態
     }
 
-
-
     public void start(int seconds) {
         stop();
         this.isPaused = false;
@@ -171,6 +181,7 @@ public class FocusEngine {
         this.originalSeconds = seconds;
         this.currentSeconds = seconds;
 
+        jfocus.main.FocusApp.startNewSession(); // 啟動時計時器自動生成新的 Session ID
         this.currentSessionRecord = new FocusSessionRecord();
         this.currentSessionRecord.sessionId = jfocus.main.FocusApp.getSessionId();
         this.currentSessionRecord.subject = this.currentSubject;
@@ -209,6 +220,7 @@ public class FocusEngine {
         this.isStopwatch = true;
         this.currentSeconds = 0; // 碼表永遠從 0 開始
 
+        jfocus.main.FocusApp.startNewSession(); // 啟動時計時器自動生成新的 Session ID
         this.currentSessionRecord = new FocusSessionRecord();
         this.currentSessionRecord.sessionId = jfocus.main.FocusApp.getSessionId();
         this.currentSessionRecord.subject = this.currentSubject;
@@ -271,15 +283,15 @@ public class FocusEngine {
         sessionMonitor.pause(deductMillis);
     }
 
-// ✅ 正確的恢復計時邏輯
+    // ✅ 正確的恢復計時邏輯
     public void resume() {
         if (!isPaused) {
             return; // 如果根本沒有暫停，就什麼都不做
         }
-        
+
         System.out.println("計時恢復: 使用者回來了，恢復計時與紀錄");
         isPaused = false; // 解除暫停狀態
-        
+
         if (sessionMonitor != null) {
             sessionMonitor.resume(); // 恢復視窗監控
         }
@@ -299,8 +311,13 @@ public class FocusEngine {
                 this.currentSessionRecord.actualDurationSeconds = originalSeconds - currentSeconds;
             }
 
-            // TODO: 將計時 session 數據寫入資料庫
-            // 例如：DatabaseCore.insertFocusSession(this.currentSessionRecord);
+            // 已將計時 session 數據寫入資料庫
+            try {
+                FocusEngine.this.pushData.insertFocusSession(this.currentSessionRecord);
+            } catch (Exception e) {
+                System.err.println("儲存專注 Session 失敗: " + e.getMessage());
+                e.printStackTrace();
+            }
             System.out.println("計時結束準備存入資料庫: Session " + currentSessionRecord.sessionId +
                     " | 科目: " + currentSessionRecord.subject +
                     " | 預期: " + currentSessionRecord.expectedDurationSeconds + "s" +
@@ -314,16 +331,12 @@ public class FocusEngine {
         }
     }
 
-
-// 關閉引擎
-// ✅ 正確的徹底關閉引擎方法 (放在 FocusEngine.java 最下面)
+    // 關閉引擎
     public void shutdown() {
-        // 先呼叫組員寫好的 stop() 來結算資料和停止監控
-        stop(); 
-        
-        // 徹底關閉背景排程器，防止記憶體外洩
+        stop();
+
         if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdownNow(); 
+            scheduler.shutdownNow();
         }
     }
 }

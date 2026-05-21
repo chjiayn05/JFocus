@@ -117,6 +117,18 @@ public class DatabaseCore {
             );
             """;
 
+        String focusSessionsTableSql = """
+            CREATE TABLE IF NOT EXISTS focus_sessions (
+                session_id TEXT PRIMARY KEY,
+                subject TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT,
+                expected_duration_seconds INTEGER,
+                actual_duration_seconds INTEGER,
+                total_idle_seconds_deducted INTEGER NOT NULL DEFAULT 0
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -127,6 +139,7 @@ public class DatabaseCore {
             stmt.execute(distractionRulesTableSql);
             stmt.execute(appSettingsTableSql);
             stmt.execute(todosTableSql);
+            stmt.execute(focusSessionsTableSql);
 
             // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");

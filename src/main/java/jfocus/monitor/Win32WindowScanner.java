@@ -13,6 +13,9 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.RECT;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.win32.W32APIOptions;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
+import com.sun.jna.platform.win32.WinNT.HANDLE;
 
 public class Win32WindowScanner implements WindowScanner {
 
@@ -129,6 +132,33 @@ public class Win32WindowScanner implements WindowScanner {
     private String getProcessName(HWND hWnd) {
         IntByReference pid = new IntByReference();
         User32.INSTANCE.GetWindowThreadProcessId(hWnd, pid);
-        return "PID:" + pid.getValue();
+        int processId = pid.getValue();
+
+        HANDLE hProcess = Kernel32.INSTANCE.OpenProcess(
+                WinNT.PROCESS_QUERY_LIMITED_INFORMATION,
+                false,
+                processId
+        );
+
+        if (hProcess != null) {
+            try {
+                char[] buffer = new char[1024];
+                IntByReference lpdwSize = new IntByReference(buffer.length);
+                if (Kernel32.INSTANCE.QueryFullProcessImageName(hProcess, 0, buffer, lpdwSize)) {
+                    String fullPath = Native.toString(buffer).trim();
+                    int lastSlash = Math.max(fullPath.lastIndexOf('\\'), fullPath.lastIndexOf('/'));
+                    if (lastSlash != -1) {
+                        return fullPath.substring(lastSlash + 1);
+                    }
+                    return fullPath;
+                }
+            } catch (Exception e) {
+                // 忽略錯誤，降級使用 PID
+            } finally {
+                Kernel32.INSTANCE.CloseHandle(hProcess);
+            }
+        }
+
+        return "PID:" + processId;
     }
 }
