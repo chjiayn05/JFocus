@@ -102,6 +102,7 @@ class DistractedAlert {
         Button closeButton = createButton("關閉視窗");
         closeButton.setOnAction(event -> {
             stopForegroundWatchdog();
+            engine.ignoreWindow(session);  // 先 ignore，防止 stage.hide() 釋放鎖後 SessionMonitor 重新觸發通知
             stage.hide();
             closeBlockerStages();
             boolean closed = engine.closeDistractingTarget(session);

@@ -1,26 +1,22 @@
 package jfocus.ai.distraction;
 
-import java.io.IOException;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 
 public class WindowsMediaPauser {
 
-    // char 179 = VK_MEDIA_PLAY_PAUSE，所有響應媒體鍵的應用程式都會暫停
-    private static final String PAUSE_MEDIA_COMMAND =
-            "(New-Object -ComObject WScript.Shell).SendKeys([char]179)";
+    // VK_MEDIA_PLAY_PAUSE = 0xB3，直接注入 OS input stream，不需要前景視窗
+    private static final byte VK_MEDIA_PLAY_PAUSE = (byte) 0xB3;
+    private static final int KEYEVENTF_KEYUP = 0x0002;
+
+    private interface User32Ext extends Library {
+        User32Ext INSTANCE = Native.load("user32", User32Ext.class);
+        void keybd_event(byte bVk, byte bScan, int dwFlags, Pointer dwExtraInfo);
+    }
 
     public static void pauseAllMedia() {
-        Thread thread = new Thread(() -> {
-            try {
-                new ProcessBuilder("powershell", "-NoProfile", "-NonInteractive", "-Command", PAUSE_MEDIA_COMMAND)
-                        .start()
-                        .waitFor();
-            } catch (IOException e) {
-                System.err.println("暫停媒體失敗: " + e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }, "jfocus-media-pauser");
-        thread.setDaemon(true);
-        thread.start();
+        User32Ext.INSTANCE.keybd_event(VK_MEDIA_PLAY_PAUSE, (byte) 0, 0, Pointer.NULL);
+        User32Ext.INSTANCE.keybd_event(VK_MEDIA_PLAY_PAUSE, (byte) 0, KEYEVENTF_KEYUP, Pointer.NULL);
     }
 }
