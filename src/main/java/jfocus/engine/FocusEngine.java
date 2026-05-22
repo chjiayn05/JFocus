@@ -145,9 +145,11 @@ public class FocusEngine {
             public void onIdleStateChanged(boolean isIdle, long idleTimeMillis) {
                 if (isIdle) {
                     pause(idleTimeMillis);
-                } else {
-                    resume();
+                    if (listener != null) {
+                        listener.onIdleDetected(idleTimeMillis);
+                    }
                 }
+                // 使用者回來的 event (!isIdle) 不再自動呼叫 resume()，而是等使用者關掉視窗後由 UI 呼叫 resume()
             }
         });
     }
@@ -333,6 +335,10 @@ public class FocusEngine {
         }
 
         sessionMonitor.pause(deductMillis);
+
+        if (listener != null) {
+            listener.onPaused();
+        }
     }
 
     // ✅ 正確的恢復計時邏輯
@@ -346,6 +352,10 @@ public class FocusEngine {
 
         if (sessionMonitor != null) {
             sessionMonitor.resume(); // 恢復視窗監控
+        }
+
+        if (listener != null) {
+            listener.onResumed();
         }
     }
 
