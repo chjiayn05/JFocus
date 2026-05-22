@@ -117,8 +117,23 @@ public class SessionMonitor {
                 if (listener != null) {
                     listener.onSessionStarted(session);
                 }
+            } else {
+                // 如果已經存在該 HWND，但標題變更了（例如新分頁 -> 搜尋結果）
+                WindowSession existingSession = activeSessions.get(hwnd);
+                if (!existingSession.title.equals(session.title)) {
+                    // 1. 結束舊標題的 Session
+                    existingSession.endTime = java.time.LocalDateTime.now();
+                    if (listener != null) {
+                        listener.onSessionEnded(existingSession);
+                    }
 
-                System.out.println("監控啟動: 偵測到新視窗: " + session.title);
+                    // 2. 替換為新標題的 Session 並啟動判定
+                    activeSessions.put(hwnd, session);
+                    if (listener != null) {
+                        listener.onSessionStarted(session);
+                    }
+                    System.out.println("監控更新: 標題變更 " + existingSession.title + " -> " + session.title);
+                }
             }
         });
     }
