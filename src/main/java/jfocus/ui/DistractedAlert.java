@@ -2,14 +2,14 @@ package jfocus.ui;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
-import javafx.collections.ObservableList;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -17,8 +17,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleButton;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -29,6 +27,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+import jfocus.ai.distraction.SystemAwareMediaPauser;
 import jfocus.engine.FocusEngine;
 import jfocus.monitor.WindowSession;
 
@@ -38,7 +37,8 @@ class DistractedAlert {
     private static final double PANEL_HEIGHT = 380;
     private static final double CONTENT_WRAP_WIDTH = 390;
     private static final Duration FOREGROUND_WATCHDOG_INTERVAL = Duration.seconds(1.5);
-    private static final Set<String> ACTIVE_ALERT_KEYS = new HashSet<>();
+    private static final Object ACTIVE_ALERT_LOCK = new Object();
+    private static String activeAlertKey;
 
     private final FocusEngine engine;
     private final WindowSession session;
@@ -67,6 +67,7 @@ class DistractedAlert {
     }
 
     public void show() {
+        SystemAwareMediaPauser.pauseAllMedia();
         if (!registerActiveAlert()) {
             return;
         }
@@ -414,14 +415,20 @@ class DistractedAlert {
     }
 
     private boolean registerActiveAlert() {
-        synchronized (ACTIVE_ALERT_KEYS) {
-            return ACTIVE_ALERT_KEYS.add(alertKey);
+        synchronized (ACTIVE_ALERT_LOCK) {
+            if (activeAlertKey != null) {
+                return false;
+            }
+            activeAlertKey = alertKey;
+            return true;
         }
     }
 
     private void unregisterActiveAlert() {
-        synchronized (ACTIVE_ALERT_KEYS) {
-            ACTIVE_ALERT_KEYS.remove(alertKey);
+        synchronized (ACTIVE_ALERT_LOCK) {
+            if (Objects.equals(activeAlertKey, alertKey)) {
+                activeAlertKey = null;
+            }
         }
     }
 

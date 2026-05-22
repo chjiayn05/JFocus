@@ -27,6 +27,7 @@ public final class BrowserTitleCleaner {
             "safari",
             "microsoft edge",
             "edge",
+            "youtube",
             "google 搜尋",
             "google search",
             "搜尋",
@@ -60,13 +61,20 @@ public final class BrowserTitleCleaner {
             return title;
         }
 
+        StringBuilder result = new StringBuilder();
         for (String part : TITLE_SEPARATOR_PATTERN.split(title)) {
             String candidate = part.trim();
             if (isUsefulTitlePart(candidate)) {
-                return candidate;
+                if (result.length() > 0) {
+                    result.append(" ");
+                }
+                result.append(candidate);
             }
         }
 
+        if (result.length() > 0) {
+            return result.toString();
+        }
         return isUsefulTitlePart(title) ? title : "";
     }
 

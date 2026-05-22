@@ -11,6 +11,36 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
     private static final String COMMAND_KEY = "command down";
     private static final int APPLESCRIPT_SUCCESS_EXIT_CODE = 0;
 
+    private static final String CHROME_TAB_CLOSE_BY_TITLE_SCRIPT_TEMPLATE = """
+            tell application "%s"
+                set targetTitle to "%s"
+                repeat with browserWindow in windows
+                    repeat with browserTab in tabs of browserWindow
+                        if targetTitle is "" or targetTitle contains (title of browserTab) or (title of browserTab) contains targetTitle then
+                            close browserTab
+                            return "closed"
+                        end if
+                    end repeat
+                end repeat
+            end tell
+            error "tab not found"
+            """;
+
+    private static final String SAFARI_TAB_CLOSE_BY_TITLE_SCRIPT_TEMPLATE = """
+            tell application "Safari"
+                set targetTitle to "%s"
+                repeat with browserWindow in windows
+                    repeat with browserTab in tabs of browserWindow
+                        if targetTitle is "" or targetTitle contains (name of browserTab) or (name of browserTab) contains targetTitle then
+                            close browserTab
+                            return "closed"
+                        end if
+                    end repeat
+                end repeat
+            end tell
+            error "tab not found"
+            """;
+
     private static final String TARGETED_CLOSE_SCRIPT_TEMPLATE = """
             tell application "System Events"
                 tell process "%s"
@@ -71,6 +101,10 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
 
         String escapedProcessName = escapeForAppleScript(session.processName.trim());
         String escapedTitle = session.title == null ? "" : escapeForAppleScript(session.title.trim());
+        if (closeTabOnly && closeBrowserTabByTitle(session.processName.trim(), session.title)) {
+            return true;
+        }
+
         String script;
         if (!escapedTitle.isBlank()) {
             script = closeTabOnly
@@ -85,6 +119,57 @@ public class MacDistractingTargetCloser implements DistractingTargetCloser {
         }
 
         return executeAppleScript(script);
+    }
+
+    private boolean closeBrowserTabByTitle(String appName, String windowTitle) {
+        String targetTitle = extractLikelyTabTitle(windowTitle);
+        if (isChromeFamily(appName)) {
+            return executeAppleScript(CHROME_TAB_CLOSE_BY_TITLE_SCRIPT_TEMPLATE.formatted(
+                    escapeForAppleScript(resolveChromiumApplicationTarget(appName)),
+                    targetTitle));
+        }
+
+        if (isSafari(appName)) {
+            return executeAppleScript(SAFARI_TAB_CLOSE_BY_TITLE_SCRIPT_TEMPLATE.formatted(targetTitle));
+        }
+
+        return false;
+    }
+
+    private boolean isChromeFamily(String appName) {
+        String normalizedName = appName.toLowerCase();
+        return normalizedName.contains("chrome")
+                || normalizedName.contains("edge")
+                || normalizedName.contains("brave");
+    }
+
+    private boolean isSafari(String appName) {
+        return appName.toLowerCase().contains("safari");
+    }
+
+    private String resolveChromiumApplicationTarget(String appName) {
+        String normalizedName = appName.toLowerCase();
+        if (normalizedName.contains("chrome")) {
+            return "/Applications/Google Chrome.app";
+        }
+        if (normalizedName.contains("edge")) {
+            return "/Applications/Microsoft Edge.app";
+        }
+        if (normalizedName.contains("brave")) {
+            return "/Applications/Brave Browser.app";
+        }
+        return appName;
+    }
+
+    private String extractLikelyTabTitle(String windowTitle) {
+        String title = windowTitle == null ? "" : windowTitle.trim();
+        title = title.replaceFirst("^\\(\\d+\\)\\s*", "");
+        title = title.replace(" - 音訊播放中", "");
+        title = title.replace(" - Google Chrome", "");
+        title = title.replace(" - Microsoft Edge", "");
+        title = title.replace(" - Brave Browser", "");
+        title = title.replace(" - Safari", "");
+        return escapeForAppleScript(title.trim());
     }
 
     private boolean executeAppleScript(String script) {

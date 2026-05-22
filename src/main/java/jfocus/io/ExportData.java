@@ -3,10 +3,8 @@ package jfocus.io;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Objects;
@@ -168,6 +166,19 @@ public class ExportData {
         String cleanTitle = textCleaner.apply(rawTitle);
 
         if (cleanApp.isBlank() && cleanTitle.isBlank()) {
+            return "";
+        }
+
+        // 過濾無意義的 YouTube 預設頁面標題
+        String rawTitleLower = rawTitle.strip().toLowerCase();
+        if (rawTitleLower.equals("youtube")
+            || rawTitleLower.equals("訂閱內容 - youtube")
+            || rawTitleLower.equals("觀看紀錄 - youtube")
+            || rawTitleLower.equals("播放清單 - youtube")
+            || rawTitleLower.equals("稍後觀看 - youtube")
+            || rawTitleLower.equals("喜歡的影片 - youtube")
+            || rawTitleLower.equals("電影 - youtube")
+            || rawTitleLower.equals("直播 - youtube")) {
             return "";
         }
 
