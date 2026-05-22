@@ -29,15 +29,8 @@ public class DistractionClassifier {
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
     private static final int MAX_KEYWORD_CANDIDATES = 6;
     private static final int MAX_KEYWORD_LENGTH = 30;
-    private static final Pattern NOTIFICATION_BADGE_PATTERN = Pattern.compile("^\\(\\d+\\)\\s*");
     private static final Pattern BRACKETED_TEXT_PATTERN = Pattern.compile("[\\[【(（]([^\\]】)）]{2,30})[\\]】)）]");
     private static final Pattern TITLE_SEPARATOR_PATTERN = Pattern.compile("\\s*(?:[-|｜·•—–_:：]+)\\s*");
-    private static final Set<String> BROWSER_APPS = Set.of(
-            "google chrome",
-            "safari",
-            "microsoft edge",
-            "chrome",
-            "edge");
     private static final Set<String> LOW_VALUE_KEYWORDS = Set.of(
             "google chrome",
             "chrome",
@@ -103,7 +96,10 @@ public class DistractionClassifier {
      */
     public List<String> suggestRuleKeywords(String appName, String windowTitle) {
         String app = normalize(appName);
-        String title = stripBrowserSuffix(extractWindowTitle(windowTitle));
+        String extractedTitle = extractWindowTitle(windowTitle);
+        String title = isBrowserApp(app)
+                ? BrowserTitleCleaner.extractImportantTitle(app, extractedTitle)
+                : stripBrowserSuffix(extractedTitle);
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
 
         addBracketedCandidates(candidates, title);
@@ -200,7 +196,7 @@ public class DistractionClassifier {
             return false;
         }
 
-        String cleanedTitle = TextProcessor.cleanText(title);
+        String cleanedTitle = TextProcessor.cleanText(BrowserTitleCleaner.extractImportantTitle(app, title));
         if (cleanedTitle.isBlank()) {
             cleanedTitle = TextProcessor.cleanText(app);
         }
@@ -259,35 +255,11 @@ public class DistractionClassifier {
     }
 
     private String stripBrowserSuffix(String title) {
-        String normalizedTitle = normalize(title);
-        normalizedTitle = NOTIFICATION_BADGE_PATTERN.matcher(normalizedTitle).replaceFirst("");
-        String[] browserSuffixes = {
-                " - google chrome",
-                " - chrome",
-                " - safari",
-                " - microsoft edge",
-                " - edge"
-        };
-
-        for (String suffix : browserSuffixes) {
-            if (normalizedTitle.endsWith(suffix)) {
-                return normalizedTitle.substring(0, normalizedTitle.length() - suffix.length()).trim();
-            }
-        }
-        return normalizedTitle;
+        return BrowserTitleCleaner.stripBrowserSuffix(title);
     }
 
     private boolean isBrowserApp(String app) {
-        if (app.isBlank()) {
-            return false;
-        }
-
-        for (String browser : BROWSER_APPS) {
-            if (app.contains(browser)) {
-                return true;
-            }
-        }
-        return false;
+        return BrowserTitleCleaner.isBrowserApp(app);
     }
 
     private static String extractWindowTitle(String windowTitle) {

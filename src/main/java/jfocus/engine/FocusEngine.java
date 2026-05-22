@@ -1,5 +1,6 @@
 package jfocus.engine;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -7,6 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import jfocus.ai.BrowserTitleCleaner;
 import jfocus.ai.DistractionClassifier;
 import jfocus.ai.distraction.DistractingTargetCloser;
 import jfocus.ai.distraction.DistractionHandlingMode;
@@ -16,12 +18,15 @@ import jfocus.ai.distraction.JdbcDistractionModeRepository;
 import jfocus.ai.distraction.SystemAwareDistractingTargetCloser;
 import jfocus.db.DatabaseCore;
 import jfocus.io.PushData;
+import jfocus.main.FocusApp;
 
 import jfocus.monitor.SessionListener;
 import jfocus.monitor.SessionMonitor;
 import jfocus.monitor.WindowSession;
 import jfocus.idle.IdleDetector;
 import jfocus.idle.IdleListener;
+import jfocus.notification.NotificationPayload;
+import jfocus.notification.NotificationSeverity;
 
 public class FocusEngine {
     private static final int SECONDS_PER_HOUR = 3600;
@@ -46,6 +51,7 @@ public class FocusEngine {
     private String currentSubject = "未分類";
     private FocusSessionRecord currentSessionRecord;
     private final PushData pushData;
+    private final List<String> ignoredWindowKeys = new ArrayList<>();
 
     private final SessionMonitor sessionMonitor;
     private final IdleDetector idleDetector;
@@ -90,6 +96,11 @@ public class FocusEngine {
             public void onSessionStarted(WindowSession session) {
 
                 System.out.println("新視窗開啟: " + session.title);
+                if (FocusEngine.this.isIgnoredWindow(session)) {
+                    session.isDistracted = true;
+                    return;
+                }
+
                 session.isDistracted = FocusEngine.this.distractionClassifier.isDistracting(session.processName,
                         session.title);
                 if (!session.isDistracted) {
@@ -166,10 +177,35 @@ public class FocusEngine {
         distractionClassifier.addWhitelistRule(keyword);
     }
 
+    public void ignoreWindow(WindowSession session) {
+        WindowSession validatedSession = Objects.requireNonNull(session, "session cannot be null");
+        String ignoredWindowKey = createWindowKey(validatedSession);
+        synchronized (ignoredWindowKeys) {
+            if (!ignoredWindowKeys.contains(ignoredWindowKey)) {
+                ignoredWindowKeys.add(ignoredWindowKey);
+            }
+        }
+        validatedSession.isDistracted = true;
+    }
+
     public boolean closeDistractingTarget(WindowSession session) {
         WindowSession validatedSession = Objects.requireNonNull(session, "session cannot be null");
         boolean closeTabOnly = distractionClassifier.isWebsiteActivity(validatedSession.processName, validatedSession.title);
-        return distractingTargetCloser.closeDistractingTarget(validatedSession, closeTabOnly);
+        boolean closed = distractingTargetCloser.closeDistractingTarget(validatedSession, closeTabOnly);
+        if (closed) {
+            String title = BrowserTitleCleaner.extractImportantTitle(
+                    validatedSession.processName,
+                    validatedSession.title);
+            if (title.isBlank()) {
+                title = "分心視窗";
+            }
+            FocusApp.getNotificationService().notify(new NotificationPayload(
+                    "已關閉分心視窗",
+                    "應用程式: " + validatedSession.processName + "\n視窗名稱: " + title,
+                    NotificationSeverity.URGENT,
+                    "FocusEngine"));
+        }
+        return closed;
     }
 
     public void setCurrentSubject(String subject) {
@@ -190,6 +226,7 @@ public class FocusEngine {
 
     public void start(int seconds) {
         stop();
+        clearIgnoredWindows();
         this.isPaused = false;
         this.isStopwatch = false;
         this.originalSeconds = seconds;
@@ -230,6 +267,7 @@ public class FocusEngine {
     // 正向計時模式 (碼表)
     public void startStopwatch() {
         stop();
+        clearIgnoredWindows();
         this.isPaused = false;
         this.isStopwatch = true;
         this.currentSeconds = 0; // 碼表永遠從 0 開始
@@ -352,5 +390,32 @@ public class FocusEngine {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdownNow();
         }
+    }
+
+    private boolean isIgnoredWindow(WindowSession session) {
+        String windowKey = createWindowKey(session);
+        synchronized (ignoredWindowKeys) {
+            return ignoredWindowKeys.contains(windowKey);
+        }
+    }
+
+    private void clearIgnoredWindows() {
+        synchronized (ignoredWindowKeys) {
+            ignoredWindowKeys.clear();
+        }
+    }
+
+    private String createWindowKey(WindowSession session) {
+        if (session == null) {
+            return "";
+        }
+        return normalizeWindowKeyPart(session.processName) + "\n" + normalizeWindowKeyPart(session.title);
+    }
+
+    private String normalizeWindowKeyPart(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().toLowerCase();
     }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jfocus.ai.BrowserTitleCleaner;
 import jfocus.db.DatabaseCore;
 import jfocus.db.StorageException;
 
@@ -47,12 +48,13 @@ public class JdbcActivityRepository implements ActivityRepository {
 
         String sql = "INSERT INTO activities(app_name, window_title, start_time, end_time, duration, is_focus, session_id) VALUES(?,?,?,?,?,?,?)";
         int durationSeconds = calculateDurationSeconds(activity.startTime(), activity.endTime());
+        String cleanedTitle = BrowserTitleCleaner.cleanForStorage(activity.appName(), activity.windowTitle());
 
         try (Connection conn = databaseCore.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, activity.appName());
-            pstmt.setString(2, activity.windowTitle());
+            pstmt.setString(2, cleanedTitle);
             pstmt.setString(3, TIMESTAMP_FORMATTER.format(activity.startTime()));
             pstmt.setString(4, TIMESTAMP_FORMATTER.format(activity.endTime()));
             pstmt.setInt(5, durationSeconds);
