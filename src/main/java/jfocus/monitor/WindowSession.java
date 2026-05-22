@@ -9,6 +9,7 @@ public class WindowSession {
     public LocalDateTime startTime;
     public LocalDateTime endTime;
     public boolean isDistracted = false;
+    public long pid; // 處理程序 ID (PID)
 
     public WindowSession(String hwnd, String processName, String title) {
         this.hwnd = hwnd;
