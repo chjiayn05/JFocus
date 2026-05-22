@@ -187,16 +187,8 @@ public class TimerView extends VBox implements FocusListener {
         // 在 TimerView.java 裡面：
         pauseBtn.setOnAction(e -> {
             if (!isPaused) {
-                isPaused = true;
-                pauseBtn.setText("繼續冒險");
-                statusLabel.setText("計時已暫停，等你回來！");
-                
                 engine.pause(); // 呼叫引擎的暫停
             } else {
-                isPaused = false;
-                pauseBtn.setText("暫停");
-                statusLabel.setText("冒險中，請保持專心！");
-                
                 engine.resume(); // 呼叫引擎的繼續
             }
         });
@@ -327,5 +319,28 @@ public class TimerView extends VBox implements FocusListener {
         pauseBtn.setText("暫停");  // 文字歸位
         stopBtn.setDisable(true);
         isPaused = false;
+    }
+
+    @Override
+    public void onPaused() {
+        Platform.runLater(() -> {
+            isPaused = true;
+            pauseBtn.setText("繼續冒險");
+            statusLabel.setText("計時已暫停，等你回來！");
+        });
+    }
+
+    @Override
+    public void onResumed() {
+        Platform.runLater(() -> {
+            isPaused = false;
+            pauseBtn.setText("暫停");
+            statusLabel.setText("冒險中，請保持專心！");
+        });
+    }
+
+    @Override
+    public void onIdleDetected(long idleTimeMillis) {
+        Platform.runLater(() -> IdleAlert.showIfNotShowing(engine, idleTimeMillis));
     }
 }
