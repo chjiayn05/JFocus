@@ -4,6 +4,8 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
+import com.sun.jna.Library;
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
@@ -16,6 +18,11 @@ public class WindowsDistractingTargetCloser implements DistractingTargetCloser {
     private static final int SW_RESTORE = 9;
     private static final int FOCUS_SWITCH_DELAY_MILLIS = 120;
     private static final int KEY_INPUT_DELAY_MILLIS = 40;
+
+    private interface User32Ext extends Library {
+        User32Ext INSTANCE = Native.load("user32", User32Ext.class);
+        boolean IsIconic(HWND hWnd);
+    }
 
     @Override
     public boolean closeDistractingTarget(WindowSession session, boolean closeTabOnly) {
@@ -48,7 +55,10 @@ public class WindowsDistractingTargetCloser implements DistractingTargetCloser {
     }
 
     private boolean closeBrowserTab(HWND hwnd) {
-        User32.INSTANCE.ShowWindow(hwnd, SW_RESTORE);
+        // 只有最小化時才 restore，保留最大化等其他狀態
+        if (User32Ext.INSTANCE.IsIconic(hwnd)) {
+            User32.INSTANCE.ShowWindow(hwnd, SW_RESTORE);
+        }
         if (!User32.INSTANCE.SetForegroundWindow(hwnd)) {
             return false;
         }
