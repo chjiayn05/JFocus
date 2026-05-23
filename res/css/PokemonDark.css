@@ -28,11 +28,16 @@
 .button {
     -fx-background-color: #3498db;
     -fx-text-fill: white;
-    -fx-background-radius: 20;
+    -fx-background-radius: 10;
     -fx-font-weight: bold;
+    -fx-font-size: 14px;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);
 }
-.button:hover { -fx-background-color: #2980b9; -fx-translate-y: -2px; }
+.button:hover { 
+    -fx-background-color: #2980b9; 
+    -fx-translate-y: -2px;
+    -fx-cursor: hand; 
+}
 
 /* ==========================================
    【關鍵修復】拔除 ScrollPane 的刺眼白底
@@ -92,4 +97,19 @@
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #505050;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+/* Styling the track (the background) */
+.scroll-bar,
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .corner {
+    -fx-background-color: #1a1a1a;
 }

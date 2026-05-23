@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jfocus.io.UserData;
+
 public class GameManager {
     private static final int STAGE_2_XP_REQUIREMENT = 50;
     private static final int STAGE_3_XP_REQUIREMENT = 200;
@@ -101,6 +103,7 @@ public class GameManager {
                 syncEvolutionStagesForPokemon(pokemonId);
                 
                 System.out.println("【成功】寶可夢 [" + pokemonId + "] 經驗值增加！目前 XP: " + nextXp);
+                UserData.savePlayerStats(focusCoins, masterStones, totalXP, pokemonId);
             } else {
                 System.err.println("【失敗】寶可夢 [" + pokemonId + "] 不在已解鎖清單中，無法獲得經驗值！");
             }

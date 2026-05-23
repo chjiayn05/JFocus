@@ -1,5 +1,6 @@
 package jfocus.ui;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -10,6 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import jfocus.ai.distraction.DistractionHandlingMode;
 import jfocus.db.DatabaseCore;
 import jfocus.engine.FocusEngine;
@@ -20,6 +22,7 @@ import jfocus.settings.TimerSettings;
 public class TimerView extends VBox implements FocusListener {
 
     private GameManager gameManager;
+    private FocusUI focusUI;
     private FocusEngine engine;
     private final JdbcTimerSettingsRepository timerSettingsRepository;
 
@@ -36,24 +39,39 @@ public class TimerView extends VBox implements FocusListener {
     private Label statusLabel;
 
     private Button pauseBtn; // 新增這行
+    private Button debugBtn;
     private boolean isPaused = false; // 記錄目前的暫停狀態
+    private int lastTickSeconds = 0;  // 碼表模式：記錄最後一次 tick 的秒數
     // 新增這行：讓 TimerView 記住目前夥伴的名字
     private String currentPartnerName = "神秘夥伴";
 
-    public TimerView(GameManager gameManager) {
+    public TimerView(GameManager gameManager, FocusUI focusUI) {
 
         this.gameManager = gameManager;
+        this.focusUI = focusUI;
+
         this.timerSettingsRepository = new JdbcTimerSettingsRepository(new DatabaseCore());
         // 原本的 startBtn 和 stopBtn
         startBtn = new Button("開始冒險");
+        startBtn.setStyle("-fx-background-color: #27ae60; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+
         stopBtn = new Button("放棄");
-        stopBtn.setDisable(true);
+        stopBtn.setStyle("-fx-background-color: #c0392b; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10;  -fx-background-radius: 8;");
+        stopBtn.setVisible(false);
+        stopBtn.setManaged(false);
 
         pauseBtn = new Button("暫停");
-        pauseBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;");
-        pauseBtn.setDisable(true); // 一開始還沒倒數，不能暫停
+        pauseBtn.setStyle("-fx-background-color: #f39c12; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10;  -fx-background-radius: 8;");
+        pauseBtn.setVisible(false);
+        pauseBtn.setManaged(false);
 
-        HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn);
+        debugBtn = new Button("⟳10s");
+        debugBtn.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        debugBtn.setVisible(false);
+        debugBtn.setManaged(false);
+        debugBtn.setOnAction(e -> engine.debugForward(10));
+
+        HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn, debugBtn);
         // 1. 實例化所有 UI 零件
         TimerSettings timerSettings = loadTimerSettingsSafely();
 
@@ -128,7 +146,6 @@ public class TimerView extends VBox implements FocusListener {
 
         // 3. 把所有零件組裝起來 (就是你原本的寫法)
         this.getChildren().addAll(
-                new Label("JFocus - Just Focus") {{ setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 14px;"); }},
                 modeSelector,
                 inputArea,
                 pokemonImageView,
@@ -144,6 +161,12 @@ public class TimerView extends VBox implements FocusListener {
 
         startBtn.setOnAction(e -> {
             try {
+                if (!validateTimeInputs()) {
+                    statusLabel.setText("時間設定需符合：工時至少是休息的兩倍。");
+                    resetUI();
+                    return;
+                }
+
                 String selectedMode = modeSelector.getValue();
                 int minutes = 0;
 
@@ -153,21 +176,29 @@ public class TimerView extends VBox implements FocusListener {
                     int breakMinutes = parsePositiveMinutes(breakInput.getText());
                     if (minutes <= 0 || breakMinutes <= 0) {
                         statusLabel.setText("時間必須大於 0 分鐘喔！");
-                        resetUI(); 
+                        resetUI();
                         return; // 直接中斷，不讓計時器啟動
                     }
                     saveTimerSettingsSafely(minutes, breakMinutes);
                 }
 
-                // 切換 UI 狀態 (鎖死開始鍵，解鎖暫停與放棄鍵)
-                startBtn.setDisable(true);
-                pauseBtn.setDisable(false);
-                stopBtn.setDisable(false);
+                // 切換 UI 狀態
+                startBtn.setVisible(false);
+                startBtn.setManaged(false);
+                pauseBtn.setVisible(true);
+                pauseBtn.setManaged(true);
+                stopBtn.setVisible(true);
+                stopBtn.setManaged(true);
+                debugBtn.setVisible(true);
+                debugBtn.setManaged(true);
+
                 isPaused = false;
                 pauseBtn.setText("暫停");
+                lastTickSeconds = 0;
 
                 // 根據模式啟動不同的引擎邏輯
                 if ("正向碼表".equals(selectedMode)) {
+                    stopBtn.setText("結束");
                     statusLabel.setText("正在與 " + currentPartnerName + " 一起冒險 (碼表模式) ...");
                     engine.startStopwatch(); // 呼叫組員的碼表引擎
                 } else {
@@ -177,7 +208,7 @@ public class TimerView extends VBox implements FocusListener {
 
             } catch (NumberFormatException ex) {
                 statusLabel.setText("請輸入有效的數字！");
-                resetUI(); 
+                resetUI();
             }
         });
 
@@ -192,36 +223,61 @@ public class TimerView extends VBox implements FocusListener {
 
 
         stopBtn.setOnAction(e -> {
-            // 1. 建立一個確認視窗 (Confirmation Dialog)
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-            alert.setTitle("放棄冒險");
-            alert.setHeaderText("確定要放棄這次的冒險嗎？");
-            alert.setContentText("現在放棄的話，將無法獲得任何專注幣與經驗值喔！");
-
-            // 2. 顯示視窗並等待玩家點擊按鈕
-            java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-            
-            // 3. 判斷玩家按了什麼
-            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-                // 玩家按下「確定」：執行原本的停止邏輯
-                engine.shutdown();
-                engine = createFocusEngine(); // 重新建立引擎準備下次使用
+            String selectedMode = modeSelector.getValue();
+            if ("正向碼表".equals(selectedMode)) {
+                int elapsedMinutes = lastTickSeconds / 60;
+                engine.stop();
+                engine = createFocusEngine();
+                String currentId = gameManager.getCurrentPokemonId();
+                gameManager.addFocusTime(elapsedMinutes, currentId);
+                if (elapsedMinutes > 0) {
+                    statusLabel.setText("冒險結束！專注了 " + elapsedMinutes + " 分鐘，獲得 " + elapsedMinutes + " 枚專注幣！");
+                } else {
+                    statusLabel.setText("冒險結束！本次太短暫，未獲得專注幣。");
+                }
+                focusUI.refreshOnEnded(); 
                 resetUI();
-                statusLabel.setText("冒險已取消。");
             } else {
-                // 玩家按下「取消」或關閉視窗：什麼都不做，讓計時繼續
-                System.out.println("玩家取消了放棄操作。");
+                // 1. 建立一個確認視窗 (Confirmation Dialog)
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+                alert.setTitle("放棄冒險");
+                alert.setHeaderText("確定要放棄這次的冒險嗎？");
+                alert.setContentText("現在放棄的話，將無法獲得任何專注幣與經驗值喔！");
+
+                // 2. 顯示視窗並等待玩家點擊按鈕
+                java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+                
+                // 3. 判斷玩家按了什麼
+                if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+                    // 玩家按下「確定」：執行原本的停止邏輯
+                    engine.shutdown();
+                    engine = createFocusEngine(); // 重新建立引擎準備下次使用
+                    resetUI();
+                    statusLabel.setText("冒險已取消");
+                } else {
+                    // 玩家按下「取消」或關閉視窗：什麼都不做，讓計時繼續
+                    System.out.println("玩家取消了放棄操作");
+                }
             }
         });
     }
 
     private FocusEngine createFocusEngine() {
         FocusEngine newEngine = new FocusEngine(this);
-        newEngine.setDistractionUserNotifier(session ->
-                Platform.runLater(() -> DistractedAlert.showIfNotShowing(newEngine, session)));
+        newEngine.setDistractionUserNotifier(
+                session -> Platform.runLater(() -> DistractedAlert.showIfNotShowing(newEngine, session)));
         return newEngine;
     }
-
+    
+    private boolean validateTimeInputs() {
+        try {
+            int w = Integer.parseInt(workInput.getText());
+            int b = Integer.parseInt(breakInput.getText());
+            return w >= 2 * b;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
     // 給 FocusUI 呼叫的方法：用來更新出戰夥伴的圖片和名字
     public void updatePartnerDisplay(String name, javafx.scene.image.Image image) {
@@ -281,8 +337,8 @@ public class TimerView extends VBox implements FocusListener {
     // ==========================================
     @Override
     public void onTick(int secondsRemaining) {
-        // 必須用 Platform.runLater 讓 UI 執行緒去更新畫面，否則會當機！
         Platform.runLater(() -> {
+            lastTickSeconds = secondsRemaining;
             int m = secondsRemaining / 60;
             int s = secondsRemaining % 60;
             timerLabel.setText(String.format("%02d:%02d", m, s));
@@ -294,28 +350,44 @@ public class TimerView extends VBox implements FocusListener {
         Platform.runLater(() -> {
             int focusedMinutes = Integer.parseInt(workInput.getText());
             statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
-            
+
             // 呼叫 GameManager 結算
             String currentId = gameManager.getCurrentPokemonId();
             gameManager.addFocusTime(focusedMinutes, currentId);
+            focusUI.refreshOnEnded();
 
             resetUI();
             // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
         });
     }
-
+    
     private void resetUI() {
+        resetUI(3.5);
+    }
+
+    private void resetUI(double setTime) {
         int m = parsePositiveMinutes(workInput.getText());
         if (m <= 0) {
             m = TimerSettings.DEFAULT_WORK_MINUTES;
             workInput.setText(String.valueOf(m));
         }
         timerLabel.setText(String.format("%02d:00", m));
-        startBtn.setDisable(false);
-        pauseBtn.setDisable(true); // 鎖死暫停按鈕
-        pauseBtn.setText("暫停");  // 文字歸位
-        stopBtn.setDisable(true);
+        startBtn.setVisible(true);
+        startBtn.setManaged(true);
+        pauseBtn.setVisible(false);
+        pauseBtn.setManaged(false);
+        pauseBtn.setText("暫停");
+        stopBtn.setVisible(false);
+        stopBtn.setManaged(false);
+        debugBtn.setVisible(false);
+        debugBtn.setManaged(false);
         isPaused = false;
+        
+        PauseTransition delay = new PauseTransition(Duration.seconds(setTime));
+        delay.setOnFinished(event -> {
+            statusLabel.setText("準備就緒");
+        });
+        delay.play();
     }
 
     @Override

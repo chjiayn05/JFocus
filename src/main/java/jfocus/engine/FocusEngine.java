@@ -359,6 +359,19 @@ public class FocusEngine {
         }
     }
 
+    // Debug: 快進 N 秒（碼表往前加，倒數往前減，不觸發 onFinished）
+    public void debugForward(int seconds) {
+        if (isStopwatch) {
+            currentSeconds += seconds;
+        } else {
+            currentSeconds -= seconds;
+            if (currentSeconds <= 1) currentSeconds = 1;
+        }
+        if (listener != null) {
+            listener.onTick(currentSeconds);
+        }
+    }
+
     // 停止與關閉功能
     public void stop() {
         if (currentTask != null && !currentTask.isCancelled()) {

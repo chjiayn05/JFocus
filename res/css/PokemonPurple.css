@@ -36,11 +36,16 @@
 .button {
     -fx-background-color: #E22B6D; 
     -fx-text-fill: white; 
-    -fx-background-radius: 20; 
-    -fx-font-weight: bold; 
+    -fx-background-radius: 10; 
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 3);
 }
-.button:hover { -fx-background-color: #f74382; -fx-translate-y: -2px; }
+.button:hover { 
+    -fx-background-color: #f74382; 
+    -fx-translate-y: -2px;
+    -fx-cursor: hand;
+}
 
 /* 圖鑑卡片 (暗星空灰) */
 .pokemon-card {
@@ -91,4 +96,19 @@
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #4A2B7A;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+/* Styling the track (the background) */
+.scroll-bar,
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .corner {
+    -fx-background-color: #1a1a24;
 }

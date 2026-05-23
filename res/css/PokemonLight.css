@@ -32,11 +32,16 @@
 .button {
     -fx-background-color: #3b82f6; /* 實驗室科技藍 */
     -fx-text-fill: white;
-    -fx-background-radius: 20;
+    -fx-background-radius: 10;
     -fx-font-weight: bold;
+    -fx-font-size: 14px;
     -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.3), 8, 0, 0, 3);
 }
-.button:hover { -fx-background-color: #2563eb; -fx-translate-y: -2px; }
+.button:hover { 
+    -fx-background-color: #2563eb; 
+    -fx-translate-y: -2px; 
+    -fx-cursor: hand;
+}
 
 /* ==========================================
    統一固定的圖鑑卡片樣式 (所有主題共用)
@@ -92,4 +97,19 @@
     -fx-text-fill: white;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #cbd5e1;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+/* Styling the track (the background) */
+.scroll-bar,
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .corner {
+    -fx-background-color: #f0f4f88d;
 }
