@@ -30,7 +30,7 @@ public class StatsView extends VBox {
 
     private void buildUI() {
         // --- 1. 頂部總覽數據 ---
-        Label titleLabel = new Label("📈 專注數據統計");
+        Label titleLabel = new Label("專注數據統計");
         titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
         Label totalTimeLabel = new Label("總專注時間： " + gameManager.getTotalXP() + " 分鐘");

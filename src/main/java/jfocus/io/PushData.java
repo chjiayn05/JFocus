@@ -1,10 +1,10 @@
 package jfocus.io;
 
-import java.time.LocalDateTime;
-import java.util.Objects;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.Objects;
 
 import jfocus.activity.ActivityRecord;
 import jfocus.activity.ActivityRepository;
@@ -83,7 +83,7 @@ public class PushData {
             isFocus,
             FocusApp.getSessionId());
         requireActivityRepository().saveActivity(activity);
-        System.out.println("💾 成功存入紀錄: [" + app + "] " + title);
+        System.out.println("成功存入紀錄: [" + app + "] " + title);
     }
 
     /**
@@ -110,7 +110,7 @@ public class PushData {
             pstmt.setInt(6, record.actualDurationSeconds);
             pstmt.setInt(7, record.totalIdleSecondsDeducted);
             pstmt.executeUpdate();
-            System.out.println("💾 成功存入專注 Session: " + record.sessionId);
+            System.out.println("成功存入專注 Session: " + record.sessionId);
         } catch (SQLException e) {
             throw new StorageException("寫入專注 Session 失敗", e);
         }
@@ -127,7 +127,7 @@ public class PushData {
     public void insertTodo(String task, LocalDateTime deadline, boolean isDone, String notes) {
         TodoRecord todo = new TodoRecord(0, task, deadline, isDone, notes);
         requireTodoRepository().saveTodo(todo);
-        System.out.println("💾 新增待辦: " + task);
+        System.out.println("新增待辦: " + task);
     }
 
     /**
@@ -142,7 +142,7 @@ public class PushData {
     public void updateTodo(int id, String task, LocalDateTime deadline, boolean isDone, String notes) {
         TodoRecord todo = new TodoRecord(id, task, deadline, isDone, notes);
         requireTodoRepository().updateTodo(todo);
-        System.out.println("✏️ 更新待辦 id=" + id + ": " + task);
+        System.out.println("更新待辦 id=" + id + ": " + task);
     }
 
     /**
@@ -152,7 +152,7 @@ public class PushData {
      */
     public void deleteTodo(int id) {
         requireTodoRepository().deleteTodo(id);
-        System.out.println("🗑️ 刪除待辦 id=" + id);
+        System.out.println("刪除待辦 id=" + id);
     }
 
     private ActivityRepository requireActivityRepository() {

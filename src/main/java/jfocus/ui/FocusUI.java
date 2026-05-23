@@ -26,6 +26,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
@@ -66,8 +67,8 @@ public class FocusUI extends Application {
     // --- 核心數據 (未來會與 JSON 對接) ---
     private String currentPokemonFolder = "004_charmander"; // 預設小火龍
     private int currentStage = 1;
-    private Label coinLabel = new Label("💰 0");
-    private Label stoneLabel = new Label("💎 0");
+    private Label coinLabel = new Label("0");
+    private Label stoneLabel = new Label("0");
     private Label gachaCurrencyLabel = new Label("我的專注幣: 0");
 
     // --- UI 元件 ---
@@ -208,10 +209,26 @@ public class FocusUI extends Application {
     }
 
     private void refreshCurrencyLabels() {
-        coinLabel.setText("💰 " + gameManager.getFocusCoins());
-        stoneLabel.setText("💎 " + gameManager.getMasterStones());
+        coinLabel.setText(String.valueOf(gameManager.getFocusCoins()));
+        stoneLabel.setText(String.valueOf(gameManager.getMasterStones()));
         if (gachaCurrencyLabel != null) {
             gachaCurrencyLabel.setText("我的專注幣: " + gameManager.getFocusCoins());
+        }
+    }
+
+    private void initCurrencyIcons() {
+        setLabeledIcon(coinLabel, "res/icon/coinlabel.png");
+        setLabeledIcon(stoneLabel, "res/icon/stonelabel.png");
+    }
+
+    private void setLabeledIcon(Labeled labeled, String path) {
+        File file = new File(path);
+        if (file.exists()) {
+            ImageView iv = new ImageView(new Image(file.toURI().toString()));
+            iv.setFitWidth(20);
+            iv.setFitHeight(20);
+            iv.setPreserveRatio(true);
+            labeled.setGraphic(iv);
         }
     }
 
@@ -332,7 +349,7 @@ public class FocusUI extends Application {
         File jsonFile = new File("res/pokemon_data.json");
 
         if (!jsonFile.exists()) {
-            System.err.println("❌ 找不到數據檔案: " + jsonFile.getAbsolutePath());
+            System.err.println("找不到數據檔案: " + jsonFile.getAbsolutePath());
             return;
         }
 
@@ -375,10 +392,10 @@ public class FocusUI extends Application {
                 pokedexList.add(new PokemonData(id, folderName, name, types, descriptions, stageNames));
             }
 
-            System.out.println("✅ 數據載入成功！共 " + pokedexList.size() + " 隻。");
+            System.out.println("數據載入成功！共 " + pokedexList.size() + " 隻。");
 
         } catch (Exception e) {
-            System.err.println("❌ 解析 JSON 失敗: " + e.getMessage());
+            System.err.println("解析 JSON 失敗: " + e.getMessage());
         }
     }
 
@@ -504,6 +521,7 @@ public class FocusUI extends Application {
 
         // 4. 刷新初始狀態
         setupButtonStyles();
+        initCurrencyIcons();
         refreshCurrencyLabels();
         refreshXpDisplay();
 
@@ -512,7 +530,7 @@ public class FocusUI extends Application {
         primaryStage.setScene(mainScene);
         primaryStage.setOnCloseRequest(event -> {
             saveUserProgressSafely();
-            FocusApp.shutdownNotificationService(); // 👈 組員的通知服務
+            FocusApp.shutdownNotificationService();
         });
         primaryStage.show();
 
@@ -601,27 +619,49 @@ public class FocusUI extends Application {
         gachaDisplay.getChildren().add(ballView);
 
         // --- 【修改區塊：雙按鈕與互動邏輯】 ---
-        Button normalBtn = new Button("普通球抽獎 (200 💰)");
+        Button normalBtn = new Button("普通球抽獎");
         normalBtn.setStyle(
                 "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
 
-        Button premiumBtn = new Button("大師球抽獎 (1 💎)");
+        Label normalCostLabel = new Label("200 / 抽");
+        setLabeledIcon(normalCostLabel, "res/icon/coinlabel.png");
+        normalCostLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+
+        VBox normalBox = new VBox(8, normalBtn, normalCostLabel);
+        normalBox.setAlignment(Pos.CENTER);
+
+        Button premiumBtn = new Button("大師球抽獎");
         premiumBtn.setStyle(
                 "-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
 
-        HBox btnBox = new HBox(20, normalBtn, premiumBtn);
+        Label premiumCostLabel = new Label("1 / 抽");
+        setLabeledIcon(premiumCostLabel, "res/icon/stonelabel.png");
+        premiumCostLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+
+        VBox premiumBox = new VBox(8, premiumBtn, premiumCostLabel);
+        premiumBox.setAlignment(Pos.CENTER);
+
+        HBox btnBox = new HBox(20, normalBox, premiumBox);
         btnBox.setAlignment(Pos.CENTER);
 
         // 滑鼠懸停切換精靈球圖片
-        normalBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_ball.png")));
-        premiumBtn.setOnMouseEntered(e -> ballView.setImage(new Image("file:res/pokemon/000_masterball.png")));
+        normalBtn.setOnMouseEntered(e -> {
+            ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
+            ballView.setScaleX(1.0);
+            ballView.setScaleY(1.0);
+        });
+        premiumBtn.setOnMouseEntered(e -> {
+            ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));
+            ballView.setScaleX(1.0);
+            ballView.setScaleY(1.0);
+        });
 
         // 點擊事件：呼叫動畫並傳入對應標籤
-        normalBtn.setOnAction(e -> playGachaAnimation(ballView, "normal"));
-        premiumBtn.setOnAction(e -> playGachaAnimation(ballView, "premium"));
+        normalBtn.setOnAction(e -> playGachaAnimation(ballView, "NORMAL"));
+        premiumBtn.setOnAction(e -> playGachaAnimation(ballView, "MASTERBALL"));
         // ------------------------------------
 
-        layout.getChildren().addAll(title, gachaCurrencyLabel, gachaDisplay, btnBox);
+        layout.getChildren().addAll(title, gachaCurrencyLabel, gachaDisplay, gachaMessageLabel, btnBox);
         return new Tab("精靈抽獎", layout);
     }
 
@@ -705,17 +745,13 @@ public class FocusUI extends Application {
             view.setManaged(true);
             view.setVisible(true);
         } else {
-            System.err.println("❌ 找不到圖片: " + relativePath);
+            System.err.println("找不到圖片: " + relativePath);
             // 如果找不到圖片，可以設一個預設圖片，防止 UI 空白
             // view.setImage(new Image("file:res/pokemon/unknown.png"));
         }
 
         view.setFitWidth(55);
         view.setPreserveRatio(true);
-
-        // ============================================
-        // 👇 【大修復區塊】：防護網與點擊邏輯 (把黑影裝回來！)
-        // ============================================
 
         // 從 GameManager 檢查這隻寶可夢的這一個階段是否解鎖
         boolean isUnlocked = gameManager.isStageUnlocked(data.getId(), stages);
@@ -732,7 +768,7 @@ public class FocusUI extends Application {
                 statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); // 警告紅字
             });
         } else {
-            // ✨ 【修復解鎖】：已經解鎖：正常顯示，點擊跳出詳細視窗
+            //【修復解鎖】：已經解鎖：正常顯示，點擊跳出詳細視窗
             view.setEffect(null); // 清除效果
 
             card.setOnMouseClicked(e -> {
@@ -757,8 +793,6 @@ public class FocusUI extends Application {
             });
         }
         // ============================================
-
-        // 👇 就是少了這行啦！！！把你的畫家 (view) 掛回畫框 (card) 上去！
         card.getChildren().add(view);
 
         return card;

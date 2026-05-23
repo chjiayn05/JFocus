@@ -49,12 +49,10 @@ public class TimerView extends VBox implements FocusListener {
         stopBtn = new Button("放棄");
         stopBtn.setDisable(true);
 
-        // 👇 【新增】建立暫停按鈕
         pauseBtn = new Button("暫停");
         pauseBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;");
         pauseBtn.setDisable(true); // 一開始還沒倒數，不能暫停
 
-        // 👇 【修改】把 pauseBtn 一起塞進 HBox 裡面
         HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn);
         // 1. 實例化所有 UI 零件
         TimerSettings timerSettings = loadTimerSettingsSafely();
@@ -70,7 +68,7 @@ public class TimerView extends VBox implements FocusListener {
         modeSelector = new ComboBox<>();
         modeSelector.getItems().addAll("番茄鐘模式", "正向碼表");
         modeSelector.setValue("番茄鐘模式");
-        // 👇 【新增這段】：監聽下拉選單的切換
+
         modeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if ("正向碼表".equals(newVal)) {
                 // 碼表模式：鎖定輸入框，時間歸零
@@ -149,12 +147,12 @@ public class TimerView extends VBox implements FocusListener {
                 String selectedMode = modeSelector.getValue();
                 int minutes = 0;
 
-                // 🛡️ 提前檢查番茄鐘模式的輸入 (防呆：擋下 0 或負數)
+                // 提前檢查番茄鐘模式的輸入 (防呆：擋下 0 或負數)
                 if (!"正向碼表".equals(selectedMode)) {
                     minutes = parsePositiveMinutes(workInput.getText());
                     int breakMinutes = parsePositiveMinutes(breakInput.getText());
                     if (minutes <= 0 || breakMinutes <= 0) {
-                        statusLabel.setText("⚠️ 時間必須大於 0 分鐘喔！");
+                        statusLabel.setText("時間必須大於 0 分鐘喔！");
                         resetUI(); 
                         return; // 直接中斷，不讓計時器啟動
                     }
@@ -168,7 +166,7 @@ public class TimerView extends VBox implements FocusListener {
                 isPaused = false;
                 pauseBtn.setText("暫停");
 
-                // 🚀 根據模式啟動不同的引擎邏輯
+                // 根據模式啟動不同的引擎邏輯
                 if ("正向碼表".equals(selectedMode)) {
                     statusLabel.setText("正在與 " + currentPartnerName + " 一起冒險 (碼表模式) ...");
                     engine.startStopwatch(); // 呼叫組員的碼表引擎
@@ -178,12 +176,11 @@ public class TimerView extends VBox implements FocusListener {
                 }
 
             } catch (NumberFormatException ex) {
-                statusLabel.setText("⚠️ 請輸入有效的數字！");
+                statusLabel.setText("請輸入有效的數字！");
                 resetUI(); 
             }
         });
 
-        // 👇 【新增】暫停與繼續的切換邏輯
         // 在 TimerView.java 裡面：
         pauseBtn.setOnAction(e -> {
             if (!isPaused) {
@@ -296,7 +293,7 @@ public class TimerView extends VBox implements FocusListener {
     public void onFinished() {
         Platform.runLater(() -> {
             int focusedMinutes = Integer.parseInt(workInput.getText());
-            statusLabel.setText("🎉 冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
+            statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
             
             // 呼叫 GameManager 結算
             String currentId = gameManager.getCurrentPokemonId();

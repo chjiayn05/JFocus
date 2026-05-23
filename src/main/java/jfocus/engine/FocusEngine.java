@@ -341,7 +341,7 @@ public class FocusEngine {
         }
     }
 
-    // ✅ 正確的恢復計時邏輯
+    // 正確的恢復計時邏輯
     public void resume() {
         if (!isPaused) {
             return; // 如果根本沒有暫停，就什麼都不做

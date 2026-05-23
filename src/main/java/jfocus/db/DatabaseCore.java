@@ -78,7 +78,7 @@ public class DatabaseCore {
                 coins INTEGER NOT NULL DEFAULT 0,
                 stones INTEGER NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL DEFAULT 0,
-                partner_id TEXT NOT NULL DEFAULT '004' -- 👈 【新增】夥伴記憶欄位
+                partner_id TEXT NOT NULL DEFAULT '004'
             );
             """;
 
@@ -148,7 +148,7 @@ public class DatabaseCore {
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
             ensureKeywordOnlyDistractionRulesTable(conn);
             ensureIndexes(stmt);
-            System.out.println("✅ DatabaseCore: SQLite 資料庫與資料表已就緒！");
+            System.out.println("DatabaseCore: SQLite 資料庫與資料表已就緒！");
         } catch (SQLException e) {
             throw new StorageException("初始化資料庫失敗", e);
         }

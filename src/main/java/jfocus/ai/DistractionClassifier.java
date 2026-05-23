@@ -52,15 +52,7 @@ public class DistractionClassifier {
             "新分頁",
             "new tab",
             "google 搜尋",
-            "起始頁面",
-            "到底",
-            "什麼",
-            "什么",
-            "對",
-            "对",
-            "我",
-            "會",
-            "会");
+            "起始頁面");
 
     private final DocumentCategorizerME categorizer;
     private final double playThreshold;
@@ -193,25 +185,20 @@ public class DistractionClassifier {
         String app = normalize(appName);
         String title = normalize(extractWindowTitle(windowTitle));
         String searchableText = toSearchText(app, title);
-        System.out.println("[DEBUG][Distraction] App=" + app + " | Title=" + title);
 
         if (matchesWhitelistRule(searchableText)) {
-            System.out.println("[DEBUG][Distraction] Whitelist rule.");
             return false;
         }
 
         if (matchesBlacklistRule(searchableText)) {
-            System.out.println("[DEBUG][Distraction] Blacklist rule.");
             return true;
         }
 
         if (isYoutubeUnnecessaryPage(app, title)) {
-            System.out.println("[DEBUG][Distraction] YouTube Unnecessary Page.");
             return false;
         }
 
         if (categorizer == null) {
-            System.out.println("[DEBUG][Distraction] Mo model; Treating as focused.");
             return false;
         }
 
@@ -220,7 +207,6 @@ public class DistractionClassifier {
             cleanedTitle = TextProcessor.cleanText(app);
         }
         if (cleanedTitle.isBlank()) {
-            System.out.println("[DEBUG][Distraction] Text is blank; Treating as focused.");
             return false;
         }
 
@@ -231,9 +217,9 @@ public class DistractionClassifier {
         int categoryIndex = categorizer.getIndex(category);
         double probability = categoryIndex >= 0 ? outcomes[categoryIndex] : 0.0;
         boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= playThreshold;
-        System.out.println("[DEBUG][Distraction] Result. CleanedText=\"" + cleanedTitle
-                + "\" | Category=" + category + " | Probability=" + probability + " | Threshold=" + playThreshold
-                + " | Distracted=" + distracted);
+
+        System.out.println(distracted ? "[PLAY]" : "[STUDY]" + " | Text = \"" + cleanedTitle + "\"");
+        System.out.println("Probability=" + probability + " | Distracted = " + distracted);
 
         return distracted;
     }

@@ -80,17 +80,17 @@ public class GameManager {
         totalXP += safeMinutes;    // 將專注時間轉為經驗值
         dailyMinutes += safeMinutes;
 
-        System.out.println("🪙 【結算】增加專注幣: " + safeMinutes + " | 總 XP 變為: " + totalXP);
+        System.out.println("【結算】增加專注幣: " + safeMinutes + " | 總 XP 變為: " + totalXP);
 
         // 滿 4 小時送一顆大師晶石
         while (dailyMinutes >= 240) {
             masterStones += 1;
             dailyMinutes -= 240;
-            System.out.println("💎 獲得一顆大師晶石！");
+            System.out.println("獲得一顆大師晶石！");
         }
 
         String pokemonId = normalizePokemonId(activePokemonId);
-        System.out.println("🔍 【準備加經驗】目前出戰寶可夢 ID: " + pokemonId);
+        System.out.println("【準備加經驗】目前出戰寶可夢 ID: " + pokemonId);
 
         if (pokemonId != null) {
             // 檢查這隻寶可夢是否在「已解鎖名單」中
@@ -100,22 +100,20 @@ public class GameManager {
                 pokemonXpById.put(pokemonId, nextXp);
                 syncEvolutionStagesForPokemon(pokemonId);
                 
-                System.out.println("✨ 【成功】寶可夢 [" + pokemonId + "] 經驗值增加！目前 XP: " + nextXp);
+                System.out.println("【成功】寶可夢 [" + pokemonId + "] 經驗值增加！目前 XP: " + nextXp);
             } else {
-                System.err.println("⚠️ 【失敗】寶可夢 [" + pokemonId + "] 不在已解鎖清單中，無法獲得經驗值！");
+                System.err.println("【失敗】寶可夢 [" + pokemonId + "] 不在已解鎖清單中，無法獲得經驗值！");
             }
         } else {
-            System.err.println("⚠️ 【失敗】沒有傳入有效的寶可夢 ID！");
+            System.err.println("【失敗】沒有傳入有效的寶可夢 ID！");
         }
     }
 
     public void addXP(int amount) {
-    // 1. 增加記憶體中的數值
-    this.totalXP += amount;
-    System.out.println("📈 經驗值增加！目前總經驗: " + this.totalXP);
-
-  
-}
+        // 1. 增加記憶體中的數值
+        this.totalXP += amount;
+        System.out.println("經驗值增加！目前總經驗: " + this.totalXP);
+    }
 
     // --- 抽獎系統 (Gacha) ---
     public String drawPokemon(String ballType) {
@@ -167,20 +165,19 @@ public class GameManager {
     }
 
     // 抽獎
-
-public String performPokeBallDraw(String ballType) {
-if ("MASTERBALL".equals(ballType)) {
+    public String performPokeBallDraw(String ballType) {
+        if ("MASTERBALL".equals(ballType)) {
             if (this.masterStones < 1) { // 假設大師球一次消耗 1 顆大師晶石 (請依你企劃修改)
                 return "INSUFFICIENT_FUNDS";
             }
             this.masterStones -= 1; // 扣除大師晶石
-            System.out.println("💎 消耗 1 顆大師晶石！剩餘：" + this.masterStones);
+            System.out.println("消耗 1 顆大師晶石！剩餘：" + this.masterStones);
         } else {
             if (this.focusCoins < 200) {
                 return "INSUFFICIENT_FUNDS";
             }
             this.focusCoins -= 200; // 扣除專注幣
-            System.out.println("🪙 消耗 200 枚專注幣！剩餘：" + this.focusCoins);
+            System.out.println("消耗 200 枚專注幣！剩餘：" + this.focusCoins);
         }
 
         // 2. 決定抽到哪個等級 (隨機 0.0 ~ 1.0)
@@ -213,7 +210,7 @@ if ("MASTERBALL".equals(ballType)) {
 
         return prizeId;
     }
-// ==========================================
+    // ==========================================
     // 取得指定寶可夢目前的「最高進化階段」(1, 2, 或 3)
     // ==========================================
     public int getEvolutionStage(String id) {
@@ -366,7 +363,7 @@ if ("MASTERBALL".equals(ballType)) {
         return this.currentPartnerId; 
     }
 
-// 3. 【修改】當玩家在 UI 切換夥伴時，不僅要改記憶體，還要寫入資料庫！
+    // 3. 【修改】當玩家在 UI 切換夥伴時，不僅要改記憶體，還要寫入資料庫！
     public void setCurrentPokemonId(String id) {
         String normalized = normalizePokemonId(id);
         if (normalized != null) {
