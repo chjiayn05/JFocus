@@ -266,6 +266,32 @@ public class FocusEngine {
         }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
+    public void startBreak(int seconds) {
+        stop();
+        this.isPaused = false;
+        this.isStopwatch = false;
+        this.originalSeconds = seconds;
+        this.currentSeconds = seconds;
+
+        currentTask = scheduler.scheduleAtFixedRate(() -> {
+            if (isPaused)
+                return;
+
+            currentSeconds--;
+
+            if (currentSeconds <= 0) {
+                stop();
+                if (listener != null) {
+                    listener.onFinished();
+                }
+            } else {
+                if (listener != null) {
+                    listener.onTick(currentSeconds);
+                }
+            }
+        }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
+    }
+
     // 正向計時模式 (碼表)
     public void startStopwatch() {
         stop();

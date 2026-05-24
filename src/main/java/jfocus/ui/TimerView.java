@@ -402,10 +402,10 @@ public class TimerView extends VBox implements FocusListener {
 
     @Override
     public void onFinished() {
-        focusUI.bringToFront();
         Platform.runLater(() -> {
+            focusUI.bringToFront();
             timerLabel.setText(String.format("%02d:%02d", 0, 0));
-            
+
             if (userStatus == status.WORKING) {
                 int focusedMinutes = Integer.parseInt(workInput.getText());
                 statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
@@ -421,7 +421,7 @@ public class TimerView extends VBox implements FocusListener {
                 PauseTransition delay = new PauseTransition(Duration.seconds(10));
                 int breakMinutes = Integer.parseInt(breakInput.getText());
                 delay.setOnFinished(event -> {
-                    engine.start(breakMinutes * 60);
+                    engine.startBreak(breakMinutes * 60);
                 });
                 delay.play();
                 // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
