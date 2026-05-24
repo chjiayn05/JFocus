@@ -79,7 +79,7 @@ public class TimerView extends VBox implements FocusListener {
         TimerSettings timerSettings = loadTimerSettingsSafely();
 
         timerLabel = new Label(String.format("%02d:00", timerSettings.workMinutes()));
-        timerLabel.setStyle("-fx-font-size: 60px; -fx-font-weight: bold; -fx-text-fill: white;");
+        timerLabel.setStyle("-fx-font-size: 60px; -fx-font-weight: bold;");
 
         workInput = new TextField(String.valueOf(timerSettings.workMinutes()));
         workInput.setPrefWidth(50);
@@ -127,11 +127,11 @@ public class TimerView extends VBox implements FocusListener {
         xpBar.setPrefWidth(300);
         xpBar.setStyle("-fx-accent: #3498db;");
 
-        xpInfoLabel = new Label("XP: 0 / 200");
-        xpInfoLabel.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 12px;");
+        xpInfoLabel = new Label("XP: 0 / 50 (等級 1)");
+        xpInfoLabel.setText("XP: 0 / 50 (等級 1)");
+        xpInfoLabel.setStyle("-fx-font-size: 14px;");
 
         statusLabel = new Label("準備就緒");
-        statusLabel.setStyle("-fx-text-fill: white;");
 
         // 2. 開始套用你設計的精美排版
         this.setAlignment(Pos.CENTER);
@@ -139,8 +139,8 @@ public class TimerView extends VBox implements FocusListener {
         this.getStyleClass().add("timer-layout"); // 建議未來把 padding 寫進 CSS
 
         HBox inputArea = new HBox(10, 
-            new Label("工:") {{ setStyle("-fx-text-fill: white;"); }}, workInput,
-            new Label("休:") {{ setStyle("-fx-text-fill: white;"); }}, breakInput
+            new Label("工:"), workInput,
+            new Label("休:"), breakInput
         );
         inputArea.setAlignment(Pos.CENTER);
 
@@ -454,5 +454,32 @@ public class TimerView extends VBox implements FocusListener {
     @Override
     public void onIdleDetected(long idleTimeMillis) {
         Platform.runLater(() -> IdleAlert.showIfNotShowing(engine, idleTimeMillis));
+    }
+
+    public void refreshXpDisplay() {
+        String id = gameManager.getCurrentPokemonId();
+        int xp = gameManager.getPokemonXp(id);
+        double progress;
+        int nextGoal;
+        int stage;
+        if (xp < 50) {
+            stage = 1; nextGoal = 50; progress = xp / 50.0;
+        } else if (xp < 250) {
+            stage = 2; nextGoal = 250; progress = (xp - 50) / 200.0;
+        } else {
+            stage = 3; nextGoal = 750; progress = Math.min(1.0, (xp - 250) / 500.0);
+        }
+        final double p = progress;
+        final String text = "XP: " + xp + " / " + nextGoal + " (等級 " + stage + ")";
+        Platform.runLater(() -> {
+            xpInfoLabel.setText(text);
+            javafx.animation.Timeline tl = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(Duration.millis(600),
+                    new javafx.animation.KeyValue(
+                        xpBar.progressProperty(), p,
+                        javafx.animation.Interpolator.EASE_BOTH))
+            );
+            tl.play();
+        });
     }
 }

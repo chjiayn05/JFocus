@@ -2,10 +2,10 @@ package jfocus.ui;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -55,18 +55,10 @@ import jfocus.ai.distraction.JdbcDistractionModeRepository;
 import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
-import jfocus.notification.NotificationPayload;
-import jfocus.notification.NotificationSeverity;
 
 public class FocusUI extends Application {
 
     private GameManager gameManager = new GameManager();
-    private String id;
-    private String folderName;
-    private String name;
-    private String types;
-    private List<String> stages; // 這是描述
-    private List<String> stageNames;
     private Scene mainScene; // 宣告全域的 Scene 以便切換主題
     private Stage primaryStage;
     // --- 核心數據 (未來會與 JSON 對接) ---
@@ -209,7 +201,7 @@ public class FocusUI extends Application {
     public void refreshOnEnded() {
         refreshCurrencyLabels();
         refreshPokedexGrid();
-        refreshXpDisplay();
+        timerView.refreshXpDisplay();
     }
 
     private void refreshCurrencyLabels() {
@@ -238,7 +230,7 @@ public class FocusUI extends Application {
                 premiumBtn.setDisable(false);
             }
             gachaMessageLabel.setText("來試試手氣吧！");
-            gachaMessageLabel.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
+            gachaMessageLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
         }
     }
 
@@ -258,49 +250,6 @@ public class FocusUI extends Application {
         }
     }
 
-    private void refreshXpDisplay() {
-        String pokemonId = getCurrentPokemonId();
-        int xp = gameManager.getPokemonXp(pokemonId);
-        int stages;
-        int nextGoal;
-        double progress;
-
-        if (xp < 50) {
-            stages = 1;
-            nextGoal = 50;
-            progress = Math.min(1.0, xp / 50.0);
-        } else if (xp < 200) {
-            stages = 2;
-            nextGoal = 200;
-            progress = Math.min(1.0, (xp - 50) / 150.0);
-        } else {
-            stages = 3;
-            nextGoal = 200;
-            progress = 1.0;
-        }
-        // 1. 先宣告 currentId！(請根據你 GameManager 裡實際的方法名稱微調，例如 getPartnerId 或
-        // getCurrentPokemonId)
-        String currentId = gameManager.getCurrentPokemonId();
-
-        // 2. 不要求 GameManager 了！我們自己用 for 迴圈去 FocusUI 的圖鑑清單裡找！
-        PokemonData data = null;
-        for (PokemonData p : pokedexList) {
-            if (p.getId().equals(currentId)) {
-                data = p; // 找到了！把它存起來
-                break; // 找到就停止迴圈
-            }
-        }
-
-        // 3. 確保有找到資料，就把真正的名字放上去！
-        if (data != null) {
-            String realName = data.getStageName(stages);
-            // 乾淨俐落的名字，順便把後面醜醜的 " (階段 X)" 刪掉了！
-            statusLabel.setText("夥伴：" + realName);
-        } else {
-            statusLabel.setText("夥伴：未知");
-        }
-    }
-
     private void loadUserProgressSafely() {
         try {
             int[] stats = UserData.loadPlayerStats();
@@ -308,7 +257,7 @@ public class FocusUI extends Application {
             Map<String, Integer> pokemonXpMap = UserData.loadPokemonXp();
             gameManager.initializePlayerState(stats[0], stats[1], stats[2], unlockedStages, pokemonXpMap);
             refreshCurrencyLabels();
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
         } catch (RuntimeException ex) {
             statusLabel.setText("讀取存檔失敗，將使用預設資料。");
             System.err.println("讀取存檔失敗: " + ex.getMessage());
@@ -338,7 +287,7 @@ public class FocusUI extends Application {
         int settledMinutes = parsePositiveInt(workInput.getText(), 25);
         gameManager.addFocusTime(settledMinutes, getCurrentPokemonId());
         refreshCurrencyLabels();
-        refreshXpDisplay();
+        timerView.refreshXpDisplay();
         refreshPokedexGrid();
         saveUserProgressSafely();
 
@@ -481,6 +430,10 @@ public class FocusUI extends Application {
     @Override
     public void start(javafx.stage.Stage primaryStage) {
         this.primaryStage = primaryStage;
+        for (String w : new String[]{"ExtraLight","Light","Regular","Medium","SemiBold","Bold","ExtraBold","Black"}) {
+            File f = new File("res/css/fonts/ChironGoRoundTC-" + w + ".ttf");
+            if (f.exists()) javafx.scene.text.Font.loadFont(f.toURI().toString(), 12);
+        }
         loadPokedexData();
         loadUserProgressSafely();
 
@@ -527,14 +480,14 @@ public class FocusUI extends Application {
         VBox rootLayout = new VBox(topBar, tabPane);
         javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
 
-        mainScene = new Scene(rootLayout, 480, 750);
+        mainScene = new Scene(rootLayout, 500, 750);
         switchTheme("PokemonDark.css");
 
         // 4. 刷新初始狀態
         setupButtonStyles();
         initCurrencyIcons();
         refreshCurrencyLabels();
-        refreshXpDisplay();
+        timerView.refreshXpDisplay();
 
         // 5. 設定視窗與關閉事件 (保留組員的通知關閉邏輯)
         primaryStage.setTitle("JFocus - Pokemon Focus Sentinel");
@@ -543,15 +496,8 @@ public class FocusUI extends Application {
             saveUserProgressSafely();
             FocusApp.shutdownNotificationService();
         });
+        primaryStage.setResizable(false);
         primaryStage.show();
-
-        // 6. 啟動歡迎通知 (保留組員的通知系統)
-        FocusApp.getNotificationService().notify(
-                new NotificationPayload(
-                        "JFocus 已啟動",
-                        "通知介面已就緒，可開始串接專注事件。",
-                        NotificationSeverity.INFO,
-                        "ui"));
 
         updatePokemonDisplay(currentPokemonFolder, currentStage);
     }
@@ -626,7 +572,7 @@ public class FocusUI extends Application {
             pop.play();
 
             refreshCurrencyLabels();
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
 
@@ -657,14 +603,15 @@ public class FocusUI extends Application {
     // 抽獎主邏輯
     private Tab createGachaTab() {
         gachaMessageLabel.setText("來試試手氣吧！");
-        gachaMessageLabel.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
+        gachaMessageLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
         gachaMessageLabel.setMinHeight(56);
         VBox layout = new VBox(20);
         layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #34495e; -fx-padding: 40;");
+        //layout.setStyle("-fx-background-color: #34495e; -fx-padding: 40;");
 
         Label title = new Label("寶可夢孵育中心");
-        title.setStyle("-fx-text-fill: #f1c40f; -fx-font-size: 32px; -fx-font-weight: bold;");
+        title.setStyle("-fx-font-size: 32px; -fx-font-weight: bold;");
+        title.getStyleClass().add("changeColor");
 
         // 抽獎展示區
         StackPane gachaDisplay = new StackPane();
@@ -679,7 +626,7 @@ public class FocusUI extends Application {
 
         Label normalCostLabel = new Label("200 / 抽");
         setLabeledIcon(normalCostLabel, "res/icon/coinlabel.png");
-        normalCostLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+        normalCostLabel.setStyle("-fx-font-size: 14px;");
 
         VBox normalBox = new VBox(8, normalBtn, normalCostLabel);
         normalBox.setAlignment(Pos.CENTER);
@@ -689,7 +636,7 @@ public class FocusUI extends Application {
 
         Label premiumCostLabel = new Label("1 / 抽");
         setLabeledIcon(premiumCostLabel, "res/icon/stonelabel.png");
-        premiumCostLabel.setStyle("-fx-text-fill: white; -fx-font-size: 12px;");
+        premiumCostLabel.setStyle("-fx-font-size: 14px;");
 
         VBox premiumBox = new VBox(8, premiumBtn, premiumCostLabel);
         premiumBox.setAlignment(Pos.CENTER);
@@ -766,6 +713,7 @@ public class FocusUI extends Application {
         }
 
         pokedexFlowGrid.getChildren().clear();
+        pokedexFlowGrid.setAlignment(Pos.CENTER);
         for (PokemonData data : pokedexList) {
             for (int i = 1; i <= 3; i++) {
                 VBox card = createPokemonCard(data, i);
@@ -916,7 +864,7 @@ public class FocusUI extends Application {
             this.currentPokemonFolder = folder;
             this.currentStage = stages;
             updatePokemonDisplay(folder, stages);
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
             // 替換掉你截圖裡報錯的那一行：
             this.timerView.updatePartnerDisplay(name, bigView.getImage());
             detailStage.close();
@@ -965,7 +913,7 @@ public class FocusUI extends Application {
         btnAdd.setOnAction(e -> {
             gameManager.addFocusTime(200, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
         });
@@ -973,7 +921,7 @@ public class FocusUI extends Application {
         btnAdd1.setOnAction(e -> {
             gameManager.addFocusTime(100, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
         });
@@ -981,7 +929,7 @@ public class FocusUI extends Application {
         btnAdd2.setOnAction(e -> {
             gameManager.addFocusTime(50, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            refreshXpDisplay();
+            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
         });

@@ -1,76 +1,184 @@
-/* 大木博士實驗室/明亮風 (PokemonLight.css) */
-.root {
-    -fx-background-color: #f0f4f88d; /* 帶有科技感的極淺灰藍 */
-    -fx-font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-}
-.label { -fx-text-fill: #2c3e50; }
+/* ==========================================
+   PokemonDark.css (純淨深色 + 白底卡片)
+   ========================================== */
 
-/* 頂部狀態列 (乾淨白) */
-.top-bar { 
-    -fx-background-color: #ffffff; 
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);
+.root {
+    -my-primary-color: #e7e7e7;
+    -my-secondary-color: #d4d4d4;
+    -my-background-color: #b0b0b0;
+
+    -my-shadow-color: #00000099;
+    -my-oppisite-primary-color: #a5a5a5;
+
+    -my-text-color: #000000;
+    -my-text-soft-color: #333333;
+    -my-label-text-color: #444444;
+
+    -my-border-color: #aaaaaa;
+    -my-tab-border-color: #353535;
+
+    -my-pokemon-card: #f1e0b1;
+    -my-pokemon-card-hover: #ffcb05;
+
+    -my-progress-bar: #ffcb05;
+
+    -fx-font-family: 'Chiron GoRound TC';
+    -fx-font-weight: 700;
+    -fx-background-color: -my-primary-color;
 }
-.top-bar .label { 
-    -fx-text-fill: #2c3e50; /* 覆蓋掉預設的白色文字 */
-    -fx-font-weight: bold; 
+
+.label {
+    -fx-text-fill: -my-text-soft-color;
+}
+.label.changeColor {
+    -fx-text-fill: #f1c40f;
+}
+/* 頂部狀態列 */
+.top-bar {
+    -fx-background-color: -my-background-color;
+}
+
+.top-bar .label {
+    -fx-text-fill: -my-text-soft-color;
+    -fx-font-weight: bold;
+}
+
+.choice-box {
+    -fx-background-color: -my-primary-color;
+    -fx-border-color: -my-border-color;
+    -fx-border-radius: 5;
+    -fx-mark-color: -my-text-color;
+}
+.choice-box > .label {
+    -fx-text-fill: -my-text-color;
+}
+.choice-box .context-menu {
+    -fx-background-color: -my-secondary-color;
+}
+.choice-box .menu-item > .label {
+    -fx-text-fill: -my-text-color;
+}
+.choice-box .menu-item:focused {
+    -fx-background-color: -my-primary-color;
+}
+.choice-box .menu-item:focused > .label {
+    -fx-text-fill: -my-text-color;
 }
 
 /* 分頁標籤 */
-.tab-pane .tab-header-area .tab-header-background { -fx-background-color: #e2e8f0; }
-.tab {
-    -fx-background-color: #cbd5e1;
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: -my-background-color;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: -my-tab-border-color;
+}
+
+.tab { 
+    -fx-padding: 6 15;
+    -fx-background-color: -my-secondary-color;
     -fx-background-radius: 8 8 0 0;
-    -fx-padding: 8 20;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: -my-tab-border-color;
 }
-.tab .tab-label { -fx-text-fill: #64748b; -fx-font-weight: bold; }
+
+.tab .tab-label {
+    -fx-text-fill: -my-label-text-color;
+    -fx-font-weight: bold;
+}
+
 .tab:selected {
-    -fx-background-color: #ffffff;
+    -fx-border-width: 2;
+    -fx-border-color: -my-tab-border-color -my-tab-border-color -my-primary-color -my-tab-border-color;
+    -fx-border-radius: 8 8 0 0;
+    -fx-background-color: -my-primary-color;
 }
-.tab:selected .tab-label { -fx-text-fill: #3b82f6; } /* 選中時變成科技藍 */
+
+.tab:selected .tab-label {
+    -fx-text-fill: -my-text-color;
+}
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
 
 /* 按鈕 */
 .button {
-    -fx-background-color: #3b82f6; /* 實驗室科技藍 */
-    -fx-text-fill: white;
+    -fx-background-color: -my-oppisite-primary-color;
+    -fx-text-fill: -my-primary-color;
     -fx-background-radius: 10;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.3), 8, 0, 0, 3);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
 }
-.button:hover { 
-    -fx-background-color: #2563eb; 
-    -fx-translate-y: -2px; 
+
+.button:hover {
+    -fx-background-color: -my-text-soft-color;
+    -fx-translate-y: -2px;
     -fx-cursor: hand;
 }
 
 /* ==========================================
-   統一固定的圖鑑卡片樣式 (所有主題共用)
+   【關鍵修復】拔除 ScrollPane 的刺眼白底
    ========================================== */
-.pokemon-card {
-    -fx-background-color: #f1e0b1; 
-    -fx-background-radius: 12;
-    -fx-border-color: #e0e0e0;
-    -fx-border-width: 1;
-    -fx-border-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 4);
+.scroll-pane,
+.scroll-pane>.viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
 }
+
+/* 黃底卡片 (浮在深色背景上) */
+.pokemon-card {
+    -fx-background-color: -my-pokemon-card;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-color, 10, 0, 0, 4);
+    /* 加深陰影，讓卡片更立體 */
+}
+
 .pokemon-card:hover {
-    -fx-border-color: #FFCB05; 
+    -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 2;
-    -fx-effect: dropshadow(gaussian, rgba(255,203,5,0.4), 12, 0, 0, 0);
+    -fx-border-radius: 12;
 }
 
 /* 經驗條 */
-.progress-bar .track { -fx-background-color: #e2e8f0; -fx-background-radius: 10; }
-.progress-bar .bar { -fx-background-color: #3b82f6; -fx-background-radius: 8; }
+.progress-bar .track {
+    -fx-background-color: -my-secondary-color;
+    -fx-background-radius: 10;
+}
+
+.progress-bar .bar {
+    -fx-background-color: -my-progress-bar;
+    -fx-background-radius: 8;
+}
 
 /* 屬性標籤 */
-.type-tag { -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 12px; }
-.fire { -fx-background-color: #e84118; }
-.water { -fx-background-color: #00a8ff; }
-.grass { -fx-background-color: #4cd137; }
-.electric { -fx-background-color: #fbc531; -fx-text-fill: #2f3640; }
-.normal { -fx-background-color: #7f8fa6; }
+.type-tag {
+    -fx-padding: 3 10;
+    -fx-background-radius: 12;
+    -fx-font-weight: bold;
+    -fx-text-fill: -my-text-color;
+    -fx-font-size: 12px;
+}
+
+.fire {
+    -fx-background-color: #e84118;
+}
+
+.water {
+    -fx-background-color: #00a8ff;
+}
+
+.grass {
+    -fx-background-color: #4cd137;
+}
+
+.electric {
+    -fx-background-color: #fbc531;
+    -fx-text-fill: #2f3640;
+}
+
+.normal {
+    -fx-background-color: #7f8fa6;
+}
 
 /* ==========================================
    【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
@@ -78,8 +186,8 @@
    ========================================== */
 .tab-pane,
 .tab-pane .tab-content-area,
-.scroll-pane, 
-.scroll-pane > .viewport {
+.scroll-pane,
+.scroll-pane>.viewport {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-padding: 0;
@@ -87,20 +195,23 @@
 
 /* 讓屬性變成一個漂亮的圓角標籤 */
 .type-badge {
-    -fx-background-color: #3498db; /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
-    -fx-background-radius: 15;     /* 圓角 */
-    -fx-padding: 5 15 5 15;        /* 內邊距，讓它看起來像一顆膠囊 */
+    -fx-background-color: #3498db;
+    /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
+    -fx-background-radius: 15;
+    /* 圓角 */
+    -fx-padding: 5 15 5 15;
+    /* 內邊距，讓它看起來像一顆膠囊 */
 }
 
 /* 確保裡面的字永遠是白色且清晰 */
 .type-text {
-    -fx-text-fill: white;
+    -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: #cbd5e1;
+    -fx-background-color: -my-secondary-color;
     -fx-background-insets: 3;
     -fx-background-radius: 5;
 }
@@ -111,5 +222,5 @@
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button,
 .scroll-bar .corner {
-    -fx-background-color: #f0f4f88d;
+    -fx-background-color: -my-primary-color;
 }
