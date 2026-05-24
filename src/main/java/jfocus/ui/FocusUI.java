@@ -1,6 +1,8 @@
 package jfocus.ui;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,7 @@ import javafx.animation.RotateTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -65,6 +68,7 @@ public class FocusUI extends Application {
     private List<String> stages; // 這是描述
     private List<String> stageNames;
     private Scene mainScene; // 宣告全域的 Scene 以便切換主題
+    private Stage primaryStage;
     // --- 核心數據 (未來會與 JSON 對接) ---
     private String currentPokemonFolder = "004_charmander"; // 預設小火龍
     private int currentStage = 1;
@@ -475,7 +479,8 @@ public class FocusUI extends Application {
     }
     
     @Override
-    public void start(javafx.stage.Stage primaryStage) { 
+    public void start(javafx.stage.Stage primaryStage) {
+        this.primaryStage = primaryStage;
         loadPokedexData();
         loadUserProgressSafely();
 
@@ -549,6 +554,40 @@ public class FocusUI extends Application {
                         "ui"));
 
         updatePokemonDisplay(currentPokemonFolder, currentStage);
+    }
+
+    public void bringToFront() {
+        if (primaryStage == null) return;
+        Platform.runLater(() -> {
+            primaryStage.setAlwaysOnTop(true);
+            primaryStage.toFront();
+            primaryStage.requestFocus();
+            primaryStage.setAlwaysOnTop(false);
+        });
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
+            Thread t = new Thread(() -> {
+                long pid = ProcessHandle.current().pid();
+                String script = """
+                        tell application "System Events"
+                            set frontmost of first application process whose unix id is %d to true
+                        end tell
+                        """.formatted(pid);
+                try {
+                    Process p = new ProcessBuilder("/usr/bin/osascript", "-e", script).start();
+                    p.waitFor();
+                } catch (IOException e) {
+                    System.err.println("bringToFront osascript failed: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                Platform.runLater(() -> {
+                    primaryStage.toFront();
+                    primaryStage.requestFocus();
+                });
+            }, "jfocus-bring-to-front");
+            t.setDaemon(true);
+            t.start();
+        }
     }
 
     // 抽獎動畫 (加入 drawType 參數)

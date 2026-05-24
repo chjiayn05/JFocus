@@ -33,7 +33,7 @@ public class ModelTrainer {
         initializeDefaultTrainingData(trainingPath);
         
         int latestId = new ExportData().exportNewDataToTxt(trainingPath.toString());
-        System.out.println("📤 已匯出訓練資料至: " + trainingPath + "，最新ID: " + latestId);
+        System.out.println("已匯出訓練資料至: " + trainingPath + "，最新ID: " + latestId);
 
         checkAndTrainModel(trainingPath, AppPaths.getModelPath(), latestId);
     }

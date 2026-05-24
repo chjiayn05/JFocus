@@ -402,8 +402,10 @@ public class TimerView extends VBox implements FocusListener {
 
     @Override
     public void onFinished() {
+        focusUI.bringToFront();
         Platform.runLater(() -> {
             timerLabel.setText(String.format("%02d:%02d", 0, 0));
+            
             if (userStatus == status.WORKING) {
                 int focusedMinutes = Integer.parseInt(workInput.getText());
                 statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
@@ -424,11 +426,10 @@ public class TimerView extends VBox implements FocusListener {
                 delay.play();
                 // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
             } else {
-                statusLabel.setText("休息時間已結束!");
+                statusLabel.setText("休息時間已結束!準備繼續工作啦!");
                 resetUI();
                 userStatus = status.IDLEING;
             }
-            
         });
     }
 
