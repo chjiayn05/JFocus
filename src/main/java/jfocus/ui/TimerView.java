@@ -41,7 +41,10 @@ public class TimerView extends VBox implements FocusListener {
     private Button pauseBtn; // 新增這行
     private Button debugBtn;
     private boolean isPaused = false; // 記錄目前的暫停狀態
-    private int lastTickSeconds = 0;  // 碼表模式：記錄最後一次 tick 的秒數
+    private int lastTickSeconds = 0; // 碼表模式：記錄最後一次 tick 的秒數
+
+    private enum status { WORKING, CHILLING, IDLEING };
+    private status userStatus = status.IDLEING;
     // 新增這行：讓 TimerView 記住目前夥伴的名字
     private String currentPartnerName = "神秘夥伴";
 
@@ -205,7 +208,7 @@ public class TimerView extends VBox implements FocusListener {
                     statusLabel.setText("正在與 " + currentPartnerName + " 一起冒險中...");
                     engine.start(minutes * 60); // 呼叫番茄鐘引擎倒數
                 }
-
+                userStatus = status.WORKING;
             } catch (NumberFormatException ex) {
                 statusLabel.setText("請輸入有效的數字！");
                 resetUI();
@@ -237,6 +240,7 @@ public class TimerView extends VBox implements FocusListener {
                 }
                 focusUI.refreshOnEnded(); 
                 resetUI();
+                userStatus = status.IDLEING;
             } else {
                 // 1. 建立一個確認視窗 (Confirmation Dialog)
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
@@ -332,6 +336,57 @@ public class TimerView extends VBox implements FocusListener {
             timerLabel.setText(String.format("%02d:00", minutes));
         }
     }
+
+    private void resetUI() {
+        resetUI(3.5, false);
+    }
+
+    private void resetUI(boolean isBreakTime) {
+        resetUI(10, isBreakTime);
+    }
+
+    private void resetUI(double setTime, boolean isBreakTime) {
+        int min = parsePositiveMinutes(isBreakTime ? breakInput.getText() : workInput.getText());
+        if (min <= 0) {
+            min = isBreakTime ? TimerSettings.DEFAULT_BREAK_MINUTES : TimerSettings.DEFAULT_WORK_MINUTES;
+            workInput.setText(String.valueOf(min));
+        }
+        int finalMin = min;
+        if (isBreakTime) {
+            startBtn.setVisible(false);
+            startBtn.setManaged(false);
+            pauseBtn.setVisible(false);
+            pauseBtn.setManaged(true);
+            stopBtn.setVisible(false);
+            stopBtn.setManaged(true);
+            debugBtn.setVisible(true);
+            debugBtn.setManaged(true);
+        } else {
+            timerLabel.setText(String.format("%02d:00", finalMin));
+            startBtn.setVisible(true);
+            startBtn.setManaged(true);
+            pauseBtn.setVisible(false);
+            pauseBtn.setManaged(false);
+            pauseBtn.setText("暫停");
+            stopBtn.setVisible(false);
+            stopBtn.setManaged(false);
+            debugBtn.setVisible(false);
+            debugBtn.setManaged(false);
+            isPaused = false;
+        }
+
+        PauseTransition delay = new PauseTransition(Duration.seconds(setTime));
+        delay.setOnFinished(event -> {
+            if (isBreakTime) {
+                statusLabel.setText("休息一下吧");
+                timerLabel.setText(String.format("%02d:00", finalMin));
+            } else {
+                statusLabel.setText("準備就緒");
+            }
+        });
+        delay.play();
+    }
+    
     // ==========================================
     // 實作 FocusListener (接收引擎每秒的回傳)
     // ==========================================
@@ -348,46 +403,33 @@ public class TimerView extends VBox implements FocusListener {
     @Override
     public void onFinished() {
         Platform.runLater(() -> {
-            int focusedMinutes = Integer.parseInt(workInput.getText());
-            statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
+            timerLabel.setText(String.format("%02d:%02d", 0, 0));
+            if (userStatus == status.WORKING) {
+                int focusedMinutes = Integer.parseInt(workInput.getText());
+                statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
 
-            // 呼叫 GameManager 結算
-            String currentId = gameManager.getCurrentPokemonId();
-            gameManager.addFocusTime(focusedMinutes, currentId);
-            focusUI.refreshOnEnded();
+                // 呼叫 GameManager 結算
+                String currentId = gameManager.getCurrentPokemonId();
+                gameManager.addFocusTime(focusedMinutes, currentId);
+                focusUI.refreshOnEnded();
 
-            resetUI();
-            // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
+                resetUI(true);
+                userStatus = status.CHILLING;
+
+                PauseTransition delay = new PauseTransition(Duration.seconds(10));
+                int breakMinutes = Integer.parseInt(breakInput.getText());
+                delay.setOnFinished(event -> {
+                    engine.start(breakMinutes * 60);
+                });
+                delay.play();
+                // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
+            } else {
+                statusLabel.setText("休息時間已結束!");
+                resetUI();
+                userStatus = status.IDLEING;
+            }
+            
         });
-    }
-    
-    private void resetUI() {
-        resetUI(3.5);
-    }
-
-    private void resetUI(double setTime) {
-        int m = parsePositiveMinutes(workInput.getText());
-        if (m <= 0) {
-            m = TimerSettings.DEFAULT_WORK_MINUTES;
-            workInput.setText(String.valueOf(m));
-        }
-        timerLabel.setText(String.format("%02d:00", m));
-        startBtn.setVisible(true);
-        startBtn.setManaged(true);
-        pauseBtn.setVisible(false);
-        pauseBtn.setManaged(false);
-        pauseBtn.setText("暫停");
-        stopBtn.setVisible(false);
-        stopBtn.setManaged(false);
-        debugBtn.setVisible(false);
-        debugBtn.setManaged(false);
-        isPaused = false;
-        
-        PauseTransition delay = new PauseTransition(Duration.seconds(setTime));
-        delay.setOnFinished(event -> {
-            statusLabel.setText("準備就緒");
-        });
-        delay.play();
     }
 
     @Override
