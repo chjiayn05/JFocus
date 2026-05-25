@@ -3,19 +3,21 @@
    ========================================== */
 
 .root {
-    -my-primary-color: #333333;
+    -my-primary-color: #363636;
     -my-secondary-color: #222222;
     -my-background-color: #101010;
 
-    -my-shadow-color: #ffffff99;
+    -my-shadow-color: #ffffff5c;
+    -my-shadow-hover-color: #ffffffbb;
     -my-oppisite-primary-color: #cccccc;
 
     -my-text-color: #ffffff;
-    -my-text-soft-color: #cacaca;
-    -my-label-text-color: #888888;
+    -my-text-soft-color: #d5d5d5;
+    -my-label-text-color: #a0a0a0;
 
     -my-border-color: #555555;
     -my-tab-border-color: #cacaca;
+    -my-line-color: #ffffff60 ;
 
     -my-pokemon-card: #f1e0b1;
     -my-pokemon-card-hover: #ffcb05;
@@ -28,7 +30,7 @@
 }
 
 .label {
-    -fx-text-fill: -my-text-soft-color;
+    -fx-text-fill: -my-text-color;
 }
 .label.changeColor {
     -fx-text-fill: #f1c40f;
@@ -40,13 +42,14 @@
 }
 
 .top-bar .label {
-    -fx-text-fill: -my-text-soft-color;
+    -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
 }
 
 .choice-box {
     -fx-background-color: -my-primary-color;
     -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
     -fx-border-radius: 5;
     -fx-mark-color: -my-text-color;
 }
@@ -138,6 +141,7 @@
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 2;
     -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 4);
 }
 
 /* 經驗條 */
@@ -209,6 +213,11 @@
     -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.separator .line {
+    -fx-border-color: -my-line-color;
+    -fx-border-width: 1px;
 }
 
 .scroll-bar .thumb {

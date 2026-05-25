@@ -5,9 +5,10 @@
 .root {
     -my-primary-color: #ceacac;
     -my-secondary-color: #6e2222;
-    -my-background-color: #ce2211;
+    -my-background-color: #cc0000;
 
-    -my-shadow-color: #0000001a;
+    -my-shadow-color: #89000060;
+    -my-shadow-hover-color: #ff00009b;
     -my-oppisite-primary-color: #6e2222;
 
     -my-text-color: #ffffff;
@@ -15,13 +16,13 @@
     -my-label-text-color: #ececec;
 
     -my-border-color: #555555;
-    -my-tab-border-color: #ffffff;
+    -my-tab-border-color: #3b4cca;
 
     -my-pokemon-card: #531616;
-    -my-pokemon-card-hover: #ce2211;
+    -my-pokemon-card-hover: #cc0000;
+    -my-line-color: #6e000040 ;
 
-    -my-progress-bar: #4dad5b;
-
+    -my-progress-bar: linear-gradient(to right, #3b4cca, #cc0000);
     -fx-font-family: 'Chiron GoRound TC';
     -fx-font-weight: 700;
     -fx-background-color: -my-primary-color;
@@ -31,7 +32,7 @@
     -fx-text-fill: -my-text-soft-color;
 }
 .label.changeColor {
-    -fx-text-fill: #ce2211;
+    -fx-text-fill: #cc0000;
 }
 
 /* 頂部狀態列 */
@@ -47,6 +48,7 @@
 .choice-box {
     -fx-background-color: -my-primary-color;
     -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
     -fx-border-radius: 5;
     -fx-mark-color: -my-text-color;
 }
@@ -138,6 +140,7 @@
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 2;
     -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 4);
 }
 
 /* 經驗條 */
@@ -209,6 +212,11 @@
     -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.separator .line {
+    -fx-border-color: -my-line-color;
+    -fx-border-width: 1px;
 }
 
 .scroll-bar .thumb {

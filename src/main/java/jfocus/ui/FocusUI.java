@@ -22,6 +22,7 @@ import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -31,7 +32,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
@@ -74,10 +74,6 @@ public class FocusUI extends Application {
 
     // 【新增這行】把抽獎訊息標籤變成全域變數
     private Label gachaMessageLabel = new Label("來試試手氣吧！");
-
-    // 經驗條元件
-    private ProgressBar xpBar = new ProgressBar(0.0);
-    private Label xpInfoLabel = new Label("XP: 0 / 50 (等級 1)");
 
     private Button startBtn = new Button("開始冒險");
     private Button stopBtn = new Button("停止");
@@ -257,7 +253,6 @@ public class FocusUI extends Application {
             Map<String, Integer> pokemonXpMap = UserData.loadPokemonXp();
             gameManager.initializePlayerState(stats[0], stats[1], stats[2], unlockedStages, pokemonXpMap);
             refreshCurrencyLabels();
-            timerView.refreshXpDisplay();
         } catch (RuntimeException ex) {
             statusLabel.setText("讀取存檔失敗，將使用預設資料。");
             System.err.println("讀取存檔失敗: " + ex.getMessage());
@@ -473,14 +468,14 @@ public class FocusUI extends Application {
 
         HBox topBar = new HBox(15, themeSelector, spacer, coinLabel, stoneLabel);
         topBar.setAlignment(Pos.CENTER);
-        topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 20));
+        topBar.setPadding(new javafx.geometry.Insets(10, 20, 10, 5));
         topBar.getStyleClass().add("top-bar");
 
         // 3. 佈局組合：上面是狀態列，下面是分頁內容
         VBox rootLayout = new VBox(topBar, tabPane);
         javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
 
-        mainScene = new Scene(rootLayout, 500, 750);
+        mainScene = new Scene(rootLayout, 530, 750);
         switchTheme("PokemonDark.css");
 
         // 4. 刷新初始狀態
@@ -672,9 +667,13 @@ public class FocusUI extends Application {
                 "-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 30;");
     }
 
+    public String getCurrentPokemonFolder() {
+        return currentPokemonFolder;
+    }
+
     /**
      * 更新精靈圖片顯示
-     * 
+     *
      * @param folder 資料夾名稱 (如 004_charmander)
      * @param stages 進化階段 (1, 2, 或 3)
      */
@@ -714,10 +713,31 @@ public class FocusUI extends Application {
 
         pokedexFlowGrid.getChildren().clear();
         pokedexFlowGrid.setAlignment(Pos.CENTER);
+
+        int count = 0;
         for (PokemonData data : pokedexList) {
             for (int i = 1; i <= 3; i++) {
                 VBox card = createPokemonCard(data, i);
                 pokedexFlowGrid.getChildren().add(card);
+            }
+
+            if (data == pokedexList.getLast()) {
+                continue;
+            }
+
+            if (count == 0) {
+                Separator separatorVer = new Separator();
+                separatorVer.setOrientation(Orientation.VERTICAL);
+                pokedexFlowGrid.getChildren().add(separatorVer);
+                count++;
+            } else if (count == 1) {
+                Separator separatorHor1 = new Separator();
+                Separator separatorHor2 = new Separator();
+                separatorHor1.setMinWidth(230);
+                separatorHor2.setMinWidth(230);
+                HBox separatorHorBox = new HBox(20, separatorHor1, separatorHor2);
+                pokedexFlowGrid.getChildren().add(separatorHorBox);
+                count = 0;
             }
         }
     }
@@ -913,25 +933,25 @@ public class FocusUI extends Application {
         btnAdd.setOnAction(e -> {
             gameManager.addFocusTime(200, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
+            timerView.refreshXpDisplay();
         });
 
         btnAdd1.setOnAction(e -> {
             gameManager.addFocusTime(100, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
+            timerView.refreshXpDisplay();
         });
 
         btnAdd2.setOnAction(e -> {
             gameManager.addFocusTime(50, getCurrentPokemonId()); // 模擬加錢
             refreshCurrencyLabels();
-            timerView.refreshXpDisplay();
             refreshPokedexGrid();
             saveUserProgressSafely();
+            timerView.refreshXpDisplay();
         });
 
         layout.getChildren().addAll(

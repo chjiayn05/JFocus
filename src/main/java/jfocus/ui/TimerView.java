@@ -1,6 +1,11 @@
 package jfocus.ui;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.SequentialTransition;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -21,6 +26,19 @@ import jfocus.settings.TimerSettings;
 
 public class TimerView extends VBox implements FocusListener {
 
+    private final int STAGE_1 = 0;
+    private final int STAGE_2 = 1;
+    private final int STAGE_3 = 2;
+
+    private final int STAGE_1_XP_REQUIREMENT = 50;
+    private final int STAGE_2_XP_REQUIREMENT = 200;
+    private final int STAGE_3_XP_REQUIREMENT = 500;
+
+    private final int[] STAGE_XP_REQUIREMENT = {
+        STAGE_1_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT + STAGE_3_XP_REQUIREMENT};
+
     private GameManager gameManager;
     private FocusUI focusUI;
     private FocusEngine engine;
@@ -39,14 +57,16 @@ public class TimerView extends VBox implements FocusListener {
     private Label statusLabel;
 
     private Button pauseBtn; // 新增這行
-    private Button debugBtn;
+    private Button debugBtn10s;
+    private Button debugBtn1m;
+    private Button debugBtn5m;
     private boolean isPaused = false; // 記錄目前的暫停狀態
     private int lastTickSeconds = 0; // 碼表模式：記錄最後一次 tick 的秒數
 
     private enum status { WORKING, CHILLING, IDLEING };
     private status userStatus = status.IDLEING;
-    // 新增這行：讓 TimerView 記住目前夥伴的名字
     private String currentPartnerName = "神秘夥伴";
+    private int previousEvolutionStage = -1;
 
     public TimerView(GameManager gameManager, FocusUI focusUI) {
 
@@ -68,13 +88,27 @@ public class TimerView extends VBox implements FocusListener {
         pauseBtn.setVisible(false);
         pauseBtn.setManaged(false);
 
-        debugBtn = new Button("⟳10s");
-        debugBtn.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
-        debugBtn.setVisible(false);
-        debugBtn.setManaged(false);
-        debugBtn.setOnAction(e -> engine.debugForward(10));
+        //TODO Debug區域
+        debugBtn10s = new Button("⟳10s");
+        debugBtn10s.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        debugBtn10s.setVisible(false);
+        debugBtn10s.setManaged(false);
+        debugBtn10s.setOnAction(e -> engine.debugForward(10));
 
-        HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn, debugBtn);
+        debugBtn1m = new Button("⟳1m");
+        debugBtn1m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        debugBtn1m.setVisible(false);
+        debugBtn1m.setManaged(false);
+        debugBtn1m.setOnAction(e -> engine.debugForward(60));
+        
+        debugBtn5m = new Button("⟳5m");
+        debugBtn5m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        debugBtn5m.setVisible(false);
+        debugBtn5m.setManaged(false);
+        debugBtn5m.setOnAction(e -> engine.debugForward(60* 5));
+
+        HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn);
+        HBox debugBtnBox = new HBox(15, debugBtn10s, debugBtn1m, debugBtn5m);
         // 1. 實例化所有 UI 零件
         TimerSettings timerSettings = loadTimerSettingsSafely();
 
@@ -131,11 +165,14 @@ public class TimerView extends VBox implements FocusListener {
         xpInfoLabel.setText("XP: 0 / 50 (等級 1)");
         xpInfoLabel.setStyle("-fx-font-size: 14px;");
 
+        VBox xpBox = new VBox(3, xpInfoLabel, xpBar);
+        xpBox.setAlignment(Pos.CENTER);
+
         statusLabel = new Label("準備就緒");
 
         // 2. 開始套用你設計的精美排版
         this.setAlignment(Pos.CENTER);
-        this.setSpacing(15);
+        this.setSpacing(18);
         this.getStyleClass().add("timer-layout"); // 建議未來把 padding 寫進 CSS
 
         HBox inputArea = new HBox(10, 
@@ -146,17 +183,18 @@ public class TimerView extends VBox implements FocusListener {
 
 
         btnBox.setAlignment(Pos.CENTER);
+        debugBtnBox.setAlignment(Pos.CENTER);
 
         // 3. 把所有零件組裝起來 (就是你原本的寫法)
         this.getChildren().addAll(
                 modeSelector,
                 inputArea,
                 pokemonImageView,
-                xpBar,
-                xpInfoLabel,
+                xpBox,
                 statusLabel,
                 timerLabel,
-                btnBox
+                btnBox,
+                debugBtnBox
         );
 
         // 4. 掛載組員寫的引擎與按鈕事件
@@ -192,8 +230,14 @@ public class TimerView extends VBox implements FocusListener {
                 pauseBtn.setManaged(true);
                 stopBtn.setVisible(true);
                 stopBtn.setManaged(true);
-                debugBtn.setVisible(true);
-                debugBtn.setManaged(true);
+
+                //TODO Debug區域
+                debugBtn10s.setVisible(true);
+                debugBtn10s.setManaged(true);
+                debugBtn1m.setVisible(true);
+                debugBtn1m.setManaged(true);
+                debugBtn5m.setVisible(true);
+                debugBtn5m.setManaged(true);
 
                 isPaused = false;
                 pauseBtn.setText("暫停");
@@ -359,8 +403,14 @@ public class TimerView extends VBox implements FocusListener {
             pauseBtn.setManaged(true);
             stopBtn.setVisible(false);
             stopBtn.setManaged(true);
-            debugBtn.setVisible(true);
-            debugBtn.setManaged(true);
+
+            //TODO Debug區域
+            debugBtn10s.setVisible(true);
+            debugBtn10s.setManaged(true);
+            debugBtn1m.setVisible(true);
+            debugBtn1m.setManaged(true);
+            debugBtn5m.setVisible(true);
+            debugBtn5m.setManaged(true);
         } else {
             timerLabel.setText(String.format("%02d:00", finalMin));
             startBtn.setVisible(true);
@@ -370,9 +420,15 @@ public class TimerView extends VBox implements FocusListener {
             pauseBtn.setText("暫停");
             stopBtn.setVisible(false);
             stopBtn.setManaged(false);
-            debugBtn.setVisible(false);
-            debugBtn.setManaged(false);
             isPaused = false;
+
+            //TODO Debug區域
+            debugBtn10s.setVisible(false);
+            debugBtn10s.setManaged(false);
+            debugBtn1m.setVisible(false);
+            debugBtn1m.setManaged(false);
+            debugBtn5m.setVisible(false);
+            debugBtn5m.setManaged(false);
         }
 
         PauseTransition delay = new PauseTransition(Duration.seconds(setTime));
@@ -462,24 +518,108 @@ public class TimerView extends VBox implements FocusListener {
         double progress;
         int nextGoal;
         int stage;
-        if (xp < 50) {
-            stage = 1; nextGoal = 50; progress = xp / 50.0;
-        } else if (xp < 250) {
-            stage = 2; nextGoal = 250; progress = (xp - 50) / 200.0;
-        } else {
-            stage = 3; nextGoal = 750; progress = Math.min(1.0, (xp - 250) / 500.0);
+        int prevStageGoal;
+        if (xp < STAGE_XP_REQUIREMENT[STAGE_1]) {
+            stage = 1;
+            nextGoal = STAGE_1_XP_REQUIREMENT;
+            prevStageGoal = 0;
+            progress = (double) xp / STAGE_XP_REQUIREMENT[STAGE_1];
+        } else if (xp < STAGE_XP_REQUIREMENT[STAGE_2]) {
+            stage = 2;
+            nextGoal = STAGE_2_XP_REQUIREMENT;
+            prevStageGoal= STAGE_XP_REQUIREMENT[STAGE_1];
+            progress = (double)(xp - prevStageGoal) / STAGE_2_XP_REQUIREMENT;
+        } else if (xp < STAGE_XP_REQUIREMENT[STAGE_3]) {
+            stage = 3;
+            nextGoal = STAGE_3_XP_REQUIREMENT;
+            prevStageGoal = STAGE_XP_REQUIREMENT[STAGE_2];
+            progress = (double)(xp - prevStageGoal) / STAGE_3_XP_REQUIREMENT;
+        }else{
+            stage = 4;
+            nextGoal = STAGE_3_XP_REQUIREMENT;
+            progress = 1.0;
+            prevStageGoal = STAGE_XP_REQUIREMENT[STAGE_3];
         }
-        final double p = progress;
-        final String text = "XP: " + xp + " / " + nextGoal + " (等級 " + stage + ")";
+        final double progressFinal = progress;
+        final String text = (stage == 4)
+            ? "等級 MAX "
+            : "XP: " + (xp - prevStageGoal) + " / " + nextGoal + " (等級 " + stage + ")";
+        String folder = focusUI.getCurrentPokemonFolder();
+        int evolutionStage = gameManager.getEvolutionStage(id);
+        java.io.File imgFile = new java.io.File("res/pokemon/" + folder + "/stage" + evolutionStage + ".png");
+        boolean evolved = previousEvolutionStage > 0 && evolutionStage > previousEvolutionStage;
+        previousEvolutionStage = evolutionStage;
         Platform.runLater(() -> {
             xpInfoLabel.setText(text);
-            javafx.animation.Timeline tl = new javafx.animation.Timeline(
-                new javafx.animation.KeyFrame(Duration.millis(600),
-                    new javafx.animation.KeyValue(
-                        xpBar.progressProperty(), p,
-                        javafx.animation.Interpolator.EASE_BOTH))
-            );
-            tl.play();
+            if (!imgFile.exists()) return;
+            javafx.scene.image.Image newImage = new javafx.scene.image.Image(imgFile.toURI().toString());
+            PauseTransition delay = new PauseTransition(Duration.seconds(1));
+            delay.setOnFinished(e -> {
+                if (evolved) {
+                    playXpFillThenReset(progressFinal, newImage);
+                } else {
+                    javafx.animation.Timeline tl = new javafx.animation.Timeline(
+                        new javafx.animation.KeyFrame(Duration.millis(600),
+                            new javafx.animation.KeyValue(
+                                xpBar.progressProperty(), progressFinal,
+                                javafx.animation.Interpolator.EASE_BOTH))
+                    );
+                    tl.play();
+                    pokemonImageView.setImage(newImage);
+                }
+            });
+            delay.play();
+            
         });
+    }
+
+    private void playXpFillThenReset(double targetProgress, javafx.scene.image.Image newImage) {
+        javafx.animation.Timeline fillToFull = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(Duration.millis(400),
+                new javafx.animation.KeyValue(xpBar.progressProperty(), 1.0, Interpolator.EASE_IN))
+        );
+        fillToFull.setOnFinished(e -> {
+            xpBar.setProgress(0);
+            PauseTransition pause = new PauseTransition(Duration.millis(80));
+            pause.setOnFinished(e2 -> {
+                javafx.animation.Timeline fillToNew = new javafx.animation.Timeline(
+                    new javafx.animation.KeyFrame(Duration.millis(600),
+                        new javafx.animation.KeyValue(xpBar.progressProperty(), targetProgress, Interpolator.EASE_BOTH))
+                );
+                fillToNew.play();
+            });
+            pause.play();
+        });
+        fillToFull.play();
+        playEvolutionAnimation(newImage);
+    }
+
+    private void playEvolutionAnimation(javafx.scene.image.Image newImage) {
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(250), pokemonImageView);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+        fadeOut.setOnFinished(e -> {
+            pokemonImageView.setImage(newImage);
+            pokemonImageView.setScaleX(0.4);
+            pokemonImageView.setScaleY(0.4);
+
+            ScaleTransition scaleUp = new ScaleTransition(Duration.millis(400), pokemonImageView);
+            scaleUp.setToX(1.25);
+            scaleUp.setToY(1.25);
+            scaleUp.setInterpolator(Interpolator.EASE_OUT);
+
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), pokemonImageView);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+
+            ScaleTransition settle = new ScaleTransition(Duration.millis(200), pokemonImageView);
+            settle.setToX(1.0);
+            settle.setToY(1.0);
+            settle.setInterpolator(Interpolator.EASE_IN);
+
+            ParallelTransition popIn = new ParallelTransition(scaleUp, fadeIn);
+            new SequentialTransition(popIn, settle).play();
+        });
+        fadeOut.play();
     }
 }

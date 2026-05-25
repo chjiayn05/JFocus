@@ -12,8 +12,18 @@ import java.util.Set;
 import jfocus.io.UserData;
 
 public class GameManager {
-    private static final int STAGE_2_XP_REQUIREMENT = 50;
-    private static final int STAGE_3_XP_REQUIREMENT = 200;
+    private final int STAGE_1 = 0;
+    private final int STAGE_2 = 1;
+    private final int STAGE_3 = 2;
+
+    private final int STAGE_1_XP_REQUIREMENT = 50;
+    private final int STAGE_2_XP_REQUIREMENT = 200;
+    private final int STAGE_3_XP_REQUIREMENT = 500;
+
+    private final int[] STAGE_XP_REQUIREMENT = {
+        STAGE_1_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT + STAGE_3_XP_REQUIREMENT};
 
     // 貨幣與數據
     private int focusCoins = 0;
@@ -98,7 +108,7 @@ public class GameManager {
             // 檢查這隻寶可夢是否在「已解鎖名單」中
             if (unlockedStageKeys.contains(stageKey(pokemonId, 1))) {
                 int currentXp = pokemonXpById.getOrDefault(pokemonId, 0);
-                int nextXp = Math.min(STAGE_3_XP_REQUIREMENT, currentXp + safeMinutes);
+                int nextXp = Math.min(STAGE_XP_REQUIREMENT[STAGE_3], currentXp + safeMinutes);
                 pokemonXpById.put(pokemonId, nextXp);
                 syncEvolutionStagesForPokemon(pokemonId);
                 
@@ -249,7 +259,7 @@ public class GameManager {
         if (normalized == null) {
             return 0;
         }
-        return Math.min(STAGE_3_XP_REQUIREMENT, pokemonXpById.getOrDefault(normalized, 0));
+        return Math.min(STAGE_XP_REQUIREMENT[STAGE_3], pokemonXpById.getOrDefault(normalized, 0));
     }
 
     
@@ -305,11 +315,17 @@ public class GameManager {
         }
 
         int pokemonXp = pokemonXpById.getOrDefault(pokemonId, 0);
-        if (pokemonXp >= STAGE_2_XP_REQUIREMENT) {
+        if (pokemonXp >= 0) {
+            unlockedStageKeys.add(stageKey(pokemonId, 1));
+        }
+        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_1]) {
             unlockedStageKeys.add(stageKey(pokemonId, 2));
         }
-        if (pokemonXp >= STAGE_3_XP_REQUIREMENT) {
+        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_2]) {
             unlockedStageKeys.add(stageKey(pokemonId, 3));
+        }
+        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_3]) {
+            unlockedStageKeys.add(stageKey(pokemonId, 4));
         }
     }
 

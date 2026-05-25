@@ -4,18 +4,20 @@
 
 .root {
     -my-primary-color: #e7e7e7;
-    -my-secondary-color: #d4d4d4;
+    -my-secondary-color: #d6d6d6;
     -my-background-color: #b0b0b0;
 
-    -my-shadow-color: #00000099;
+    -my-shadow-color: #00000060;
+    -my-shadow-hover-color: #1d1d1dcc;
     -my-oppisite-primary-color: #a5a5a5;
 
     -my-text-color: #000000;
     -my-text-soft-color: #333333;
-    -my-label-text-color: #444444;
+    -my-label-text-color: #555555;
 
     -my-border-color: #aaaaaa;
     -my-tab-border-color: #353535;
+    -my-line-color: #1d1d1d50 ;
 
     -my-pokemon-card: #f1e0b1;
     -my-pokemon-card-hover: #ffcb05;
@@ -39,13 +41,14 @@
 }
 
 .top-bar .label {
-    -fx-text-fill: -my-text-soft-color;
+    -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
 }
 
 .choice-box {
     -fx-background-color: -my-primary-color;
     -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
     -fx-border-radius: 5;
     -fx-mark-color: -my-text-color;
 }
@@ -137,6 +140,7 @@
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 2;
     -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 4);
 }
 
 /* 經驗條 */
@@ -208,6 +212,11 @@
     -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.separator .line {
+    -fx-border-color: -my-line-color;
+    -fx-border-width: 1px;
 }
 
 .scroll-bar .thumb {

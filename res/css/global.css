@@ -47,6 +47,7 @@
 .choice-box {
     -fx-background-color: -my-primary-color;
     -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
     -fx-border-radius: 5;
     -fx-mark-color: -my-text-color;
 }

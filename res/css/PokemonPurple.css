@@ -7,7 +7,8 @@
     -my-secondary-color: #57328f;
     -my-background-color: #341c53;
 
-    -my-shadow-color: #bfa3e860;
+    -my-shadow-color: #5e349ca0;
+    -my-shadow-hover-color: #a081cfa0;
     -my-oppisite-primary-color: #e5e5db;
 
     -my-text-color: #ffffff;
@@ -17,8 +18,9 @@
     -my-border-color: #555555;
     -my-tab-border-color: #f74382;
 
-    -my-pokemon-card: #2a2a3b;
+    -my-pokemon-card: #36364f;
     -my-pokemon-card-hover: #f74382;
+    -my-line-color: #a081cfa0 ;
 
     -my-progress-bar: linear-gradient(to right, #4A2B7A, #E22B6D);
 
@@ -40,13 +42,14 @@
 }
 
 .top-bar .label {
-    -fx-text-fill: -my-text-soft-color;
+    -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
 }
 
 .choice-box {
     -fx-background-color: -my-primary-color;
     -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
     -fx-border-radius: 5;
     -fx-mark-color: -my-text-color;
 }
@@ -138,6 +141,7 @@
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 2;
     -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 4);
 }
 
 /* 經驗條 */
@@ -209,6 +213,11 @@
     -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+}
+
+.separator .line {
+    -fx-border-color: -my-line-color;
+    -fx-border-width: 1px;
 }
 
 .scroll-bar .thumb {
