@@ -128,6 +128,13 @@ public class DatabaseCore {
             );
             """;
 
+        String pokemonSelectedStageTableSql = """
+            CREATE TABLE IF NOT EXISTS pokemon_selected_stage (
+                pokemon_id TEXT PRIMARY KEY,
+                stage INTEGER NOT NULL DEFAULT 1
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -139,6 +146,7 @@ public class DatabaseCore {
             stmt.execute(appSettingsTableSql);
             stmt.execute(todosTableSql);
             stmt.execute(focusSessionsTableSql);
+            stmt.execute(pokemonSelectedStageTableSql);
 
             // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");

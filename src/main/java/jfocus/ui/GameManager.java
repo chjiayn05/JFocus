@@ -65,7 +65,7 @@ public class GameManager {
                 String pokemonId = normalizePokemonId(entry.getKey());
                 if (pokemonId != null) {
                     int xpValue = entry.getValue() == null ? 0 : Math.max(0, entry.getValue());
-                    xpValue = Math.min(STAGE_3_XP_REQUIREMENT, xpValue);
+                    xpValue = Math.min(STAGE_XP_REQUIREMENT[STAGE_3], xpValue);
                     pokemonXpById.put(pokemonId, xpValue);
                 }
             }
@@ -324,9 +324,7 @@ public class GameManager {
         if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_2]) {
             unlockedStageKeys.add(stageKey(pokemonId, 3));
         }
-        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_3]) {
-            unlockedStageKeys.add(stageKey(pokemonId, 4));
-        }
+        // Stage 3 is max; no stage 4 key stored
     }
 
     private void ensureXpEntriesForUnlockedStage1() {

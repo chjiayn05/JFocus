@@ -93,3 +93,52 @@
 .type-tag.fairy {
     -fx-background-color: #ef70ef;
 }
+
+
+.select-button {
+    -fx-text-fill: #ffffff;
+}
+
+/* ── Stage selector in detail view ── */
+
+.button.stage-select-btn {
+    -fx-background-color: -my-pokemon-card;
+    -fx-border: 0;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 6;
+    -fx-effect: none;
+    -fx-translate-y: 0;
+}
+
+.button.stage-select-btn.locked {
+    -fx-background-color: -my-pokemon-card-lock;
+    -fx-cursor: none;
+}
+
+.button.stage-select-btn:hover {
+    -fx-background-color: -my-pokemon-card-hover;
+    -fx-translate-y: 0;
+}
+
+.button.stage-select-btn.locked .label {
+    -fx-text-fill: none;
+}
+.button.stage-select-btn .label {
+    -fx-text-fill: -my-text-color;
+}
+
+.button.stage-select-btn.stage-selected {
+    -fx-cursor: none;
+    -fx-background-color: -my-pokemon-card;
+    -fx-border-color: -my-border-color;
+    -fx-border-width: 2;
+    -fx-border-insets: -2;
+}
+
+/* ── Active partner card in pokedex grid ── */
+.pokemon-card.active-partner {
+    -fx-border-color: -my-pokemon-card;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, #ffca09, 12, 0.4, 0, 0);
+}

@@ -9,13 +9,15 @@
 
     -my-shadow-color: #792140;
     -my-shadow-hover-color: #f74382;
-    -my-oppisite-primary-color: #e5e5db;
+
+    -my-btn-primary-color: #ac2f5b;
+    -my-btn-secondary-color: #d83c73;
 
     -my-text-color: #ffffff;
     -my-text-soft-color: #cacaca;
-    -my-label-text-color: #bfa3e8;
+    -my-label-text-color: #d8bdff;
 
-    -my-border-color: #555555;
+    -my-border-color: #f74382;
     -my-tab-border-color: #f74382;
     -my-line-color: #a081cfa0 ;
 
@@ -25,6 +27,9 @@
 
     -my-progress-bar: linear-gradient(to right, #4A2B7A, #E22B6D);
     -my-lock-color: #850000;
+
+    -my-stage-color: #57328f50;
+    -my-stage-hover-color: #57328f99;
 
     -fx-font-family: 'Chiron GoRound TC';
     -fx-font-weight: 700;
@@ -79,9 +84,12 @@
 }
 
 .tab { 
+    -fx-background-insets: 0 2 0 2; 
+    -fx-cursor: hand;
     -fx-padding: 6 15;
     -fx-background-color: -my-secondary-color;
     -fx-background-radius: 8 8 0 0;
+    -fx-border-insets: 0 2 0 2;
     -fx-border-width: 0 0 2 0;
     -fx-border-color: -my-tab-border-color;
 }
@@ -107,8 +115,8 @@
 
 /* 按鈕 */
 .button {
-    -fx-background-color: -my-oppisite-primary-color;
-    -fx-text-fill: -my-primary-color;
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: -my-text-color;
     -fx-background-radius: 10;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
@@ -116,7 +124,7 @@
 }
 
 .button:hover {
-    -fx-background-color: -my-text-soft-color;
+    -fx-background-color: -my-btn-secondary-color;
     -fx-translate-y: -1px;
     -fx-cursor: hand;
 }
@@ -142,7 +150,8 @@
     /* 加深陰影，讓卡片更立體 */
 }
 
-.pokemon-card:hover {
+.pokemon-card:hover,
+.pokemon-card.active-partner:hover {
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 1;
     -fx-border-radius: 12;
@@ -202,6 +211,6 @@
 
 .detailView{
     -fx-border-width: 3;
-    -fx-border-color: -my-pokemon-card-hover;
+    -fx-border-color: -my-shadow-hover-color;
     -fx-border-radius: 0 0 10 10;
 }

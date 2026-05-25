@@ -67,6 +67,7 @@ public class TimerView extends VBox implements FocusListener {
     private status userStatus = status.IDLEING;
     private String currentPartnerName = "神秘夥伴";
     private int previousEvolutionStage = -1;
+    private String previousPokemonId = null;
 
     public TimerView(GameManager gameManager, FocusUI focusUI) {
 
@@ -546,9 +547,14 @@ public class TimerView extends VBox implements FocusListener {
             : "XP: " + (xp - prevStageGoal) + " / " + nextGoal + " (等級 " + stage + ")";
         String folder = focusUI.getCurrentPokemonFolder();
         int evolutionStage = gameManager.getEvolutionStage(id);
-        java.io.File imgFile = new java.io.File("res/pokemon/" + folder + "/stage" + evolutionStage + ".png");
-        boolean evolved = previousEvolutionStage > 0 && evolutionStage > previousEvolutionStage;
+        int displayStage = focusUI.getCurrentPokemonStage();
+        java.io.File imgFile = new java.io.File("res/pokemon/" + folder + "/stage" + displayStage + ".png");
+        boolean partnerChanged = !id.equals(previousPokemonId);
+        boolean evolved = !partnerChanged && previousEvolutionStage > 0 && evolutionStage > previousEvolutionStage;
         previousEvolutionStage = evolutionStage;
+        previousPokemonId = id;
+        final String pokemonId = id;
+        final int newEvolutionStage = evolutionStage;
         Platform.runLater(() -> {
             xpInfoLabel.setText(text);
             if (!imgFile.exists()) return;
@@ -556,7 +562,7 @@ public class TimerView extends VBox implements FocusListener {
             PauseTransition delay = new PauseTransition(Duration.seconds(1));
             delay.setOnFinished(e -> {
                 if (evolved) {
-                    playXpFillThenReset(progressFinal, newImage);
+                    playXpFillThenReset(progressFinal, newImage, pokemonId, newEvolutionStage);
                 } else {
                     javafx.animation.Timeline tl = new javafx.animation.Timeline(
                         new javafx.animation.KeyFrame(Duration.millis(600),
@@ -569,11 +575,11 @@ public class TimerView extends VBox implements FocusListener {
                 }
             });
             delay.play();
-            
         });
     }
 
-    private void playXpFillThenReset(double targetProgress, javafx.scene.image.Image newImage) {
+    private void playXpFillThenReset(double targetProgress, javafx.scene.image.Image newImage,
+                                      String pokemonId, int newStage) {
         javafx.animation.Timeline fillToFull = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(Duration.millis(400),
                 new javafx.animation.KeyValue(xpBar.progressProperty(), 1.0, Interpolator.EASE_IN))
@@ -591,35 +597,7 @@ public class TimerView extends VBox implements FocusListener {
             pause.play();
         });
         fillToFull.play();
-        playEvolutionAnimation(newImage);
-    }
-
-    private void playEvolutionAnimation(javafx.scene.image.Image newImage) {
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(250), pokemonImageView);
-        fadeOut.setFromValue(1.0);
-        fadeOut.setToValue(0.0);
-        fadeOut.setOnFinished(e -> {
-            pokemonImageView.setImage(newImage);
-            pokemonImageView.setScaleX(0.4);
-            pokemonImageView.setScaleY(0.4);
-
-            ScaleTransition scaleUp = new ScaleTransition(Duration.millis(400), pokemonImageView);
-            scaleUp.setToX(1.25);
-            scaleUp.setToY(1.25);
-            scaleUp.setInterpolator(Interpolator.EASE_OUT);
-
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), pokemonImageView);
-            fadeIn.setFromValue(0.0);
-            fadeIn.setToValue(1.0);
-
-            ScaleTransition settle = new ScaleTransition(Duration.millis(200), pokemonImageView);
-            settle.setToX(1.0);
-            settle.setToY(1.0);
-            settle.setInterpolator(Interpolator.EASE_IN);
-
-            ParallelTransition popIn = new ParallelTransition(scaleUp, fadeIn);
-            new SequentialTransition(popIn, settle).play();
-        });
-        fadeOut.play();
+        pokemonImageView.setImage(newImage);
+        focusUI.showEvolutionUnlockDialog(pokemonId, newStage);
     }
 }

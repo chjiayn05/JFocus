@@ -3,28 +3,33 @@
    ========================================== */
 
 .root {
-    -my-primary-color: #e7e7e7;
-    -my-secondary-color: #d6d6d6;
-    -my-background-color: #b0b0b0;
+    -my-primary-color: #d7d7d7;
+    -my-secondary-color: #b7b7b7;
+    -my-background-color: #878787;
 
-    -my-shadow-color: #baa658;
-    -my-shadow-hover-color: #ffcc00;
-    -my-oppisite-primary-color: #a5a5a5;
+    -my-shadow-color: #767676;
+    -my-shadow-hover-color: #2e2e2e;
+
+    -my-btn-primary-color: #555555;
+    -my-btn-secondary-color: #707070;
 
     -my-text-color: #000000;
     -my-text-soft-color: #333333;
-    -my-label-text-color: #555555;
+    -my-label-text-color: #3e3e3e;
 
-    -my-border-color: #aaaaaa;
+    -my-border-color: #333333;
     -my-tab-border-color: #353535;
     -my-line-color: #1d1d1d50 ;
 
-    -my-pokemon-card: #f1e0b1;
-    -my-pokemon-card-lock: #aea280;
-    -my-pokemon-card-hover: #ffcb05;
+    -my-pokemon-card: #e3e1e1;
+    -my-pokemon-card-lock: #6e6e6e;
+    -my-pokemon-card-hover: #a8a8a8;
 
     -my-progress-bar: #ffcb05;
     -my-lock-color: #850000;
+
+    -my-stage-color: #b4b4b450;
+    -my-stage-hover-color: #b4b4b499;
 
     -fx-font-family: 'Chiron GoRound TC';
     -fx-font-weight: 700;
@@ -78,9 +83,12 @@
 }
 
 .tab { 
+    -fx-background-insets: 0 2 0 2; 
+    -fx-cursor: hand;
     -fx-padding: 6 15;
     -fx-background-color: -my-secondary-color;
     -fx-background-radius: 8 8 0 0;
+    -fx-border-insets: 0 2 0 2;
     -fx-border-width: 0 0 2 0;
     -fx-border-color: -my-tab-border-color;
 }
@@ -106,8 +114,8 @@
 
 /* 按鈕 */
 .button {
-    -fx-background-color: -my-oppisite-primary-color;
-    -fx-text-fill: -my-primary-color;
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: -my-text-color;
     -fx-background-radius: 10;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
@@ -115,7 +123,7 @@
 }
 
 .button:hover {
-    -fx-background-color: -my-text-soft-color;
+    -fx-background-color: -my-btn-secondary-color;
     -fx-translate-y: -1px;
     -fx-cursor: hand;
 }
@@ -141,7 +149,8 @@
     /* 加深陰影，讓卡片更立體 */
 }
 
-.pokemon-card:hover {
+.pokemon-card:hover,
+.pokemon-card.active-partner:hover {
     -fx-border-color: -my-pokemon-card-hover;
     -fx-border-width: 1;
     -fx-border-radius: 12;
@@ -201,6 +210,6 @@
 
 .detailView{
     -fx-border-width: 3;
-    -fx-border-color: -my-pokemon-card-hover;
+    -fx-border-color: -my-shadow-hover-color;
     -fx-border-radius: 0 0 10 10;
 }

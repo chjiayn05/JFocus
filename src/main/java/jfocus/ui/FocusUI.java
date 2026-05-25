@@ -22,7 +22,6 @@ import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -71,11 +70,13 @@ public class FocusUI extends Application {
     private GameManager gameManager = new GameManager();
     private Scene mainScene; // 宣告全域的 Scene 以便切換主題
     private Scene detailScene;
+    private Scene evolutionScene;
     private Stage primaryStage;
     private Stage detailStage;
     // --- 核心數據 (未來會與 JSON 對接) ---
     private String currentPokemonFolder = "004_charmander"; // 預設小火龍
     private int currentStage = 1;
+    private final java.util.Map<String, Integer> selectedStageMap = new java.util.HashMap<>();
     private Label coinLabel = new Label("0");
     private Label stoneLabel = new Label("0");
 
@@ -207,6 +208,10 @@ public class FocusUI extends Application {
         return pokemonId;
     }
 
+    private int getDisplayStageForPokemon(String pokemonId) {
+        return selectedStageMap.getOrDefault(pokemonId, gameManager.getEvolutionStage(pokemonId));
+    }
+
     public void refreshOnEnded() {
         refreshCurrencyLabels();
         refreshPokedexGrid();
@@ -265,6 +270,7 @@ public class FocusUI extends Application {
             Set<String> unlockedStages = UserData.loadUnlockedStages();
             Map<String, Integer> pokemonXpMap = UserData.loadPokemonXp();
             gameManager.initializePlayerState(stats[0], stats[1], stats[2], unlockedStages, pokemonXpMap);
+            selectedStageMap.putAll(UserData.loadSelectedStages());
             refreshCurrencyLabels();
         } catch (RuntimeException ex) {
             statusLabel.setText("讀取存檔失敗，將使用預設資料。");
@@ -382,17 +388,15 @@ public class FocusUI extends Application {
         }
     }
 
-    /**
-     * 動態切換 CSS 主題
-     */
+
     private void switchTheme(String cssFileName) {
-        Scene allScene[] = { mainScene, detailScene };
-        for (Scene targetScene : allScene){
+        Scene allScene[] = { mainScene, detailScene, evolutionScene };
+        for (Scene targetScene : allScene) {
             if (targetScene == null)
-                return;
+                continue;
 
             File cssFile = new File("res/css/" + cssFileName);
-            File typesFile = new File("res/css/PokemonTypes.css");
+            File typesFile = new File("res/css/pokemonTypes.css");
             if (cssFile.exists()) {
                 targetScene.getStylesheets().clear();
                 targetScene.getStylesheets().add(cssFile.toURI().toString());
@@ -403,7 +407,6 @@ public class FocusUI extends Application {
                 System.err.println("找不到主題檔案: " + cssFileName);
             }
         }
-        
     }
 
 
@@ -421,17 +424,14 @@ public class FocusUI extends Application {
         if (currentPartnerId != null && !currentPartnerId.isEmpty()) {
             for (PokemonData data : pokedexList) {
                 if (data.getId().equals(currentPartnerId)) {
-                    // 取得它現在進化到第幾階段
-                    int currentStage = gameManager.getEvolutionStage(data.getId());
-
-                    String partnerName = data.getStageName(currentStage);
-
-                    // 組合圖片路徑並載入
-                    String imgPath = "res/pokemon/" + data.getFolderName() + "/stage" + currentStage + ".png";
+                    int displayStage = this.currentStage > 0
+                            ? this.currentStage
+                            : getDisplayStageForPokemon(data.getId());
+                    String partnerName = data.getStageName(displayStage);
+                    String imgPath = "res/pokemon/" + data.getFolderName() + "/stage" + displayStage + ".png";
                     java.io.File imgFile = new java.io.File(imgPath);
                     if (imgFile.exists()) {
                         javafx.scene.image.Image initImage = new javafx.scene.image.Image(imgFile.toURI().toString());
-                        // 把名字和圖片傳給 TimerView！
                         this.timerView.updatePartnerDisplay(partnerName, initImage);
                     }
                     break;
@@ -453,6 +453,19 @@ public class FocusUI extends Application {
         loadPokedexData();
         loadUserProgressSafely();
 
+        // 還原上次使用的角色與出戰狀態
+        String savedPartnerId = gameManager.getCurrentPokemonId();
+        if (savedPartnerId != null) {
+            for (PokemonData data : pokedexList) {
+                if (savedPartnerId.equals(data.getId())) {
+                    this.currentPokemonFolder = data.getFolderName();
+                    this.currentStage = selectedStageMap.getOrDefault(
+                        savedPartnerId, gameManager.getEvolutionStage(savedPartnerId));
+                    break;
+                }
+            }
+        }
+
         // 1. 初始化 TabPane 與分頁
         javafx.scene.control.TabPane tabPane = new javafx.scene.control.TabPane();
 
@@ -464,14 +477,19 @@ public class FocusUI extends Application {
         statsTab.setClosable(false);
         Tab gachaTab = createGachaTab();
         gachaTab.setClosable(false);
-        gachaTab.setOnSelectionChanged(e -> { if (gachaTab.isSelected()) refreshDrawBtnStatus(); });
 
+        gachaTab.setOnSelectionChanged(e -> {
+            if (gachaTab.isSelected())
+                refreshDrawBtnStatus();
+        });
+        
         tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
 
         // 2. 頂部狀態列 (主題切換 + 貨幣)
         ChoiceBox<String> themeSelector = new ChoiceBox<>();
         themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
-        themeSelector.setValue("暗黑電競"); 
+        String savedThemeName = jfocus.io.UserData.loadAppSetting("theme_name", "暗黑電競");
+        themeSelector.setValue(savedThemeName);
 
         themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             css = switch (newVal) {
@@ -481,6 +499,7 @@ public class FocusUI extends Application {
                 case "大師球" -> "PokemonPurple.css";
                 default -> "PokemonDark.css";
             };
+            jfocus.io.UserData.saveAppSetting("theme_name", newVal);
             switchTheme(css);
         });
 
@@ -497,7 +516,13 @@ public class FocusUI extends Application {
         javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
 
         mainScene = new Scene(rootLayout, 530, 750);
-        switchTheme("PokemonDark.css");
+        css = switch (savedThemeName) {
+            case "明亮清新" -> "PokemonLight.css";
+            case "經典紅" -> "PokemonRed.css";
+            case "大師球" -> "PokemonPurple.css";
+            default -> "PokemonDark.css";
+        };
+        switchTheme(css);
 
         // 4. 刷新初始狀態
         setupButtonStyles();
@@ -513,9 +538,8 @@ public class FocusUI extends Application {
             FocusApp.shutdownNotificationService();
         });
         primaryStage.setResizable(false);
-        primaryStage.show();
-
         updatePokemonDisplay(currentPokemonFolder, currentStage);
+        primaryStage.show();
     }
 
     public void bringToFront() {
@@ -579,12 +603,12 @@ public class FocusUI extends Application {
             }
 
             ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(400), ballView);
-            pop.setFromX(0.5);
-            pop.setFromY(0.5);
-            pop.setToX(1.3);
-            pop.setToY(1.3);
+            pop.setFromX(0.7);
+            pop.setFromY(0.7);
+            pop.setToX(1.4);
+            pop.setToY(1.4);
             pop.setOnFinished(e2 -> {
-                ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
+                ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
                 ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
                 settle.setToX(1.0);
                 settle.setToY(1.0);
@@ -697,6 +721,82 @@ public class FocusUI extends Application {
         return currentPokemonFolder;
     }
 
+    public int getCurrentPokemonStage() {
+        return currentStage;
+    }
+
+    public PokemonData getPokemonDataById(String pokemonId) {
+        if (pokemonId == null) return null;
+        for (PokemonData d : pokedexList) {
+            if (pokemonId.equals(d.getId())) return d;
+        }
+        return null;
+    }
+
+    public void showEvolutionUnlockDialog(String pokemonId, int unlockedStage) {
+        PokemonData data = getPokemonDataById(pokemonId);
+        if (data == null) return;
+
+        Stage dialog = new Stage();
+        dialog.initOwner(primaryStage);
+
+        String stageName = data.getStageName(unlockedStage);
+        Label titleLabel = new Label("解鎖新狀態！");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label msgLabel = new Label("「" + stageName + "」已解鎖！");
+        msgLabel.setStyle("-fx-font-size: 14px;");
+        msgLabel.setWrapText(true);
+        msgLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        ImageView stageView = new ImageView();
+        java.io.File imgFile = new java.io.File(
+            "res/pokemon/" + data.getFolderName() + "/stage" + unlockedStage + ".png");
+        if (imgFile.exists()) {
+            stageView.setImage(new Image(imgFile.toURI().toString()));
+        }
+        stageView.setFitWidth(160);
+        stageView.setPreserveRatio(true);
+
+        Button confirmBtn = new Button("確認");
+        confirmBtn.getStyleClass().add("select-button");
+        confirmBtn.setOnAction(e -> dialog.close());
+
+        Button selectBtn = new Button("選擇出戰");
+        selectBtn.getStyleClass().add("select-button");
+        selectBtn.setOnAction(e -> {
+            dialog.close();
+            String battleName = data.getStageName(unlockedStage);
+            gameManager.setCurrentPokemonId(data.getId());
+            jfocus.io.UserData.saveCurrentPartner(data.getId());
+            this.currentPokemonFolder = data.getFolderName();
+            this.currentStage = unlockedStage;
+            selectedStageMap.put(data.getId(), unlockedStage);
+            jfocus.io.UserData.saveSelectedStage(data.getId(), unlockedStage);
+            java.io.File imgFile2 = new java.io.File(
+                "res/pokemon/" + data.getFolderName() + "/stage" + unlockedStage + ".png");
+            javafx.scene.image.Image img = imgFile2.exists()
+                ? new Image(imgFile2.toURI().toString()) : null;
+            updatePokemonDisplay(data.getFolderName(), unlockedStage);
+            timerView.refreshXpDisplay();
+            if (img != null) timerView.updatePartnerDisplay(battleName, img);
+            refreshPokedexGrid();
+        });
+
+        HBox btnRow = new HBox(12, confirmBtn, selectBtn);
+        btnRow.setAlignment(Pos.CENTER);
+
+        VBox layout = new VBox(14, titleLabel, stageView, msgLabel, btnRow);
+        layout.setAlignment(Pos.CENTER);
+        layout.getStyleClass().add("detailView");
+        layout.setStyle("-fx-padding: 28;");
+
+        evolutionScene = new Scene(layout, 300, 340);
+        switchTheme(css);
+        dialog.setScene(evolutionScene);
+        dialog.show();
+    }
+
     /**
      * 更新精靈圖片顯示
      *
@@ -740,31 +840,10 @@ public class FocusUI extends Application {
         pokedexFlowGrid.getChildren().clear();
         pokedexFlowGrid.setAlignment(Pos.CENTER);
 
-        int count = 0;
         for (PokemonData data : pokedexList) {
-            for (int i = 1; i <= 3; i++) {
-                VBox card = createPokemonCard(data, i);
-                pokedexFlowGrid.getChildren().add(card);
-            }
-
-            if (data == pokedexList.getLast()) {
-                continue;
-            }
-
-            if (count == 0) {
-                Separator separatorVer = new Separator();
-                separatorVer.setOrientation(Orientation.VERTICAL);
-                pokedexFlowGrid.getChildren().add(separatorVer);
-                count++;
-            } else if (count == 1) {
-                Separator separatorHor1 = new Separator();
-                Separator separatorHor2 = new Separator();
-                separatorHor1.setMinWidth(230);
-                separatorHor2.setMinWidth(230);
-                HBox separatorHorBox = new HBox(20, separatorHor1, separatorHor2);
-                pokedexFlowGrid.getChildren().add(separatorHorBox);
-                count = 0;
-            }
+            int displayStage = getDisplayStageForPokemon(data.getId());
+            VBox card = createPokemonCard(data, displayStage);
+            pokedexFlowGrid.getChildren().add(card);
         }
     }
 
@@ -773,6 +852,9 @@ public class FocusUI extends Application {
     private VBox createPokemonCard(PokemonData data, int stages) {
         VBox card = new VBox();
         card.getStyleClass().add("pokemon-card");
+        if (data.getId().equals(gameManager.getCurrentPokemonId())) {
+            card.getStyleClass().add("active-partner");
+        }
         card.setPrefSize(70, 90);
         card.setAlignment(Pos.CENTER);
 
@@ -819,9 +901,9 @@ public class FocusUI extends Application {
         view.setPreserveRatio(true);
 
         // 從 GameManager 檢查這隻寶可夢的這一個階段是否解鎖
-        boolean isUnlocked = gameManager.isStageUnlocked(data.getId(), stages);
+        boolean Unlocked = gameManager.isStageUnlocked(data.getId(), stages);
 
-        if (!isUnlocked) {
+        if (!Unlocked) {
             //【修復黑影】：尚未解鎖：利用 ColorAdjust 變黑！
             ColorAdjust blackout = new ColorAdjust();
             blackout.setBrightness(-1.0); // 100% 變黑
@@ -847,26 +929,7 @@ public class FocusUI extends Application {
             card.setCursor(Cursor.HAND);
             card.getStyleClass().remove("locked");
 
-            card.setOnMouseClicked(e -> {
-                // 抓取各階段專屬名字 (例如: 卡咪龜)
-                String realName = data.getStageName(stages);
-
-                // 終極防呆：確保就算沒抓到描述，也不會當機！
-                String safeDescription = "這是一隻神秘的寶可夢，暫無描述。";
-                if (data.getDescriptions() != null && data.getDescriptions().size() >= stages) {
-                    safeDescription = data.getDescriptions().get(stages - 1);
-                }
-
-                // 顯示詳細視窗
-                showDetailView(
-                        data.getId(),
-                        data.getFolderName(),
-                        stages,
-                        realName,
-                        // 防呆：如果沒抓到屬性，顯示 "未知"
-                        data.getTypes() != null ? data.getTypes() : java.util.Arrays.asList("未知"),
-                        safeDescription);
-            });
+            card.setOnMouseClicked(e -> showDetailView(data, stages));
 
             StackPane stack = new StackPane();
             stack.setPrefSize(70, 90);
@@ -881,76 +944,125 @@ public class FocusUI extends Application {
         return card;
     }
 
-    // 在 FocusApp.java 類別中
-
-    /**
-     * 顯示選中精靈的詳細資訊 (強化版：加入彩色屬性 Tag 與出戰按鈕)
-     * @param folder 資料夾名稱 (如 007_squirtle)
-     * 
-     * @param stage       階段 (1, 2, 3)
-     * @param name        精靈名字
-     * @param types       屬性清單 (例如：{"水", "飛行"}) -> 這裡是假設資料格式
-     * @param description 描述文字
-     */
-    /**
-     * 顯示精靈詳細資訊視窗 (含彩色屬性標籤、描述文字與出戰按鈕)
-     */
-    // 1. 【修改】在括號裡第一個位置，加上 String id
-    public void showDetailView(String id, String folder, int stages, String name, List<String> types, String description) {
+    public void showDetailView(PokemonData data, int initialStage) {
         if (detailStage != null && detailStage.isShowing()) {
             detailStage.close();
         }
         detailStage = new Stage();
         detailStage.initOwner(primaryStage);
-        VBox layout = new VBox(15);
+
+        VBox layout = new VBox(12);
         layout.setAlignment(Pos.CENTER);
         layout.getStyleClass().add("detailView");
 
+        final int[] selectedStage = {initialStage};
+
         ImageView bigView = new ImageView();
-
-        // 同樣用 File 轉 URI 的安全寫法
-        java.io.File bigImgFile = new java.io.File("res/pokemon/" + folder + "/stage" + stages + ".png");
-        if (bigImgFile.exists()) {
-            bigView.setImage(new Image(bigImgFile.toURI().toString()));
-        }
-
-        bigView.setFitWidth(280);
+        bigView.setFitWidth(240);
         bigView.setPreserveRatio(true);
 
-        Label nameLabel = new Label(name);
+        Label nameLabel = new Label();
         nameLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        Label descLabel = new Label();
+        descLabel.setMaxWidth(300);
+        descLabel.setMinHeight(40);
+        descLabel.setWrapText(true);
+        descLabel.setTextAlignment(TextAlignment.CENTER);
+
+        Runnable updateDisplay = () -> {
+            int s = selectedStage[0];
+            java.io.File imgFile = new java.io.File("res/pokemon/" + data.getFolderName() + "/stage" + s + ".png");
+            if (imgFile.exists()) {
+                bigView.setImage(new Image(imgFile.toURI().toString()));
+            }
+            nameLabel.setText(data.getStageName(s));
+            String desc = "這是一隻神秘的寶可夢，暫無描述。";
+            if (data.getDescriptions() != null && data.getDescriptions().size() >= s) {
+                desc = data.getDescriptions().get(s - 1);
+            }
+            descLabel.setText(desc);
+        };
+        updateDisplay.run();
 
         // 屬性標籤
         HBox typeBox = new HBox(8);
         typeBox.setAlignment(Pos.CENTER);
+        List<String> types = data.getTypes() != null ? data.getTypes() : java.util.Arrays.asList("未知");
         for (String t : types) {
             String eng = TYPE_TO_FILE.get(t.trim());
             java.io.File typeFile = eng != null ? new java.io.File("res/pokemon_type/" + eng + "_Icon.png") : null;
-
             HBox typeBadge = new HBox(4);
             typeBadge.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             typeBadge.getStyleClass().addAll("type-tag", eng != null ? eng.toLowerCase() : "");
-
             if (typeFile != null && typeFile.exists()) {
                 ImageView typeIcon = new ImageView(new Image(typeFile.toURI().toString()));
                 typeIcon.setFitHeight(20);
                 typeIcon.setPreserveRatio(true);
                 typeBadge.getChildren().add(typeIcon);
             }
-
             Label tag = new Label(t.trim());
             tag.getStyleClass().add("type-text");
             typeBadge.getChildren().add(tag);
-
             typeBox.getChildren().add(typeBadge);
         }
 
-        Label descLabel = new Label(description);
-        descLabel.setMaxWidth(300);
-        descLabel.setMaxHeight(40);
-        descLabel.setWrapText(true);
-        descLabel.setTextAlignment(TextAlignment.CENTER);
+        // Stage 選擇器
+        int totalStages = data.getStageNames() != null ? Math.min(data.getStageNames().size(), 3) : 3;
+        HBox stageSelector = new HBox(10);
+        stageSelector.setAlignment(Pos.CENTER);
+        Button[] stageBtns = new Button[totalStages];
 
+        for (int s = 1; s <= totalStages; s++) {
+            final int stageNum = s;
+            boolean unlocked = gameManager.isStageUnlocked(data.getId(), s);
+
+            ImageView thumb = new ImageView();
+            java.io.File thumbFile = new java.io.File("res/pokemon/" + data.getFolderName() + "/stage" + s + ".png");
+            if (thumbFile.exists()) {
+                thumb.setImage(new Image(thumbFile.toURI().toString()));
+            }
+            thumb.setFitHeight(70);
+            thumb.setPreserveRatio(true);
+            if (!unlocked) {
+                ColorAdjust blackout = new ColorAdjust();
+                blackout.setBrightness(-1.0);
+                thumb.setEffect(blackout);
+            }
+
+            Label stageName = new Label(data.getStageName(s));
+            stageName.setStyle("-fx-font-size: 12px;");
+
+            VBox stageCard = new VBox(2, thumb, stageName);
+            stageCard.setAlignment(Pos.CENTER);
+
+            Button btn = new Button();
+            btn.setGraphic(stageCard);
+            btn.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+            btn.getStyleClass().add("stage-select-btn");
+
+            if (unlocked) {
+                btn.setCursor(Cursor.HAND);
+                btn.setOnAction(e -> {
+                    selectedStage[0] = stageNum;
+                    updateDisplay.run();
+                    for (Button b : stageBtns) {
+                        if (b != null) b.getStyleClass().remove("stage-selected");
+                    }
+                    btn.getStyleClass().add("stage-selected");
+                });
+            } else {
+                btn.getStyleClass().add("locked");
+            }
+
+            stageBtns[s - 1] = btn;
+            stageSelector.getChildren().add(btn);
+        }
+        if (stageBtns[initialStage - 1] != null) {
+            stageBtns[initialStage - 1].getStyleClass().add("stage-selected");
+        }
+
+        // 出戰按鈕
         Button selectBtn = new Button("選擇出戰");
         java.io.File swordFile = new java.io.File("res/pokemon/sword.png");
         if (swordFile.exists()) {
@@ -960,27 +1072,25 @@ public class FocusUI extends Application {
             selectBtn.setGraphic(swordIcon);
             selectBtn.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
         }
-        selectBtn.getStyleClass().add("gacha-button");
+        selectBtn.getStyleClass().add("select-button");
         selectBtn.setOnAction(e -> {
-            // 3. 【修改】這裡直接使用傳進來的 id，就不會報錯了！
-            gameManager.setCurrentPokemonId(id);
-
-            // 寫入 SQLite 資料庫存檔！
-            jfocus.io.UserData.saveCurrentPartner(id);
-
-            // 更新本地變數與主畫面 (幫你把重複的 refreshXpDisplay 整理乾淨了)
-            this.currentPokemonFolder = folder;
-            this.currentStage = stages;
-            updatePokemonDisplay(folder, stages);
+            int s = selectedStage[0];
+            String battleName = data.getStageName(s);
+            gameManager.setCurrentPokemonId(data.getId());
+            jfocus.io.UserData.saveCurrentPartner(data.getId());
+            this.currentPokemonFolder = data.getFolderName();
+            this.currentStage = s;
+            selectedStageMap.put(data.getId(), s);
+            jfocus.io.UserData.saveSelectedStage(data.getId(), s);
+            updatePokemonDisplay(data.getFolderName(), s);
             timerView.refreshXpDisplay();
-            // 替換掉你截圖裡報錯的那一行：
-            this.timerView.updatePartnerDisplay(name, bigView.getImage());
+            this.timerView.updatePartnerDisplay(battleName, bigView.getImage());
+            refreshPokedexGrid();
             detailStage.close();
         });
 
-        // --- 組合視窗的剩餘程式碼 (照你原本的寫法) ---
-        layout.getChildren().addAll(bigView, nameLabel, typeBox, descLabel, selectBtn);
-        detailScene = new Scene(layout, 400, 550);
+        layout.getChildren().addAll(bigView, nameLabel, typeBox, stageSelector, descLabel, selectBtn);
+        detailScene = new Scene(layout, 400, 580);
         switchTheme(css);
         detailStage.setScene(detailScene);
         detailStage.show();
