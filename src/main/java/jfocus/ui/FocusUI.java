@@ -47,6 +47,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -58,9 +59,20 @@ import jfocus.main.FocusApp;
 
 public class FocusUI extends Application {
 
+    private static final Map<String, String> TYPE_TO_FILE = Map.ofEntries(
+        Map.entry("水", "Water"), Map.entry("火", "Fire"), Map.entry("草", "Grass"),
+        Map.entry("毒", "Poison"), Map.entry("蟲", "Bug"), Map.entry("飛行", "Flying"),
+        Map.entry("一般", "Normal"), Map.entry("電", "Electric"), Map.entry("冰", "Ice"),
+        Map.entry("格鬥", "Fighting"), Map.entry("地面", "Ground"), Map.entry("岩石", "Rock"),
+        Map.entry("超能力", "Psychic"), Map.entry("幽靈", "Ghost"), Map.entry("龍", "Dragon"),
+        Map.entry("惡", "Dark"), Map.entry("鋼", "Steel"), Map.entry("妖精", "Fairy")
+    );
+
     private GameManager gameManager = new GameManager();
     private Scene mainScene; // 宣告全域的 Scene 以便切換主題
+    private Scene detailScene;
     private Stage primaryStage;
+    private Stage detailStage;
     // --- 核心數據 (未來會與 JSON 對接) ---
     private String currentPokemonFolder = "004_charmander"; // 預設小火龍
     private int currentStage = 1;
@@ -87,6 +99,7 @@ public class FocusUI extends Application {
     private Button premiumBtn;
     // 加在最上面的變數宣告區
     private TimerView timerView;
+    private String css = "PokemonDark.css";
     // 圖鑑相關元件
     // private ImageView bigView;
     // private ComboBox<String> stageSelector;
@@ -373,16 +386,24 @@ public class FocusUI extends Application {
      * 動態切換 CSS 主題
      */
     private void switchTheme(String cssFileName) {
-        if (mainScene == null)
-            return;
+        Scene allScene[] = { mainScene, detailScene };
+        for (Scene targetScene : allScene){
+            if (targetScene == null)
+                return;
 
-        File cssFile = new File("res/css/" + cssFileName);
-        if (cssFile.exists()) {
-            mainScene.getStylesheets().clear();
-            mainScene.getStylesheets().add(cssFile.toURI().toString());
-        } else {
-            System.err.println("找不到主題檔案: " + cssFileName);
+            File cssFile = new File("res/css/" + cssFileName);
+            File typesFile = new File("res/css/PokemonTypes.css");
+            if (cssFile.exists()) {
+                targetScene.getStylesheets().clear();
+                targetScene.getStylesheets().add(cssFile.toURI().toString());
+                if (typesFile.exists()) {
+                    targetScene.getStylesheets().add(typesFile.toURI().toString());
+                }
+            } else {
+                System.err.println("找不到主題檔案: " + cssFileName);
+            }
         }
+        
     }
 
 
@@ -453,7 +474,7 @@ public class FocusUI extends Application {
         themeSelector.setValue("暗黑電競"); 
 
         themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            String css = switch (newVal) {
+            css = switch (newVal) {
                 case "暗黑電競" -> "PokemonDark.css";
                 case "明亮清新" -> "PokemonLight.css";
                 case "經典紅" -> "PokemonRed.css";
@@ -551,15 +572,20 @@ public class FocusUI extends Application {
 
         shake.setOnFinished(event -> {
             // 3. 換圖並噴發效果
-            ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
+            if (drawType .equals("NORMAL")) {
+                ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
+            } else {
+                ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));  
+            }
 
-            ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
+            ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(400), ballView);
             pop.setFromX(0.5);
             pop.setFromY(0.5);
             pop.setToX(1.3);
             pop.setToY(1.3);
             pop.setOnFinished(e2 -> {
-                ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
+                ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(300), ballView);
+                ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
                 settle.setToX(1.0);
                 settle.setToY(1.0);
                 settle.play();
@@ -745,10 +771,28 @@ public class FocusUI extends Application {
     // FocusUI.java 裡面的 createPokemonCard 方法
 
     private VBox createPokemonCard(PokemonData data, int stages) {
-        VBox card = new VBox(5);
+        VBox card = new VBox();
         card.getStyleClass().add("pokemon-card");
         card.setPrefSize(70, 90);
         card.setAlignment(Pos.CENTER);
+
+        HBox typeBadges = new HBox(2);
+        typeBadges.setPickOnBounds(false);
+        List<String> types = data.getTypes();
+        if (types != null) {
+            for (String type : types) {
+                String eng = TYPE_TO_FILE.get(type.trim());
+                if (eng != null) {
+                    java.io.File typeFile = new java.io.File("res/pokemon_type/" + eng + "_Icon.png");
+                    if (typeFile.exists()) {
+                        ImageView typeIcon = new ImageView(new Image(typeFile.toURI().toString()));
+                        typeIcon.setFitHeight(14);
+                        typeIcon.setPreserveRatio(true);
+                        typeBadges.getChildren().add(typeIcon);
+                    }
+                }
+            }
+        }
 
         ImageView view = new ImageView();
 
@@ -771,7 +815,7 @@ public class FocusUI extends Application {
             // view.setImage(new Image("file:res/pokemon/unknown.png"));
         }
 
-        view.setFitWidth(55);
+        view.setFitWidth(60);
         view.setPreserveRatio(true);
 
         // 從 GameManager 檢查這隻寶可夢的這一個階段是否解鎖
@@ -783,15 +827,25 @@ public class FocusUI extends Application {
             blackout.setBrightness(-1.0); // 100% 變黑
             view.setEffect(blackout);
 
+            card.getStyleClass().add("locked");
+
             // 尚未解鎖：點擊只顯示警告，不跳出詳細視窗
             card.setOnMouseClicked(e -> {
                 statusLabel.setText("這隻精靈尚未解鎖喔！去補給站試試手氣吧！");
                 statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); // 警告紅字
             });
+
+            StackPane stack = new StackPane();
+            stack.setPrefSize(70, 90);
+            stack.getChildren().addAll(view);
+            StackPane.setAlignment(view, Pos.BOTTOM_CENTER);
+            card.getChildren().add(stack);
+
         } else {
             //【修復解鎖】：已經解鎖：正常顯示，點擊跳出詳細視窗
             view.setEffect(null); // 清除效果
             card.setCursor(Cursor.HAND);
+            card.getStyleClass().remove("locked");
 
             card.setOnMouseClicked(e -> {
                 // 抓取各階段專屬名字 (例如: 卡咪龜)
@@ -813,9 +867,16 @@ public class FocusUI extends Application {
                         data.getTypes() != null ? data.getTypes() : java.util.Arrays.asList("未知"),
                         safeDescription);
             });
+
+            StackPane stack = new StackPane();
+            stack.setPrefSize(70, 90);
+            stack.getChildren().addAll(view, typeBadges);
+            StackPane.setAlignment(view, Pos.BOTTOM_CENTER);
+            StackPane.setAlignment(typeBadges, Pos.TOP_LEFT);
+            StackPane.setMargin(typeBadges, new Insets(4, 0, 0, 4));
+            card.getChildren().add(stack);
         }
         // ============================================
-        card.getChildren().add(view);
 
         return card;
     }
@@ -835,13 +896,15 @@ public class FocusUI extends Application {
      * 顯示精靈詳細資訊視窗 (含彩色屬性標籤、描述文字與出戰按鈕)
      */
     // 1. 【修改】在括號裡第一個位置，加上 String id
-    public void showDetailView(String id, String folder, int stages, String name, List<String> types,
-            String description) {
-        Stage detailStage = new Stage();
+    public void showDetailView(String id, String folder, int stages, String name, List<String> types, String description) {
+        if (detailStage != null && detailStage.isShowing()) {
+            detailStage.close();
+        }
+        detailStage = new Stage();
+        detailStage.initOwner(primaryStage);
         VBox layout = new VBox(15);
         layout.setAlignment(Pos.CENTER);
-        layout.setStyle(
-                "-fx-background-color: #2c3e50; -fx-padding: 20; -fx-border-color: #f1c40f; -fx-border-width: 2;");
+        layout.getStyleClass().add("detailView");
 
         ImageView bigView = new ImageView();
 
@@ -854,24 +917,49 @@ public class FocusUI extends Application {
         bigView.setFitWidth(280);
         bigView.setPreserveRatio(true);
 
-        // 2. 【修改】因為傳進來的 name 已經是「水箭龜」了，直接用就好，把醜醜的 " 階段 X" 拿掉！
         Label nameLabel = new Label(name);
-        nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;");
+        nameLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         // 屬性標籤
-        HBox typeBox = new HBox(10);
+        HBox typeBox = new HBox(8);
         typeBox.setAlignment(Pos.CENTER);
         for (String t : types) {
+            String eng = TYPE_TO_FILE.get(t.trim());
+            java.io.File typeFile = eng != null ? new java.io.File("res/pokemon_type/" + eng + "_Icon.png") : null;
+
+            HBox typeBadge = new HBox(4);
+            typeBadge.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            typeBadge.getStyleClass().addAll("type-tag", eng != null ? eng.toLowerCase() : "");
+
+            if (typeFile != null && typeFile.exists()) {
+                ImageView typeIcon = new ImageView(new Image(typeFile.toURI().toString()));
+                typeIcon.setFitHeight(20);
+                typeIcon.setPreserveRatio(true);
+                typeBadge.getChildren().add(typeIcon);
+            }
+
             Label tag = new Label(t.trim());
-            tag.getStyleClass().addAll("type-tag", getStyleClassForType(t.trim()));
-            typeBox.getChildren().add(tag);
+            tag.getStyleClass().add("type-text");
+            typeBadge.getChildren().add(tag);
+
+            typeBox.getChildren().add(typeBadge);
         }
 
-        javafx.scene.text.Text descText = new javafx.scene.text.Text(description);
-        descText.setFill(javafx.scene.paint.Color.WHITE);
-        descText.setWrappingWidth(350);
+        Label descLabel = new Label(description);
+        descLabel.setMaxWidth(300);
+        descLabel.setMaxHeight(40);
+        descLabel.setWrapText(true);
+        descLabel.setTextAlignment(TextAlignment.CENTER);
 
         Button selectBtn = new Button("選擇出戰");
+        java.io.File swordFile = new java.io.File("res/pokemon/sword.png");
+        if (swordFile.exists()) {
+            ImageView swordIcon = new ImageView(new Image(swordFile.toURI().toString()));
+            swordIcon.setFitHeight(18);
+            swordIcon.setPreserveRatio(true);
+            selectBtn.setGraphic(swordIcon);
+            selectBtn.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        }
         selectBtn.getStyleClass().add("gacha-button");
         selectBtn.setOnAction(e -> {
             // 3. 【修改】這裡直接使用傳進來的 id，就不會報錯了！
@@ -891,26 +979,11 @@ public class FocusUI extends Application {
         });
 
         // --- 組合視窗的剩餘程式碼 (照你原本的寫法) ---
-        layout.getChildren().addAll(bigView, nameLabel, typeBox, descText, selectBtn);
-        Scene scene = new Scene(layout, 400, 550);
-        detailStage.setScene(scene);
+        layout.getChildren().addAll(bigView, nameLabel, typeBox, descLabel, selectBtn);
+        detailScene = new Scene(layout, 400, 550);
+        switchTheme(css);
+        detailStage.setScene(detailScene);
         detailStage.show();
-    }
-
-    // 輔助：判定屬性顏色
-    private String getStyleClassForType(String type) {
-        switch (type) {
-            case "火":
-                return "fire";
-            case "水":
-                return "water";
-            case "草":
-                return "grass";
-            case "電":
-                return "electric";
-            default:
-                return "normal";
-        }
     }
 
     private Tab createStatsTab() {
