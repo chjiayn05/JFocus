@@ -93,3 +93,121 @@
     -fx-font-weight: bold;
     -fx-font-size: 14px;
 }
+
+/* --- 數據分析自定義樣式 (明亮系) --- */
+.heatmap-cell {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-alignment: center;
+    -fx-effect: null; /* 移除按鈕預設陰影 */
+}
+.heatmap-cell:hover {-fx-translate-y: 0px;}
+
+.heatmap-cell-0 { -fx-background-color: #ffffff; -fx-text-fill: #7f8c8d; }
+.heatmap-cell-1 { -fx-background-color: #f0f0f0; -fx-text-fill: #333333; }
+.heatmap-cell-2 { -fx-background-color: #dcdcdc; -fx-text-fill: #111111; }
+.heatmap-cell-3 { -fx-background-color: #aaaaaa; -fx-text-fill: #ffffff; }
+.heatmap-cell-4 { -fx-background-color: #808080; -fx-text-fill: #ffffff; }
+.heatmap-cell-0:hover { -fx-background-color: #ffffff; }
+.heatmap-cell-1:hover { -fx-background-color: #f0f0f0; }
+.heatmap-cell-2:hover { -fx-background-color: #dcdcdc; }
+.heatmap-cell-3:hover { -fx-background-color: #aaaaaa; }
+.heatmap-cell-4:hover { -fx-background-color: #808080; }
+.heatmap-cell-active { -fx-border-color: #FFCB05; -fx-border-width: 1px; -fx-border-style: solid; -fx-background-radius: 0;; }
+/* TODO: 要改active顏色 */
+
+.stats-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+.stats-card-title {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.stats-card-value {
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.stats-card-comment {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+}
+
+/* 正圓形按鈕 */
+.circular-btn {
+    -fx-background-radius: 50%;
+    -fx-min-width: 30px;
+    -fx-min-height: 30px;
+    -fx-max-width: 30px;
+    -fx-max-height: 30px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-font-size: 12px;
+}
+
+/* 圓餅圖 */
+.chart-pie {
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+}
+.chart-pie-label-line {
+    -fx-stroke: transparent;
+}
+
+/* 圖表背景與格線樣式優化 */
+.chart {
+    -fx-background-color: transparent;
+}
+.chart-content {
+    -fx-background-color: transparent;
+}
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: rgba(0, 0, 0, 0.08);
+}
+.axis {
+    -fx-tick-label-fill: #555555;
+}
+.axis-label {
+    -fx-text-fill: #333333;
+}
+.chart-legend {
+    -fx-background-color: transparent;
+}
+.chart-legend-item {
+    -fx-text-fill: #333333;
+}
+
+.rank-comment{
+    -fx-font-size: 12px; 
+    -fx-font-weight: bold; 
+    -fx-text-fill: #FFCB05;
+}
+
+/* 月專注趨勢折線圖自訂樣式 */
+.monthly-trend-line .chart-series-line {
+    -fx-stroke: #FFCB05;
+    -fx-stroke-width: 3px;
+}
+.monthly-trend-line .chart-line-symbol {
+    -fx-background-color: #FFCB05, white;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px;
+}
+/* TODO: 要改顏色 */
+

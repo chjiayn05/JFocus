@@ -14,40 +14,68 @@ public class MockDashboardDataManager implements DashboardDataManager {
         Map<LocalDate, Long> data = new LinkedHashMap<>();
         int lengthOfMonth = month.lengthOfMonth();
         for (int i = 1; i <= lengthOfMonth; i++) {
-            // 隨機產生 1~8 小時的專注時間
-            data.put(month.atDay(i), (long) (Math.random() * 28800) + 3600);
+            LocalDate date = month.atDay(i);
+            long seed = date.getYear() * 10000 + date.getMonthValue() * 100 + date.getDayOfMonth();
+            Random rand = new Random(seed);
+            long totalFocusSeconds = rand.nextInt(28800) + 120; // 隨機產生 2分鐘 到 8小時
+            data.put(date, totalFocusSeconds);
         }
         return data;
     }
 
     @Override
     public DailyDetailData getDailyDetail(LocalDate date) {
-        long totalFocusSeconds = 14400; // 4 hours
-        long distractionSeconds = 1800; // 30 minutes
-        long longestFocusSessionSeconds = 5400; // 1.5 hours
-        LocalTime startTime = LocalTime.of(9, 0);
-        LocalTime endTime = LocalTime.of(15, 30);
+        long seed = date.getYear() * 10000 + date.getMonthValue() * 100 + date.getDayOfMonth();
+        Random rand = new Random(seed);
+
+        // 隨機產生 2分鐘 ~ 8小時 的專注秒數
+        long totalFocusSeconds = rand.nextInt(28800) + 120;
+        // 隨機產生 0 ~ 2小時 的分心秒數
+        long distractionSeconds = rand.nextInt(7200);
+        long longestFocusSessionSeconds = totalFocusSeconds > 1800 ? totalFocusSeconds - rand.nextInt(1800) : totalFocusSeconds;
+        
+        LocalTime startTime = LocalTime.of(rand.nextInt(4) + 8, rand.nextInt(60)); // 8~12點間開始
+        LocalTime endTime = startTime.plusSeconds(totalFocusSeconds + distractionSeconds);
 
         List<SubjectTime> subjectTimes = Arrays.asList(
-            new SubjectTime("數學", 7200),
-            new SubjectTime("英文", 3600),
-            new SubjectTime("程式設計", 3600)
+            new SubjectTime("數學", (long)(totalFocusSeconds * 0.4)),
+            new SubjectTime("英文", (long)(totalFocusSeconds * 0.3)),
+            new SubjectTime("程式設計", (long)(totalFocusSeconds * 0.3))
         );
 
         List<TimelineEvent> timelineEvents = Arrays.asList(
-            new TimelineEvent("數學", date.atTime(9, 0), date.atTime(11, 0)),
-            new TimelineEvent("英文", date.atTime(13, 0), date.atTime(14, 0)),
-            new TimelineEvent("程式設計", date.atTime(14, 30), date.atTime(15, 30))
+            new TimelineEvent("數學", date.atTime(startTime), date.atTime(startTime.plusSeconds((long)(totalFocusSeconds * 0.4)))),
+            new TimelineEvent("英文", date.atTime(startTime.plusSeconds((long)(totalFocusSeconds * 0.5))), date.atTime(startTime.plusSeconds((long)(totalFocusSeconds * 0.8)))),
+            new TimelineEvent("程式設計", date.atTime(startTime.plusSeconds((long)(totalFocusSeconds * 0.9))), date.atTime(endTime))
         );
 
         List<DistractionApp> topDistractions = Arrays.asList(
-            new DistractionApp("YouTube", 1200),
-            new DistractionApp("Instagram", 400),
-            new DistractionApp("Line", 200)
+            new DistractionApp("YouTube", (long)(distractionSeconds * 0.6)),
+            new DistractionApp("Instagram", (long)(distractionSeconds * 0.3)),
+            new DistractionApp("Line", (long)(distractionSeconds * 0.1))
         );
 
-        double focusScore = 0.88;
-        String focusComment = "太棒了！你的專注力驚人，完全進入了心流狀態，請繼續保持這股氣勢！";
+        // 採用相同的專注分數計算公式
+        double totalFocusHours = totalFocusSeconds / 3600.0;
+        double baseScore;
+        if (totalFocusHours <= 2.0) {
+            baseScore = totalFocusHours * 30.0;
+        } else if (totalFocusHours <= 4.0) {
+            baseScore = 60.0 + (totalFocusHours - 2.0) * 10.0;
+        } else if (totalFocusHours <= 6.0) {
+            baseScore = 80.0 + (totalFocusHours - 4.0) * 10.0;
+        } else {
+            baseScore = 100.0;
+        }
+
+        double focusRatio = 0.0;
+        long totalSecs = totalFocusSeconds + distractionSeconds;
+        if (totalSecs > 0) {
+            focusRatio = totalFocusSeconds / (double) totalSecs;
+        }
+
+        double focusScore = (baseScore / 100.0) * focusRatio;
+        String focusComment = jfocus.ui.FocusCommentGenerator.getComment(focusScore, totalFocusSeconds, distractionSeconds, date);
 
         return new DailyDetailData(
             totalFocusSeconds, distractionSeconds, longestFocusSessionSeconds,

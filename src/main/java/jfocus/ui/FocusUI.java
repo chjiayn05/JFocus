@@ -90,6 +90,7 @@ public class FocusUI extends Application {
     private TextField breakInput = new TextField("5");
     // 加在最上面的變數宣告區
     private TimerView timerView;
+    private StatsView statsView;
     // 圖鑑相關元件
     // private ImageView bigView;
     // private ComboBox<String> stageSelector;
@@ -194,7 +195,7 @@ public class FocusUI extends Application {
         }
     }
 
-    private String getCurrentPokemonId() {
+    String getCurrentPokemonId() {
         if (currentPokemonFolder == null || currentPokemonFolder.length() < 3) {
             return null;
         }
@@ -207,7 +208,7 @@ public class FocusUI extends Application {
         return pokemonId;
     }
 
-    private void refreshCurrencyLabels() {
+    void refreshCurrencyLabels() {
         coinLabel.setText("💰 " + gameManager.getFocusCoins());
         stoneLabel.setText("💎 " + gameManager.getMasterStones());
         if (gachaCurrencyLabel != null) {
@@ -215,7 +216,8 @@ public class FocusUI extends Application {
         }
     }
 
-    private void refreshXpDisplay() {
+    void refreshXpDisplay() {
+
         String pokemonId = getCurrentPokemonId();
         int xp = gameManager.getPokemonXp(pokemonId);
         int stages;
@@ -272,7 +274,7 @@ public class FocusUI extends Application {
         }
     }
 
-    private void saveUserProgressSafely() {
+    void saveUserProgressSafely() {
         try {
             UserData.savePlayerStats(
                     gameManager.getFocusCoins(),
@@ -412,6 +414,9 @@ public class FocusUI extends Application {
         if (cssFile.exists()) {
             mainScene.getStylesheets().clear();
             mainScene.getStylesheets().add(cssFile.toURI().toString());
+            if (statsView != null) {
+                statsView.refreshCurrentView();
+            }
         } else {
             System.err.println("找不到主題檔案: " + cssFileName);
         }
@@ -667,7 +672,7 @@ public class FocusUI extends Application {
         return new Tab("寶可夢圖鑑", scrollPane);
     }
 
-    private void refreshPokedexGrid() {
+    void refreshPokedexGrid() {
         if (pokedexFlowGrid == null) {
             return;
         }
@@ -858,56 +863,15 @@ public class FocusUI extends Application {
     }
 
     private Tab createStatsTab() {
-        VBox layout = new VBox(20);
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-padding: 40;");
-
-        Button btnAdd = new Button("DEBUG: 增加資源 200");
-        Button btnAdd1 = new Button("DEBUG: 增加資源 100");
-        Button btnAdd2 = new Button("DEBUG: 增加資源 50");
-        JdbcDistractionModeRepository modeRepository = new JdbcDistractionModeRepository(new DatabaseCore());
-        DistractionHandlingMode currentMode = modeRepository.loadMode(DistractionHandlingMode.WARN_USER);
-        Label modeStatusLabel = new Label("目前分心處理模式: " + currentMode.name());
-        ToggleButton modeSwitch = createDistractionModeSwitch(currentMode, modeStatusLabel, modeRepository);
-        Label warnLabel = new Label("提醒");
-        Label closeLabel = new Label("關閉");
-        HBox modeSwitchRow = new HBox(12, warnLabel, modeSwitch, closeLabel);
-        modeSwitchRow.setAlignment(Pos.CENTER);
-
-        btnAdd.setOnAction(e -> {
-            gameManager.addFocusTime(200, getCurrentPokemonId()); // 模擬加錢
-            refreshCurrencyLabels();
-            refreshXpDisplay();
-            refreshPokedexGrid();
-            saveUserProgressSafely();
+        this.statsView = new StatsView(this.gameManager, this.timerView, this);
+        Tab tab = new Tab("數據分析", statsView);
+        tab.setClosable(false);
+        tab.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                statsView.refreshCurrentView();
+            }
         });
-
-        btnAdd1.setOnAction(e -> {
-            gameManager.addFocusTime(100, getCurrentPokemonId()); // 模擬加錢
-            refreshCurrencyLabels();
-            refreshXpDisplay();
-            refreshPokedexGrid();
-            saveUserProgressSafely();
-        });
-
-        btnAdd2.setOnAction(e -> {
-            gameManager.addFocusTime(50, getCurrentPokemonId()); // 模擬加錢
-            refreshCurrencyLabels();
-            refreshXpDisplay();
-            refreshPokedexGrid();
-            saveUserProgressSafely();
-        });
-
-        layout.getChildren().addAll(
-                new Label("數據統計區"),
-                new Separator(),
-                modeStatusLabel,
-                modeSwitchRow,
-                new Separator(),
-                btnAdd,
-                btnAdd1,
-                btnAdd2);
-        return new Tab("數據分析", layout);
+        return tab;
     }
 
     private ToggleButton createDistractionModeSwitch(
