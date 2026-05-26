@@ -15,6 +15,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement; // 在最上方加入這行
 import com.google.gson.JsonObject;
 
+import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
 import javafx.animation.ScaleTransition;
@@ -25,6 +26,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -46,6 +49,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -100,6 +105,8 @@ public class FocusUI extends Application {
     private Button premiumBtn;
     // 加在最上面的變數宣告區
     private TimerView timerView;
+    private Canvas borderCanvas;
+    private javafx.scene.control.TabPane tabPane;
     private String css = "PokemonDark.css";
     // 圖鑑相關元件
     // private ImageView bigView;
@@ -471,7 +478,7 @@ public class FocusUI extends Application {
         }
 
         // 1. 初始化 TabPane 與分頁
-        javafx.scene.control.TabPane tabPane = new javafx.scene.control.TabPane();
+        tabPane = new javafx.scene.control.TabPane();
 
         Tab focusTab = createTimerTab(); // 👉 綁定你的開機喚醒邏輯
         focusTab.setClosable(false);
@@ -520,7 +527,15 @@ public class FocusUI extends Application {
         VBox rootLayout = new VBox(topBar, tabPane);
         javafx.scene.layout.VBox.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
 
-        mainScene = new Scene(rootLayout, 530, 750);
+        borderCanvas = new Canvas(530, 750);
+        borderCanvas.setMouseTransparent(true);
+        StackPane root = new StackPane(rootLayout, borderCanvas);
+        root.layoutBoundsProperty().addListener((obs, old, b) -> {
+            borderCanvas.setWidth(b.getWidth());
+            borderCanvas.setHeight(b.getHeight());
+        });
+
+        mainScene = new Scene(root, 530, 750);
         css = switch (savedThemeName) {
             case "明亮清新" -> "PokemonLight.css";
             case "經典紅" -> "PokemonRed.css";
@@ -608,8 +623,8 @@ public class FocusUI extends Application {
             }
 
             ScaleTransition ballExpand = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
-            ballExpand.setFromX(0.7);
-            ballExpand.setFromY(0.7);
+            ballExpand.setFromX(0.8);
+            ballExpand.setFromY(0.8);
             ballExpand.setToX(1.4);
             ballExpand.setToY(1.4);
             ballExpand.setOnFinished(e2 -> {
@@ -645,10 +660,21 @@ public class FocusUI extends Application {
             gachaMessageLabel.setText("恭喜！收服了：" + caughtName + "！");
             gachaMessageLabel.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
 
+            startBorderCountdown(3.5);
             PauseTransition delay = new PauseTransition(Duration.seconds(3.5));
             delay.setOnFinished(e -> {
-                ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
                 refreshDrawBtnStatus();
+                ScaleTransition ballExpandBack = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
+                ballExpandBack.setToX(0);
+                ballExpandBack.setToY(0);
+                ballExpandBack.setOnFinished(e3 -> {
+                    ScaleTransition settleBack = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
+                    ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
+                    settleBack.setToX(1.0);
+                    settleBack.setToY(1.0);
+                    settleBack.play();
+                });
+                ballExpandBack.play();
             });
             delay.play();
         });
@@ -1226,6 +1252,116 @@ public class FocusUI extends Application {
         TranslateTransition transition = new TranslateTransition(Duration.millis(160), thumb);
         transition.setToX(targetX);
         transition.play();
+    }
+
+    public void startBorderCountdown(double durationSeconds) {
+        startBorderCountdown(durationSeconds, null);
+    }
+
+    public void startBorderCountdown(double durationSeconds, Runnable onComplete) {
+        if (borderCanvas == null) return;
+        double yOff = 0;
+        Color strokeColor = Color.web("#5eabff");
+        if (tabPane != null) {
+            javafx.scene.Node header = tabPane.lookup(".tab-header-area");
+            if (header != null) {
+                yOff = header.localToScene(0, header.getBoundsInLocal().getHeight()).getY();
+            }
+            javafx.scene.Node headerBg = tabPane.lookup(".tab-header-background");
+            if (headerBg instanceof javafx.scene.layout.Region) {
+                javafx.scene.layout.Border border = ((javafx.scene.layout.Region) headerBg).getBorder();
+                if (border != null) {
+                    outer:
+                    for (javafx.scene.layout.BorderStroke bs : border.getStrokes()) {
+                        for (javafx.scene.paint.Paint p : new javafx.scene.paint.Paint[]{
+                                bs.getBottomStroke(), bs.getTopStroke(),
+                                bs.getLeftStroke(), bs.getRightStroke()}) {
+                            if (p instanceof Color c) { strokeColor = c; break outer; }
+                        }
+                    }
+                }
+            }
+        }
+        final double yOffset = yOff;
+        final Color finalColor = strokeColor;
+        long durationNanos = (long) (durationSeconds * 1_000_000_000L);
+        long[] t0 = {-1L};
+        new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (t0[0] < 0) t0[0] = now;
+                double p = Math.min((now - t0[0]) / (double) durationNanos, 1.0);
+                drawBorderErase(p, yOffset, finalColor);
+                if (p >= 1.0) {
+                    stop();
+                    if (onComplete != null) Platform.runLater(onComplete);
+                }
+            }
+        }.start();
+    }
+
+    private void drawBorderErase(double progress, double yOffset, Color strokeColor) {
+        double W = borderCanvas.getWidth();
+        double H = borderCanvas.getHeight();
+        GraphicsContext gc = borderCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, W, H);
+        if (progress >= 1.0 || W == 0 || H == 0) return;
+
+        double pad = 3;
+        double r = 12.0;
+        double x = pad, y = yOffset + pad, w = W - pad * 2, h = H - y - pad;
+
+        gc.setStroke(strokeColor);
+        gc.setLineWidth(2.5);
+        gc.setLineCap(StrokeLineCap.ROUND);
+        gc.setLineJoin(StrokeLineJoin.ROUND);
+
+        double straightSide = h - r;
+        double arcLen = Math.PI * r / 2.0;
+        double totalPerArm = straightSide + arcLen + (w / 2.0 - r);
+        double eaten = progress * totalPerArm;
+
+        drawArmRemaining(gc, eaten, x, y, w, h, r, straightSide, arcLen, true);
+        drawArmRemaining(gc, eaten, x, y, w, h, r, straightSide, arcLen, false);
+    }
+
+    private void drawArmRemaining(GraphicsContext gc, double eaten,
+                                   double x, double y, double w, double h, double r,
+                                   double straightSide, double arcLen, boolean leftArm) {
+        double phase2End = straightSide + arcLen;
+        double sideX = leftArm ? x : x + w;
+        double arcCx = leftArm ? x + r : x + w - r;
+        double arcCy = y + h - r;
+
+        gc.beginPath();
+        if (eaten < straightSide) {
+            gc.moveTo(sideX, y + eaten);
+            gc.lineTo(sideX, arcCy);
+            if (leftArm) gc.arcTo(x, y + h, x + r, y + h, r);
+            else         gc.arcTo(x + w, y + h, x + w - r, y + h, r);
+            gc.lineTo(x + w / 2.0, y + h);
+        } else if (eaten < phase2End) {
+            // Partial arc: parametric Y-down compensated (angle π→3π/2 left, 0→-π/2 right)
+            double frac = (eaten - straightSide) / arcLen;
+            double startAngle = leftArm
+                ? Math.PI + (Math.PI / 2.0) * frac
+                : -(Math.PI / 2.0) * frac;
+            gc.moveTo(arcCx + r * Math.cos(startAngle), arcCy - r * Math.sin(startAngle));
+            for (int i = 1; i <= 6; i++) {
+                double t = frac + (1.0 - frac) * i / 6.0;
+                double a = leftArm ? Math.PI + (Math.PI / 2.0) * t : -(Math.PI / 2.0) * t;
+                gc.lineTo(arcCx + r * Math.cos(a), arcCy - r * Math.sin(a));
+            }
+            gc.lineTo(x + w / 2.0, y + h);
+        } else {
+            double bEaten = eaten - phase2End;
+            double startX = leftArm ? x + r + bEaten : x + w - r - bEaten;
+            double endX = x + w / 2.0;
+            if (leftArm ? startX >= endX : startX <= endX) return;
+            gc.moveTo(startX, y + h);
+            gc.lineTo(endX, y + h);
+        }
+        gc.stroke();
     }
 
 }

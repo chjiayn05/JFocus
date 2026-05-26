@@ -56,6 +56,10 @@
 .choice-box .menu-item:focused > .label {
     -fx-text-fill: -my-text-color;
 }
+.choice-box.mode-selector {
+    -fx-pref-width: 100px;
+}
+
 /* TextField */
 .text-field {
     -fx-background-color: -my-secondary-color;

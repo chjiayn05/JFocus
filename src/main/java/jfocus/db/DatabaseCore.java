@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -135,6 +136,14 @@ public class DatabaseCore {
             );
             """;
 
+        String subjectsTableSql = """
+            CREATE TABLE IF NOT EXISTS subjects (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL UNIQUE,
+                sort_order INTEGER NOT NULL DEFAULT 0
+            );
+            """;
+
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -147,6 +156,8 @@ public class DatabaseCore {
             stmt.execute(todosTableSql);
             stmt.execute(focusSessionsTableSql);
             stmt.execute(pokemonSelectedStageTableSql);
+            stmt.execute(subjectsTableSql);
+            seedDefaultSubjects(conn);
 
             // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");
@@ -292,5 +303,18 @@ public class DatabaseCore {
         }
 
         return columns;
+    }
+
+    private void seedDefaultSubjects(Connection conn) throws SQLException {
+        String[] defaults = {"數學", "英文", "物理", "化學", "歷史", "地理", "程式設計", "語文"};
+        String sql = "INSERT OR IGNORE INTO subjects (name, sort_order) VALUES (?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < defaults.length; i++) {
+                ps.setString(1, defaults[i]);
+                ps.setInt(2, i);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 }

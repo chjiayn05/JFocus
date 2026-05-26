@@ -51,6 +51,7 @@ public class TimerView extends VBox implements FocusListener {
     private FocusUI focusUI;
     private FocusEngine engine;
     private final JdbcTimerSettingsRepository timerSettingsRepository;
+    private final jfocus.subjects.JdbcSubjectRepository subjectRepo;
 
     // --- 將原本 FocusUI 中的零件搬到這裡 ---
     private Label timerLabel;
@@ -60,6 +61,7 @@ public class TimerView extends VBox implements FocusListener {
     private TextField breakInput;
     private HBox inputArea;
     private ChoiceBox<String> modeSelector;
+    private ChoiceBox<String> subjectSelector;
     private VBox settingsSection;
     private double settingsSectionHeight = -1;
     private double inputAreaHeight = -1;
@@ -87,6 +89,7 @@ public class TimerView extends VBox implements FocusListener {
         this.focusUI = focusUI;
 
         this.timerSettingsRepository = new JdbcTimerSettingsRepository(new DatabaseCore());
+        this.subjectRepo = new jfocus.subjects.JdbcSubjectRepository(new DatabaseCore());
         // 原本的 startBtn 和 stopBtn
         startBtn = new Button("開始冒險");
         startBtn.setStyle("-fx-background-color: #27ae60; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
@@ -128,19 +131,21 @@ public class TimerView extends VBox implements FocusListener {
         timerLabel = new Label(String.format("%02d:00", timerSettings.workMinutes()));
         timerLabel.setStyle("-fx-font-size: 60px; -fx-font-weight: bold;");
 
+        PauseTransition digitsOnlyErrorDelay = new PauseTransition(Duration.seconds(2));
+        digitsOnlyErrorDelay.setOnFinished(event -> {
+            statusLabel.getStyleClass().removeAll("error");
+            statusLabel.setText("準備就緒");
+        });
         UnaryOperator<TextFormatter.Change> digitsOnly = change -> {
             String text = change.getControlNewText();
             if (text.matches("\\d*")) {
                 return change;
             }
             statusLabel.setText("必須輸入正整數!");
-            statusLabel.getStyleClass().add("error");
-            PauseTransition delay = new PauseTransition(Duration.seconds(2));
-            delay.setOnFinished(event -> {
-                statusLabel.getStyleClass().remove("error");
-                statusLabel.setText("準備就緒");
-            });
-            delay.play();
+            if (!statusLabel.getStyleClass().contains("error")) {
+                statusLabel.getStyleClass().add("error");
+            }
+            digitsOnlyErrorDelay.playFromStart();
             return null;
         };
 
@@ -215,11 +220,17 @@ public class TimerView extends VBox implements FocusListener {
         inputArea = new HBox(8, workPre, workInput, workPost, divider, breakPre, breakInput, breakPost);
         inputArea.setAlignment(Pos.CENTER);
 
+        subjectSelector = new ChoiceBox<>();
+        subjectSelector.getStyleClass().add("mode-selector");
+        reloadSubjects(null);
+
+        HBox selectorRow = new HBox(10, modeSelector, subjectSelector);
+        selectorRow.setAlignment(Pos.CENTER);
 
         btnBox.setAlignment(Pos.CENTER);
         debugBtnBox.setAlignment(Pos.CENTER);
 
-        settingsSection = new VBox(8, modeSelector, inputArea);
+        settingsSection = new VBox(8, selectorRow, inputArea);
         settingsSection.setAlignment(Pos.CENTER);
 
         // 3. 把所有零件組裝起來 (就是你原本的寫法)
@@ -229,7 +240,8 @@ public class TimerView extends VBox implements FocusListener {
                 xpBox,
                 statusLabel,
                 timerLabel,
-                btnBox
+                btnBox,
+                debugBtnBox
         );
 
         // 4. 掛載組員寫的引擎與按鈕事件
@@ -239,9 +251,26 @@ public class TimerView extends VBox implements FocusListener {
             try {
                 if (!validateTimeInputs()) {
                     int newTime = Integer.parseInt(breakInput.getText()) * 2;
+                    startBtn.setDisable(true);
                     workInput.setText(String.format("%d", newTime));
+                    updateTimerLabelFromWorkInput();
                     statusLabel.setText("時間設定錯誤: 專注時間至少是休息時間的兩倍\n已將專注時間設定為 " + newTime + " 分鐘");
-                    resetUI(5, false);
+                    focusUI.startBorderCountdown(5, () -> {
+                        startBtn.setDisable(false);
+                        statusLabel.setText("準備就緒");
+                    });
+                    return;
+                }
+
+                if (SUBJECT_PLACEHOLDER.equals(subjectSelector.getValue())) {
+                    statusLabel.getStyleClass().add("error");
+                    statusLabel.setText("請先選擇科目！");
+                    PauseTransition errDelay = new PauseTransition(Duration.seconds(2));
+                    errDelay.setOnFinished(ev -> {
+                        statusLabel.getStyleClass().remove("error");
+                        statusLabel.setText("準備就緒");
+                    });
+                    errDelay.play();
                     return;
                 }
 
@@ -284,6 +313,8 @@ public class TimerView extends VBox implements FocusListener {
                 scaleUp.play();
 
 
+                engine.setCurrentSubject(subjectSelector.getValue());
+
                 // 根據模式啟動不同的引擎邏輯
                 if ("正向碼表".equals(selectedMode)) {
                     stopBtn.setText("結束");
@@ -318,13 +349,19 @@ public class TimerView extends VBox implements FocusListener {
                 engine = createFocusEngine();
                 String currentId = gameManager.getCurrentPokemonId();
                 gameManager.addFocusTime(elapsedMinutes, currentId);
+                int showTime;
                 if (elapsedMinutes > 0) {
+                    showTime = 10;
+                    focusUI.startBorderCountdown(showTime, () -> startBtn.setDisable(false));
                     statusLabel.setText("冒險結束！專注了 " + elapsedMinutes + " 分鐘，獲得 " + elapsedMinutes + " 枚專注幣！");
                 } else {
+                    showTime = 5;
+                    focusUI.startBorderCountdown(showTime, () -> startBtn.setDisable(false));
                     statusLabel.setText("冒險結束！本次太短暫，未獲得專注幣。");
                 }
                 focusUI.refreshOnEnded();
-                resetUI();
+                resetUI(showTime);
+                startBtn.setDisable(true);
                 userStatus = status.IDLEING;
             } else {
                 // 1. 建立一個確認視窗 (Confirmation Dialog)
@@ -353,8 +390,7 @@ public class TimerView extends VBox implements FocusListener {
 
     private FocusEngine createFocusEngine() {
         FocusEngine newEngine = new FocusEngine(this);
-        newEngine.setDistractionUserNotifier(
-                session -> Platform.runLater(() -> DistractedAlert.showIfNotShowing(newEngine, session)));
+        newEngine.setDistractionUserNotifier(session -> Platform.runLater(() -> DistractedAlert.showIfNotShowing(newEngine, session)));
         return newEngine;
     }
     
@@ -426,6 +462,10 @@ public class TimerView extends VBox implements FocusListener {
         resetUI(3.5, false);
     }
 
+    private void resetUI(double setTime) {
+        resetUI(setTime, false);
+    }
+
     private void resetUI(boolean isBreakTime) {
         resetUI(10, isBreakTime);
     }
@@ -453,7 +493,11 @@ public class TimerView extends VBox implements FocusListener {
             debugBtn5m.setVisible(true);
             debugBtn5m.setManaged(true);
         } else {
-            timerLabel.setText(String.format("%02d:00", finalMin));
+            if ("正向碼表".equals(modeSelector.getValue())) {
+                timerLabel.setText(String.format("%02d:00", 0));  
+            } else {
+                updateTimerLabelFromWorkInput();
+            }
             startBtn.setVisible(true);
             startBtn.setManaged(true);
             pauseBtn.setVisible(false);
@@ -523,6 +567,7 @@ public class TimerView extends VBox implements FocusListener {
 
                 resetUI(true);
                 userStatus = status.CHILLING;
+                focusUI.startBorderCountdown(10.0);
 
                 PauseTransition delay = new PauseTransition(Duration.seconds(10));
                 int rawBreak = parsePositiveMinutes(breakInput.getText());
@@ -768,4 +813,17 @@ public class TimerView extends VBox implements FocusListener {
         });
         pt.play();
     }
+
+    private static final String SUBJECT_PLACEHOLDER = "選擇科目";
+
+    private void reloadSubjects(String selectValue) {
+        String current = selectValue != null ? selectValue
+                : (subjectSelector.getValue() != null ? subjectSelector.getValue() : SUBJECT_PLACEHOLDER);
+        java.util.List<String> items = new java.util.ArrayList<>();
+        items.add(SUBJECT_PLACEHOLDER);
+        items.addAll(subjectRepo.findAll());
+        subjectSelector.getItems().setAll(items);
+        subjectSelector.setValue(items.contains(current) ? current : SUBJECT_PLACEHOLDER);
+    }
+
 }
