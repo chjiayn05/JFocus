@@ -395,10 +395,14 @@ public class FocusUI extends Application {
             if (targetScene == null)
                 continue;
 
+            File globalFile = new File("res/css/global.css");
             File cssFile = new File("res/css/" + cssFileName);
             File typesFile = new File("res/css/pokemonTypes.css");
             if (cssFile.exists()) {
                 targetScene.getStylesheets().clear();
+                if (globalFile.exists()) {
+                    targetScene.getStylesheets().add(globalFile.toURI().toString());
+                }
                 targetScene.getStylesheets().add(cssFile.toURI().toString());
                 if (typesFile.exists()) {
                     targetScene.getStylesheets().add(typesFile.toURI().toString());
@@ -487,6 +491,7 @@ public class FocusUI extends Application {
 
         // 2. 頂部狀態列 (主題切換 + 貨幣)
         ChoiceBox<String> themeSelector = new ChoiceBox<>();
+        themeSelector.getStyleClass().add("theme-selector");
         themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
         String savedThemeName = jfocus.io.UserData.loadAppSetting("theme_name", "暗黑電競");
         themeSelector.setValue(savedThemeName);
@@ -602,19 +607,25 @@ public class FocusUI extends Application {
                 ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));  
             }
 
-            ScaleTransition pop = new ScaleTransition(javafx.util.Duration.millis(400), ballView);
-            pop.setFromX(0.7);
-            pop.setFromY(0.7);
-            pop.setToX(1.4);
-            pop.setToY(1.4);
-            pop.setOnFinished(e2 -> {
-                ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
-                ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
-                settle.setToX(1.0);
-                settle.setToY(1.0);
-                settle.play();
+            ScaleTransition ballExpand = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
+            ballExpand.setFromX(0.7);
+            ballExpand.setFromY(0.7);
+            ballExpand.setToX(1.4);
+            ballExpand.setToY(1.4);
+            ballExpand.setOnFinished(e2 -> {
+                ScaleTransition ballShrink = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
+                ballShrink.setToX(0);
+                ballShrink.setToY(0);
+                ballShrink.setOnFinished(e3 -> {
+                    ScaleTransition settle = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
+                    ballView.setImage(new Image("file:res/pokemon/" + resultId + "/stage1.png"));
+                    settle.setToX(1.0);
+                    settle.setToY(1.0);
+                    settle.play();
+                });
+                ballShrink.play();
             });
-            pop.play();
+            ballExpand.play();
 
             refreshCurrencyLabels();
             timerView.refreshXpDisplay();
@@ -661,7 +672,7 @@ public class FocusUI extends Application {
         // 抽獎展示區
         StackPane gachaDisplay = new StackPane();
         ballView = new ImageView(new Image("file:res/pokemon/000_ball.png"));
-        ballView.setFitHeight(150);
+        ballView.setFitHeight(200);
         ballView.setPreserveRatio(true);
         gachaDisplay.getChildren().add(ballView);
 
@@ -739,6 +750,7 @@ public class FocusUI extends Application {
 
         Stage dialog = new Stage();
         dialog.initOwner(primaryStage);
+        dialog.setResizable(false);
 
         String stageName = data.getStageName(unlockedStage);
         Label titleLabel = new Label("解鎖新狀態！");
@@ -764,6 +776,14 @@ public class FocusUI extends Application {
 
         Button selectBtn = new Button("選擇出戰");
         selectBtn.getStyleClass().add("select-button");
+        java.io.File swordFile = new java.io.File("res/pokemon/sword.png");
+        if (swordFile.exists()) {
+            ImageView swordIcon = new ImageView(new Image(swordFile.toURI().toString()));
+            swordIcon.setFitHeight(18);
+            swordIcon.setPreserveRatio(true);
+            selectBtn.setGraphic(swordIcon);
+            selectBtn.setContentDisplay(javafx.scene.control.ContentDisplay.RIGHT);
+        }
         selectBtn.setOnAction(e -> {
             dialog.close();
             String battleName = data.getStageName(unlockedStage);
@@ -950,6 +970,7 @@ public class FocusUI extends Application {
         }
         detailStage = new Stage();
         detailStage.initOwner(primaryStage);
+        detailStage.setResizable(false);
 
         VBox layout = new VBox(12);
         layout.setAlignment(Pos.CENTER);

@@ -1,18 +1,26 @@
 package jfocus.ui;
 
+import java.util.function.UnaryOperator;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
-import javafx.animation.SequentialTransition;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -50,7 +58,11 @@ public class TimerView extends VBox implements FocusListener {
     private Button stopBtn;
     private TextField workInput;
     private TextField breakInput;
-    private ComboBox<String> modeSelector;
+    private HBox inputArea;
+    private ChoiceBox<String> modeSelector;
+    private VBox settingsSection;
+    private double settingsSectionHeight = -1;
+    private double inputAreaHeight = -1;
     private ImageView pokemonImageView;
     private ProgressBar xpBar;
     private Label xpInfoLabel;
@@ -116,25 +128,43 @@ public class TimerView extends VBox implements FocusListener {
         timerLabel = new Label(String.format("%02d:00", timerSettings.workMinutes()));
         timerLabel.setStyle("-fx-font-size: 60px; -fx-font-weight: bold;");
 
+        UnaryOperator<TextFormatter.Change> digitsOnly = change -> {
+            String text = change.getControlNewText();
+            if (text.matches("\\d*")) {
+                return change;
+            }
+            statusLabel.setText("必須輸入正整數!");
+            statusLabel.getStyleClass().add("error");
+            PauseTransition delay = new PauseTransition(Duration.seconds(2));
+            delay.setOnFinished(event -> {
+                statusLabel.getStyleClass().remove("error");
+                statusLabel.setText("準備就緒");
+            });
+            delay.play();
+            return null;
+        };
+
         workInput = new TextField(String.valueOf(timerSettings.workMinutes()));
         workInput.setPrefWidth(50);
+        workInput.setAlignment(Pos.CENTER);
+        workInput.setTextFormatter(new TextFormatter<>(digitsOnly));
+
         breakInput = new TextField(String.valueOf(timerSettings.breakMinutes()));
         breakInput.setPrefWidth(50);
+        breakInput.setAlignment(Pos.CENTER);
+        breakInput.setTextFormatter(new TextFormatter<>(digitsOnly));
 
-        modeSelector = new ComboBox<>();
+        modeSelector = new ChoiceBox<>();
+        modeSelector.getStyleClass().add("mode-selector");
         modeSelector.getItems().addAll("番茄鐘模式", "正向碼表");
         modeSelector.setValue("番茄鐘模式");
 
         modeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if ("正向碼表".equals(newVal)) {
-                // 碼表模式：鎖定輸入框，時間歸零
-                workInput.setDisable(true);
-                breakInput.setDisable(true);
-                timerLabel.setText("00:00"); 
+                fadeOutInputArea();
+                timerLabel.setText("00:00");
             } else {
-                // 番茄鐘模式：解鎖輸入框，恢復預設時間
-                workInput.setDisable(false);
-                breakInput.setDisable(false);
+                fadeInInputArea();
                 updateTimerLabelFromWorkInput();
             }
         });
@@ -159,7 +189,6 @@ public class TimerView extends VBox implements FocusListener {
         }
 
         xpBar = new ProgressBar(0);
-        xpBar.setPrefWidth(300);
         xpBar.setStyle("-fx-accent: #3498db;");
 
         xpInfoLabel = new Label("XP: 0 / 50 (等級 1)");
@@ -170,32 +199,37 @@ public class TimerView extends VBox implements FocusListener {
         xpBox.setAlignment(Pos.CENTER);
 
         statusLabel = new Label("準備就緒");
+        statusLabel.getStyleClass().add("statusLabel");
 
         // 2. 開始套用你設計的精美排版
         this.setAlignment(Pos.CENTER);
-        this.setSpacing(18);
+        this.setSpacing(10);
         this.getStyleClass().add("timer-layout"); // 建議未來把 padding 寫進 CSS
 
-        HBox inputArea = new HBox(10, 
-            new Label("工:"), workInput,
-            new Label("休:"), breakInput
-        );
+        Label workPre = new Label("專注");
+        Label workPost = new Label("分");
+        Label breakPre = new Label("休息");
+        Label breakPost = new Label("分");
+        Separator divider = new Separator(Orientation.VERTICAL);
+
+        inputArea = new HBox(8, workPre, workInput, workPost, divider, breakPre, breakInput, breakPost);
         inputArea.setAlignment(Pos.CENTER);
 
 
         btnBox.setAlignment(Pos.CENTER);
         debugBtnBox.setAlignment(Pos.CENTER);
 
+        settingsSection = new VBox(8, modeSelector, inputArea);
+        settingsSection.setAlignment(Pos.CENTER);
+
         // 3. 把所有零件組裝起來 (就是你原本的寫法)
         this.getChildren().addAll(
-                modeSelector,
-                inputArea,
+                settingsSection,
                 pokemonImageView,
                 xpBox,
                 statusLabel,
                 timerLabel,
-                btnBox,
-                debugBtnBox
+                btnBox
         );
 
         // 4. 掛載組員寫的引擎與按鈕事件
@@ -204,8 +238,10 @@ public class TimerView extends VBox implements FocusListener {
         startBtn.setOnAction(e -> {
             try {
                 if (!validateTimeInputs()) {
-                    statusLabel.setText("時間設定需符合：工時至少是休息的兩倍。");
-                    resetUI();
+                    int newTime = Integer.parseInt(breakInput.getText()) * 2;
+                    workInput.setText(String.format("%d", newTime));
+                    statusLabel.setText("時間設定錯誤: 專注時間至少是休息時間的兩倍\n已將專注時間設定為 " + newTime + " 分鐘");
+                    resetUI(5, false);
                     return;
                 }
 
@@ -216,11 +252,6 @@ public class TimerView extends VBox implements FocusListener {
                 if (!"正向碼表".equals(selectedMode)) {
                     minutes = parsePositiveMinutes(workInput.getText());
                     int breakMinutes = parsePositiveMinutes(breakInput.getText());
-                    if (minutes <= 0 || breakMinutes <= 0) {
-                        statusLabel.setText("時間必須大於 0 分鐘喔！");
-                        resetUI();
-                        return; // 直接中斷，不讓計時器啟動
-                    }
                     saveTimerSettingsSafely(minutes, breakMinutes);
                 }
 
@@ -243,6 +274,15 @@ public class TimerView extends VBox implements FocusListener {
                 isPaused = false;
                 pauseBtn.setText("暫停");
                 lastTickSeconds = 0;
+
+                fadeOutSection();
+                VBox.setMargin(timerLabel, new Insets(0, 0, 15, 0));
+                ScaleTransition scaleUp = new ScaleTransition(Duration.millis(350), timerLabel);
+                scaleUp.setToX(1.35);
+                scaleUp.setToY(1.35);
+                scaleUp.setInterpolator(Interpolator.EASE_OUT);
+                scaleUp.play();
+
 
                 // 根據模式啟動不同的引擎邏輯
                 if ("正向碼表".equals(selectedMode)) {
@@ -283,7 +323,7 @@ public class TimerView extends VBox implements FocusListener {
                 } else {
                     statusLabel.setText("冒險結束！本次太短暫，未獲得專注幣。");
                 }
-                focusUI.refreshOnEnded(); 
+                focusUI.refreshOnEnded();
                 resetUI();
                 userStatus = status.IDLEING;
             } else {
@@ -423,6 +463,14 @@ public class TimerView extends VBox implements FocusListener {
             stopBtn.setManaged(false);
             isPaused = false;
 
+            fadeInSection();
+            VBox.setMargin(timerLabel, new Insets(0, 0, 0, 0));
+            ScaleTransition scaleDown = new ScaleTransition(Duration.millis(350), timerLabel);
+            scaleDown.setToX(1.0);
+            scaleDown.setToY(1.0);
+            scaleDown.setInterpolator(Interpolator.EASE_OUT);
+            scaleDown.play();
+
             //TODO Debug區域
             debugBtn10s.setVisible(false);
             debugBtn10s.setManaged(false);
@@ -464,7 +512,8 @@ public class TimerView extends VBox implements FocusListener {
             timerLabel.setText(String.format("%02d:%02d", 0, 0));
 
             if (userStatus == status.WORKING) {
-                int focusedMinutes = Integer.parseInt(workInput.getText());
+                int focusedMinutes = parsePositiveMinutes(workInput.getText());
+                if (focusedMinutes <= 0) focusedMinutes = 25;
                 statusLabel.setText("冒險結束！獲得 " + focusedMinutes + " 枚專注幣！");
 
                 // 呼叫 GameManager 結算
@@ -476,7 +525,8 @@ public class TimerView extends VBox implements FocusListener {
                 userStatus = status.CHILLING;
 
                 PauseTransition delay = new PauseTransition(Duration.seconds(10));
-                int breakMinutes = Integer.parseInt(breakInput.getText());
+                int rawBreak = parsePositiveMinutes(breakInput.getText());
+                final int breakMinutes = rawBreak > 0 ? rawBreak : 5;
                 delay.setOnFinished(event -> {
                     engine.startBreak(breakMinutes * 60);
                 });
@@ -599,5 +649,123 @@ public class TimerView extends VBox implements FocusListener {
         fillToFull.play();
         pokemonImageView.setImage(newImage);
         focusUI.showEvolutionUnlockDialog(pokemonId, newStage);
+    }
+
+    private void fadeOutInputArea() {
+        double h = inputArea.getHeight();
+        if (h <= 0) h = inputArea.prefHeight(-1);
+        inputAreaHeight = h;
+
+        inputArea.setMinHeight(0);
+        inputArea.setMaxHeight(h);
+        inputArea.setPrefHeight(h);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(200), inputArea);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.0);
+
+        double fh = h;
+        Timeline heightAnim = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(inputArea.prefHeightProperty(), fh)),
+                new KeyFrame(Duration.millis(220),
+                        new KeyValue(inputArea.prefHeightProperty(), 0, Interpolator.EASE_BOTH)));
+
+        ParallelTransition pt = new ParallelTransition(ft, heightAnim);
+        pt.setOnFinished(e -> {
+            inputArea.setVisible(false);
+            inputArea.setManaged(false);
+            inputArea.setPrefHeight(-1);
+            inputArea.setMinHeight(-1);
+            inputArea.setMaxHeight(Double.MAX_VALUE);
+        });
+        pt.play();
+    }
+
+    private void fadeInInputArea() {
+        double targetH = inputAreaHeight > 0 ? inputAreaHeight : inputArea.prefHeight(-1);
+
+        inputArea.setMinHeight(0);
+        inputArea.setMaxHeight(targetH);
+        inputArea.setPrefHeight(0);
+        inputArea.setOpacity(0.0);
+        inputArea.setVisible(true);
+        inputArea.setManaged(true);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(200), inputArea);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+
+        Timeline heightAnim = new Timeline(
+                new KeyFrame(Duration.ZERO, new KeyValue(inputArea.prefHeightProperty(), 0)),
+                new KeyFrame(Duration.millis(220),
+                        new KeyValue(inputArea.prefHeightProperty(), targetH, Interpolator.EASE_BOTH)));
+
+        ParallelTransition pt = new ParallelTransition(ft, heightAnim);
+        pt.setOnFinished(e -> {
+            inputArea.setPrefHeight(-1);
+            inputArea.setMinHeight(-1);
+            inputArea.setMaxHeight(Double.MAX_VALUE);
+        });
+        pt.play();
+    }
+
+    private void fadeOutSection() {
+        double h = settingsSection.getHeight();
+        if (h <= 0) h = settingsSection.prefHeight(-1);
+        settingsSectionHeight = h;
+
+        settingsSection.setMinHeight(0);
+        settingsSection.setMaxHeight(h);
+        settingsSection.setPrefHeight(h);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(250), settingsSection);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.0);
+
+        Timeline heightAnim = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                        new KeyValue(settingsSection.prefHeightProperty(), h)),
+                new KeyFrame(Duration.millis(280),
+                        new KeyValue(settingsSection.prefHeightProperty(), 0, Interpolator.EASE_BOTH)));
+
+        ParallelTransition pt = new ParallelTransition(ft, heightAnim);
+        pt.setOnFinished(e -> {
+            settingsSection.setVisible(false);
+            settingsSection.setManaged(false);
+            settingsSection.setPrefHeight(-1);
+            settingsSection.setMinHeight(-1);
+            settingsSection.setMaxHeight(Double.MAX_VALUE);
+        });
+        pt.play();
+    }
+
+    private void fadeInSection() {
+        double targetH = settingsSectionHeight > 0 ? settingsSectionHeight
+                : settingsSection.prefHeight(-1);
+
+        settingsSection.setMinHeight(0);
+        settingsSection.setMaxHeight(targetH);
+        settingsSection.setPrefHeight(0);
+        settingsSection.setOpacity(0.0);
+        settingsSection.setVisible(true);
+        settingsSection.setManaged(true);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(250), settingsSection);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+
+        Timeline heightAnim = new Timeline(
+                new KeyFrame(Duration.ZERO,
+                        new KeyValue(settingsSection.prefHeightProperty(), 0)),
+                new KeyFrame(Duration.millis(280),
+                        new KeyValue(settingsSection.prefHeightProperty(), targetH, Interpolator.EASE_BOTH)));
+
+        ParallelTransition pt = new ParallelTransition(ft, heightAnim);
+        pt.setOnFinished(e -> {
+            settingsSection.setPrefHeight(-1);
+            settingsSection.setMinHeight(-1);
+            settingsSection.setMaxHeight(Double.MAX_VALUE);
+        });
+        pt.play();
     }
 }

@@ -1,10 +1,10 @@
 /* ==========================================
-   PokemonDark.css (純淨深色 + 白底卡片)
+   PokemonLight.css — 明亮清新
    ========================================== */
 
 .root {
-    -my-primary-color: #d7d7d7;
-    -my-secondary-color: #b7b7b7;
+    -my-primary-color: #c8c8c8;
+    -my-secondary-color: #a1a1a1;
     -my-background-color: #878787;
 
     -my-shadow-color: #767676;
@@ -19,15 +19,15 @@
 
     -my-border-color: #333333;
     -my-tab-border-color: #353535;
-    -my-line-color: #1d1d1d50 ;
+    -my-line-color: #1d1d1d50;
 
     -my-pokemon-card: #e3e1e1;
-    -my-pokemon-card-lock: #6e6e6e;
-    -my-pokemon-card-hover: #a8a8a8;
+    -my-pokemon-card-lock: #a6a6a6;
+    -my-pokemon-card-hover: #d6d4d4;
 
+    -my-progress-track: #000000;
     -my-progress-bar: #ffcb05;
     -my-lock-color: #850000;
-
     -my-stage-color: #b4b4b450;
     -my-stage-hover-color: #b4b4b499;
 
@@ -40,176 +40,5 @@
     -fx-text-fill: -my-text-soft-color;
 }
 .label.changeColor {
-    -fx-text-fill: #f1c40f;
-}
-/* 頂部狀態列 */
-.top-bar {
-    -fx-background-color: -my-background-color;
-}
-
-.top-bar .label {
-    -fx-text-fill: -my-text-color;
-    -fx-font-weight: bold;
-}
-
-.choice-box {
-    -fx-background-color: -my-primary-color;
-    -fx-border-color: -my-border-color;
-    -fx-background-radius: 6;
-    -fx-border-radius: 5;
-    -fx-mark-color: -my-text-color;
-}
-.choice-box > .label {
-    -fx-text-fill: -my-text-color;
-}
-.choice-box .context-menu {
-    -fx-background-color: -my-secondary-color;
-}
-.choice-box .menu-item > .label {
-    -fx-text-fill: -my-text-color;
-}
-.choice-box .menu-item:focused {
-    -fx-background-color: -my-primary-color;
-}
-.choice-box .menu-item:focused > .label {
-    -fx-text-fill: -my-text-color;
-}
-
-/* 分頁標籤 */
-.tab-pane .tab-header-area .tab-header-background {
-    -fx-background-color: -my-background-color;
-    -fx-border-width: 0 0 2 0;
-    -fx-border-color: -my-tab-border-color;
-}
-
-.tab { 
-    -fx-background-insets: 0 2 0 2; 
-    -fx-cursor: hand;
-    -fx-padding: 6 15;
-    -fx-background-color: -my-secondary-color;
-    -fx-background-radius: 8 8 0 0;
-    -fx-border-insets: 0 2 0 2;
-    -fx-border-width: 0 0 2 0;
-    -fx-border-color: -my-tab-border-color;
-}
-
-.tab .tab-label {
-    -fx-text-fill: -my-label-text-color;
-    -fx-font-weight: bold;
-}
-
-.tab:selected {
-    -fx-border-width: 2;
-    -fx-border-color: -my-tab-border-color -my-tab-border-color -my-primary-color -my-tab-border-color;
-    -fx-border-radius: 8 8 0 0;
-    -fx-background-color: -my-primary-color;
-}
-
-.tab:selected .tab-label {
-    -fx-text-fill: -my-text-color;
-}
-.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
-    -fx-border-color: transparent;
-}
-
-/* 按鈕 */
-.button {
-    -fx-background-color: -my-btn-primary-color;
-    -fx-text-fill: -my-text-color;
-    -fx-background-radius: 10;
-    -fx-font-weight: bold;
-    -fx-font-size: 14px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
-}
-
-.button:hover {
-    -fx-background-color: -my-btn-secondary-color;
-    -fx-translate-y: -1px;
-    -fx-cursor: hand;
-}
-
-/* ==========================================
-   【關鍵修復】拔除 ScrollPane 的刺眼白底
-   ========================================== */
-.scroll-pane,
-.scroll-pane>.viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
-
-/* 黃底卡片 (浮在深色背景上) */
-.pokemon-card {
-    -fx-border-color: -my-pokemon-card;
-    -fx-border-width: 1;
-    -fx-border-radius: 13;
-    -fx-background-color: -my-pokemon-card;
-    -fx-background-radius: 14;
-    -fx-effect: dropshadow(gaussian, -my-shadow-color, 10, 0, 0, 0);
-    /* 加深陰影，讓卡片更立體 */
-}
-
-.pokemon-card:hover,
-.pokemon-card.active-partner:hover {
-    -fx-border-color: -my-pokemon-card-hover;
-    -fx-border-width: 1;
-    -fx-border-radius: 12;
-    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 0);
-}
-
-.pokemon-card.locked {
-    -fx-background-color: -my-pokemon-card-lock;
-    -fx-border-color: -my-pokemon-card-lock;
-    -fx-effect: none;
-}
-
-/* 經驗條 */
-.progress-bar .track {
-    -fx-background-color: -my-secondary-color;
-    -fx-background-radius: 10;
-}
-
-.progress-bar .bar {
-    -fx-background-color: -my-progress-bar;
-    -fx-background-radius: 8;
-}
-
-/* 屬性標籤 */
-/* ==========================================
-   【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
-   讓最底層 (.root) 的漂亮背景色完美透出來
-   ========================================== */
-.tab-pane,
-.tab-pane .tab-content-area,
-.scroll-pane,
-.scroll-pane>.viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
-
-.separator .line {
-    -fx-border-color: -my-line-color;
-    -fx-border-width: 1px;
-}
-
-.scroll-bar .thumb {
-    -fx-background-color: -my-secondary-color;
-    -fx-background-insets: 3;
-    -fx-background-radius: 5;
-}
-
-/* Styling the track (the background) */
-.scroll-bar,
-.scroll-bar .track,
-.scroll-bar .increment-button,
-.scroll-bar .decrement-button,
-.scroll-bar .corner {
-    -fx-background-color: -my-primary-color;
-}
-
-.detailView{
-    -fx-border-width: 3;
-    -fx-border-color: -my-shadow-hover-color;
-    -fx-border-radius: 0 0 10 10;
+    -fx-text-fill: #000000;
 }

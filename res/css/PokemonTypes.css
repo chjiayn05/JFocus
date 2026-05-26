@@ -129,8 +129,6 @@
 }
 
 .button.stage-select-btn.stage-selected {
-    -fx-cursor: none;
-    -fx-background-color: -my-pokemon-card;
     -fx-border-color: -my-border-color;
     -fx-border-width: 2;
     -fx-border-insets: -2;
