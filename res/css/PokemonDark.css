@@ -190,11 +190,12 @@
     -fx-text-fill: #cccccc;
 }
 
-.rank-comment{
+.stats-view .label.rank-comment {
     -fx-font-size: 12px; 
     -fx-font-weight: bold; 
     -fx-text-fill: #FFCB05;
 }
+/* TODO: 要改顏色 */
 
 /* 月專注趨勢折線圖自訂樣式 */
 .monthly-trend-line .chart-series-line {
@@ -206,4 +207,9 @@
     -fx-background-radius: 4px;
     -fx-padding: 4px;
 }
+
+.stats-view .label {
+    -fx-text-fill: #e0e0e0;
+}
+
 

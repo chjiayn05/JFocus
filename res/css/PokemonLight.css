@@ -193,11 +193,12 @@
     -fx-text-fill: #333333;
 }
 
-.rank-comment{
+.stats-view .label.rank-comment {
     -fx-font-size: 12px; 
     -fx-font-weight: bold; 
     -fx-text-fill: #FFCB05;
 }
+/* TODO: 要改顏色 */
 
 /* 月專注趨勢折線圖自訂樣式 */
 .monthly-trend-line .chart-series-line {
@@ -209,5 +210,9 @@
     -fx-background-radius: 4px;
     -fx-padding: 4px;
 }
-/* TODO: 要改顏色 */
+
+.stats-view .label {
+    -fx-text-fill: #2c3e50;
+}
+
 

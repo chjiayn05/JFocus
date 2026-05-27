@@ -173,7 +173,8 @@
 /* TODO: 要改active顏色 */
 
 .stats-card {
-    -fx-background-color: rgba(83, 22, 22, 0.779);
+    -fx-background-color: #f26d6d;
+    -fx-opacity: 0.5;
     -fx-background-radius: 8;
     -fx-padding: 10;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
@@ -243,11 +244,12 @@
     -fx-text-fill: #cccccc;
 }
 
-.rank-comment{
+.stats-view .label.rank-comment {
     -fx-font-size: 12px; 
     -fx-font-weight: bold; 
     -fx-text-fill: #FFCB05;
 }
+/* TODO: 要改顏色 */
 
 /* 月專注趨勢折線圖自訂樣式 */
 .monthly-trend-line .chart-series-line {
@@ -259,4 +261,9 @@
     -fx-background-radius: 4px;
     -fx-padding: 4px;
 }
-/* TODO: 要改顏色 */
+
+.stats-view .label {
+    -fx-text-fill: #333333;
+}
+
+

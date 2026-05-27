@@ -45,18 +45,6 @@ public class StatsView extends VBox {
     private YearMonth currentMonthlyMonth = YearMonth.now();
     private String currentViewType = "Daily";
 
-    // 固定的學科配色調色盤
-    private static final String[] PALETTE = {
-            "#3498db", // 藍色
-            "#e74c3c", // 紅色
-            "#2ecc71", // 綠色
-            "#f1c40f", // 黃色
-            "#9b59b6", // 紫色
-            "#e67e22", // 橘色
-            "#1abc9c", // 青色
-            "#a86df2" // 亮紫
-    };
-
     private final Map<String, String> subjectColorMap = new HashMap<>();
     private int colorIndex = 0;
 
@@ -73,6 +61,7 @@ public class StatsView extends VBox {
         this.setSpacing(10);
         this.setPadding(new Insets(10));
         this.setAlignment(Pos.TOP_CENTER);
+        this.getStyleClass().add("stats-view");
 
         // 1. 頂部按鈕 (每日、每週、每月)
         HBox navBar = new HBox(12);
@@ -165,14 +154,14 @@ public class StatsView extends VBox {
         
         switch (activeTheme) {
             case "Dark":
-                return new String[]{"#333333", "#4d4d4d", "#666666", "#808080"};
+                return new String[]{"#e0e0e0", "#bebebe", "#9d9d9d", "#7b7b7b", "#5b5b5b"};
             case "Light":
-                return new String[]{"#808080", "#aaaaaa", "#dcdcdc", "#f0f0f0"};
+                return new String[]{"#2c3e50", "#475569", "#64748b", "#94a3b8"};
             case "Purple":
-                return new String[]{"#4b2e6e", "#6d3ea3", "#8c52d9", "#a86df2"};
+                return new String[]{"#c084fc", "#d8b4fe", "#e9d5ff", "#f3e8ff"};
             case "Red":
             default:
-                return new String[]{"#6e2e2e", "#a33e3e", "#d95252", "#f26d6d"};
+                return new String[]{"#7f1d1d", "#991b1b", "#b91c1c", "#dc2626"};
         }
     }
 
@@ -403,14 +392,18 @@ public class StatsView extends VBox {
         if (data.getSubjectTimes().isEmpty()) {
             container.getChildren().add(new Label("本日無科目專注數據"));
         } else {
+            Label lblChartTitle = new Label("科目專注分佈");
+            lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+            lblChartTitle.setAlignment(Pos.CENTER);
+            lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+
             HBox chartContainer = new HBox(15);
             chartContainer.setAlignment(Pos.CENTER);
             chartContainer.setPadding(new Insets(10));
 
             PieChart pieChart = new PieChart();
-            pieChart.setTitle("科目專注分佈");
             pieChart.setPrefHeight(180);
-            pieChart.setPrefWidth(220);
+            pieChart.setPrefWidth(160);
             pieChart.setLegendVisible(false);
             pieChart.setLabelsVisible(false);
 
@@ -442,20 +435,30 @@ public class StatsView extends VBox {
                 Circle colorIndicator = new Circle(6);
                 colorIndicator.setFill(Color.web(color));
 
-                Label descLbl = new Label(st.getSubject() + ": " + formatSeconds(st.getDurationSeconds()));
+                Label pctLbl = new Label(String.format("%.1f%%", pct));
+                pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+                pctLbl.setPrefWidth(45);
+                pctLbl.setAlignment(Pos.CENTER_LEFT);
+
+                Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
                 descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
 
-                legendItem.getChildren().addAll(colorIndicator, descLbl);
+                legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
                 legendBox.getChildren().add(legendItem);
             }
 
             chartContainer.getChildren().addAll(pieChart, legendBox);
-            container.getChildren().add(chartContainer);
+
+            VBox chartSection = new VBox(5);
+            chartSection.setAlignment(Pos.TOP_CENTER);
+            chartSection.getChildren().addAll(lblChartTitle, chartContainer);
+
+            container.getChildren().add(chartSection);
         }
 
         // 專注時間軸
         Label lblTimelineTitle = new Label("專注時間軸");
-        lblTimelineTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblTimelineTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         VBox timelineBox = new VBox(0);
         timelineBox.setAlignment(Pos.TOP_LEFT);
         timelineBox.setPadding(new Insets(10, 20, 10, 20));
@@ -520,7 +523,7 @@ public class StatsView extends VBox {
 
         // 分心軟體排行榜
         Label lblDistractTitle = new Label("分心軟體排行榜");
-        lblDistractTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblDistractTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
@@ -529,6 +532,7 @@ public class StatsView extends VBox {
             VBox distractLeaderboard = createDistractionLeaderboard(data.getTopDistractions());
             container.getChildren().add(distractLeaderboard);
         }
+
     }
 
     // 每週趨勢視圖
@@ -602,11 +606,15 @@ public class StatsView extends VBox {
         container.getChildren().add(cardsBox);
 
         // 每日專注趨勢
+        Label lblTrendTitle = new Label("本週專注趨勢");
+        lblTrendTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        lblTrendTitle.setAlignment(Pos.CENTER);
+        lblTrendTitle.setMaxWidth(Double.MAX_VALUE);
+
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(null);
         StackedBarChart<String, Number> barChart = new StackedBarChart<>(xAxis, yAxis);
-        barChart.setTitle("本週專注趨勢");
         barChart.setPrefHeight(240);
         barChart.setLegendSide(Side.BOTTOM);
 
@@ -634,7 +642,11 @@ public class StatsView extends VBox {
             }
             barChart.getData().add(series);
         }
-        container.getChildren().add(barChart);
+
+        VBox trendSection = new VBox(5);
+        trendSection.setAlignment(Pos.TOP_CENTER);
+        trendSection.getChildren().addAll(lblTrendTitle, barChart);
+        container.getChildren().add(trendSection);
 
         // 顏色同步
         Platform.runLater(() -> {
@@ -663,14 +675,18 @@ public class StatsView extends VBox {
         });
 
         // 科目整體比例
+        Label lblChartTitle = new Label("專注科目比例");
+        lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        lblChartTitle.setAlignment(Pos.CENTER);
+        lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+
         HBox chartContainer = new HBox(15);
         chartContainer.setAlignment(Pos.CENTER);
         chartContainer.setPadding(new Insets(10));
 
         PieChart pieChart = new PieChart();
-        pieChart.setTitle("專注科目比例");
         pieChart.setPrefHeight(180);
-        pieChart.setPrefWidth(220);
+        pieChart.setPrefWidth(160);
         pieChart.setLegendVisible(false);
         pieChart.setLabelsVisible(false);
 
@@ -698,18 +714,28 @@ public class StatsView extends VBox {
             legendItem.setAlignment(Pos.CENTER_LEFT);
             Circle colorIndicator = new Circle(6);
             colorIndicator.setFill(Color.web(color));
-            Label descLbl = new Label(st.getSubject() + ": " + formatSeconds(st.getDurationSeconds()));
+
+            Label pctLbl = new Label(String.format("%.1f%%", pct));
+            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+            pctLbl.setPrefWidth(45);
+            pctLbl.setAlignment(Pos.CENTER_LEFT);
+
+            Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
             descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            legendItem.getChildren().addAll(colorIndicator, descLbl);
+            legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
             legendBox.getChildren().add(legendItem);
         }
 
         chartContainer.getChildren().addAll(pieChart, legendBox);
-        container.getChildren().add(chartContainer);
+
+        VBox chartSection = new VBox(5);
+        chartSection.setAlignment(Pos.TOP_CENTER);
+        chartSection.getChildren().addAll(lblChartTitle, chartContainer);
+        container.getChildren().add(chartSection);
 
         // 分心軟體排行榜
         Label lblDistractTitle = new Label("本週分心排行榜");
-        lblDistractTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblDistractTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
@@ -800,8 +826,12 @@ public class StatsView extends VBox {
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(null);
 
+        Label lblTrendTitle = new Label("月專注趨勢");
+        lblTrendTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        lblTrendTitle.setAlignment(Pos.CENTER);
+        lblTrendTitle.setMaxWidth(Double.MAX_VALUE);
+
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
-        lineChart.setTitle("月專注趨勢");
         lineChart.setPrefHeight(240);
         lineChart.setLegendVisible(false);
         lineChart.getStyleClass().add("monthly-trend-line");
@@ -815,17 +845,25 @@ public class StatsView extends VBox {
             series.getData().add(new XYChart.Data<>(dayVal, hours));
         }
         lineChart.getData().add(series);
-        container.getChildren().add(lineChart);
+
+        VBox trendSection = new VBox(5);
+        trendSection.setAlignment(Pos.TOP_CENTER);
+        trendSection.getChildren().addAll(lblTrendTitle, lineChart);
+        container.getChildren().add(trendSection);
 
         // 科目整體比例
+        Label lblChartTitle = new Label("科目整體比例");
+        lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        lblChartTitle.setAlignment(Pos.CENTER);
+        lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+
         HBox chartContainer = new HBox(15);
         chartContainer.setAlignment(Pos.CENTER);
         chartContainer.setPadding(new Insets(10));
 
         PieChart pieChart = new PieChart();
-        pieChart.setTitle("科目整體比例");
         pieChart.setPrefHeight(180);
-        pieChart.setPrefWidth(220);
+        pieChart.setPrefWidth(160);
         pieChart.setLegendVisible(false);
         pieChart.setLabelsVisible(false);
 
@@ -853,18 +891,28 @@ public class StatsView extends VBox {
             legendItem.setAlignment(Pos.CENTER_LEFT);
             Circle colorIndicator = new Circle(6);
             colorIndicator.setFill(Color.web(color));
-            Label descLbl = new Label(st.getSubject() + ": " + formatSeconds(st.getDurationSeconds()));
+
+            Label pctLbl = new Label(String.format("%.1f%%", pct));
+            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+            pctLbl.setPrefWidth(45);
+            pctLbl.setAlignment(Pos.CENTER_LEFT);
+
+            Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
             descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            legendItem.getChildren().addAll(colorIndicator, descLbl);
+            legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
             legendBox.getChildren().add(legendItem);
         }
 
         chartContainer.getChildren().addAll(pieChart, legendBox);
-        container.getChildren().add(chartContainer);
+
+        VBox chartSection = new VBox(5);
+        chartSection.setAlignment(Pos.TOP_CENTER);
+        chartSection.getChildren().addAll(lblChartTitle, chartContainer);
+        container.getChildren().add(chartSection);
 
         // 3. 分心排行榜
         Label lblDistractTitle = new Label("本月分心排行榜");
-        lblDistractTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        lblDistractTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
@@ -873,6 +921,7 @@ public class StatsView extends VBox {
             VBox distractLeaderboard = createDistractionLeaderboard(data.getTopDistractions());
             container.getChildren().add(distractLeaderboard);
         }
+
     }
 
     // 輔助 UI 元件
