@@ -27,11 +27,8 @@ target/
 */test/
 jfocus-data/
 .DS_Store
-<<<<<<< HEAD
 .idea/*
 .obsidian/
 graphify-out/
 CLAUDE.md
-=======
 .idea/*
->>>>>>> parent of 956abc2 (:Merge branch 'feature/distract-mode' into develop)
