@@ -106,8 +106,10 @@ public class FocusUI extends Application {
     // 加在最上面的變數宣告區
     private TimerView timerView;
     private Canvas borderCanvas;
+    private AnimationTimer currentBorderTimer;
     private javafx.scene.control.TabPane tabPane;
     private String css = "PokemonDark.css";
+    static final List<String> activeStylesheets = new ArrayList<>();
     // 圖鑑相關元件
     // private ImageView bigView;
     // private ComboBox<String> stageSelector;
@@ -397,26 +399,26 @@ public class FocusUI extends Application {
 
 
     private void switchTheme(String cssFileName) {
-        Scene allScene[] = { mainScene, detailScene, evolutionScene };
-        for (Scene targetScene : allScene) {
-            if (targetScene == null)
-                continue;
+        File globalFile = new File("res/css/global.css");
+        File cssFile = new File("res/css/" + cssFileName);
+        File typesFile = new File("res/css/pokemonTypes.css");
+        if (!cssFile.exists()) {
+            System.err.println("找不到主題檔案: " + cssFileName);
+            return;
+        }
 
-            File globalFile = new File("res/css/global.css");
-            File cssFile = new File("res/css/" + cssFileName);
-            File typesFile = new File("res/css/pokemonTypes.css");
-            if (cssFile.exists()) {
-                targetScene.getStylesheets().clear();
-                if (globalFile.exists()) {
-                    targetScene.getStylesheets().add(globalFile.toURI().toString());
-                }
-                targetScene.getStylesheets().add(cssFile.toURI().toString());
-                if (typesFile.exists()) {
-                    targetScene.getStylesheets().add(typesFile.toURI().toString());
-                }
-            } else {
-                System.err.println("找不到主題檔案: " + cssFileName);
-            }
+        List<String> sheets = new ArrayList<>();
+        if (globalFile.exists()) sheets.add(globalFile.toURI().toString());
+        sheets.add(cssFile.toURI().toString());
+        if (typesFile.exists()) sheets.add(typesFile.toURI().toString());
+
+        activeStylesheets.clear();
+        activeStylesheets.addAll(sheets);
+
+        Scene[] allScene = { mainScene, detailScene, evolutionScene };
+        for (Scene targetScene : allScene) {
+            if (targetScene == null) continue;
+            targetScene.getStylesheets().setAll(sheets);
         }
     }
 
@@ -622,9 +624,9 @@ public class FocusUI extends Application {
                 ballView.setImage(new Image("file:res/pokemon/000_masterball.png"));  
             }
 
-            ScaleTransition ballExpand = new ScaleTransition(javafx.util.Duration.millis(150), ballView);
-            ballExpand.setFromX(0.8);
-            ballExpand.setFromY(0.8);
+            ScaleTransition ballExpand = new ScaleTransition(javafx.util.Duration.millis(250), ballView);
+            ballExpand.setFromX(0.7);
+            ballExpand.setFromY(0.7);
             ballExpand.setToX(1.4);
             ballExpand.setToY(1.4);
             ballExpand.setOnFinished(e2 -> {
@@ -1260,13 +1262,67 @@ public class FocusUI extends Application {
 
     public void startBorderCountdown(double durationSeconds, Runnable onComplete) {
         if (borderCanvas == null) return;
+        if (currentBorderTimer != null) currentBorderTimer.stop();
+        double yOff = resolveBorderParams()[0];
+        Color strokeColor = resolveBorderStrokeColor();
+        final double yOffset = yOff;
+        final Color finalColor = strokeColor;
+        long durationNanos = (long) (durationSeconds * 1_000_000_000L);
+        long[] t0 = {-1L};
+        currentBorderTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (t0[0] < 0) t0[0] = now;
+                double p = Math.min((now - t0[0]) / (double) durationNanos, 1.0);
+                drawBorderErase(p, yOffset, finalColor);
+                if (p >= 1.0) {
+                    stop();
+                    if (onComplete != null) Platform.runLater(onComplete);
+                }
+            }
+        };
+        currentBorderTimer.start();
+    }
+
+    public void startBorderFlash(double durationSeconds, Runnable onComplete) {
+        if (borderCanvas == null) return;
+        if (currentBorderTimer != null) currentBorderTimer.stop();
+        final double yOffset = resolveBorderParams()[0];
+        final Color flashColor = Color.web("#cd0000");
+        long[] t0 = {-1L};
+        currentBorderTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (t0[0] < 0) t0[0] = now;
+                double elapsed = (now - t0[0]) / 1_000_000_000.0;
+                if (elapsed >= durationSeconds) {
+                    borderCanvas.getGraphicsContext2D().clearRect(0, 0, borderCanvas.getWidth(), borderCanvas.getHeight());
+                    stop();
+                    if (onComplete != null) Platform.runLater(onComplete);
+                    return;
+                }
+                double alpha = 0.55 + 0.45 * Math.sin(elapsed * Math.PI * 2.5);
+                alpha = Math.max(0.05, alpha);
+                drawBorderErase(0.0, yOffset, Color.color(flashColor.getRed(), flashColor.getGreen(), flashColor.getBlue(), alpha));
+            }
+        };
+        currentBorderTimer.start();
+    }
+
+    private double[] resolveBorderParams() {
         double yOff = 0;
-        Color strokeColor = Color.web("#5eabff");
         if (tabPane != null) {
             javafx.scene.Node header = tabPane.lookup(".tab-header-area");
             if (header != null) {
                 yOff = header.localToScene(0, header.getBoundsInLocal().getHeight()).getY();
             }
+        }
+        return new double[]{yOff};
+    }
+
+    private Color resolveBorderStrokeColor() {
+        Color strokeColor = Color.web("#5eabff");
+        if (tabPane != null) {
             javafx.scene.Node headerBg = tabPane.lookup(".tab-header-background");
             if (headerBg instanceof javafx.scene.layout.Region) {
                 javafx.scene.layout.Border border = ((javafx.scene.layout.Region) headerBg).getBorder();
@@ -1282,22 +1338,7 @@ public class FocusUI extends Application {
                 }
             }
         }
-        final double yOffset = yOff;
-        final Color finalColor = strokeColor;
-        long durationNanos = (long) (durationSeconds * 1_000_000_000L);
-        long[] t0 = {-1L};
-        new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (t0[0] < 0) t0[0] = now;
-                double p = Math.min((now - t0[0]) / (double) durationNanos, 1.0);
-                drawBorderErase(p, yOffset, finalColor);
-                if (p >= 1.0) {
-                    stop();
-                    if (onComplete != null) Platform.runLater(onComplete);
-                }
-            }
-        }.start();
+        return strokeColor;
     }
 
     private void drawBorderErase(double progress, double yOffset, Color strokeColor) {
@@ -1307,12 +1348,12 @@ public class FocusUI extends Application {
         gc.clearRect(0, 0, W, H);
         if (progress >= 1.0 || W == 0 || H == 0) return;
 
-        double pad = 3;
-        double r = 12.0;
-        double x = pad, y = yOffset + pad, w = W - pad * 2, h = H - y - pad;
+        double pad = 1;
+        double r = 11.0;
+        double x = pad, y = yOffset, w = W - pad * 2, h = H - y - pad;
 
         gc.setStroke(strokeColor);
-        gc.setLineWidth(2.5);
+        gc.setLineWidth(3);
         gc.setLineCap(StrokeLineCap.ROUND);
         gc.setLineJoin(StrokeLineJoin.ROUND);
 

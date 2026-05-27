@@ -17,12 +17,12 @@ public class MacMediaPauser {
         void MRMediaRemoteSendCommand(int command, Pointer options);
     }
 
-    private static final int kMRTogglePlayPause = 2;
+    private static final int kMRPause = 1;
 
     public static void pauseAllMedia() {
         Thread thread = new Thread(() -> {
             try {
-                MediaRemote.INSTANCE.MRMediaRemoteSendCommand(kMRTogglePlayPause, null);
+                MediaRemote.INSTANCE.MRMediaRemoteSendCommand(kMRPause, null);
             } catch (Exception e) {
                 System.err.println("[MediaPauser] 執行失敗: " + e.getMessage());
             }

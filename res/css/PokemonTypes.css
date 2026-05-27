@@ -96,7 +96,7 @@
 
 
 .select-button {
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: -my-text-color;
 }
 
 /* ── Stage selector in detail view ── */

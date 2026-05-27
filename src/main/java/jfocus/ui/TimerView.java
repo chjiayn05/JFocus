@@ -146,6 +146,7 @@ public class TimerView extends VBox implements FocusListener {
                 statusLabel.getStyleClass().add("error");
             }
             digitsOnlyErrorDelay.playFromStart();
+            focusUI.startBorderFlash(2, null);
             return null;
         };
 
@@ -253,9 +254,9 @@ public class TimerView extends VBox implements FocusListener {
                     int newTime = Integer.parseInt(breakInput.getText()) * 2;
                     startBtn.setDisable(true);
                     workInput.setText(String.format("%d", newTime));
-                    updateTimerLabelFromWorkInput();
+                    timerLabel.setText(String.format("%02d:00", newTime));
                     statusLabel.setText("時間設定錯誤: 專注時間至少是休息時間的兩倍\n已將專注時間設定為 " + newTime + " 分鐘");
-                    focusUI.startBorderCountdown(5, () -> {
+                    focusUI.startBorderFlash(3, () -> {
                         startBtn.setDisable(false);
                         statusLabel.setText("準備就緒");
                     });
@@ -271,6 +272,7 @@ public class TimerView extends VBox implements FocusListener {
                         statusLabel.setText("準備就緒");
                     });
                     errDelay.play();
+                    focusUI.startBorderFlash(2, null);
                     return;
                 }
 
@@ -364,26 +366,18 @@ public class TimerView extends VBox implements FocusListener {
                 startBtn.setDisable(true);
                 userStatus = status.IDLEING;
             } else {
-                // 1. 建立一個確認視窗 (Confirmation Dialog)
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-                alert.setTitle("放棄冒險");
-                alert.setHeaderText("確定要放棄這次的冒險嗎？");
-                alert.setContentText("現在放棄的話，將無法獲得任何專注幣與經驗值喔！");
-
-                // 2. 顯示視窗並等待玩家點擊按鈕
-                java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-                
-                // 3. 判斷玩家按了什麼
-                if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
-                    // 玩家按下「確定」：執行原本的停止邏輯
-                    engine.shutdown();
-                    engine = createFocusEngine(); // 重新建立引擎準備下次使用
-                    resetUI();
-                    statusLabel.setText("冒險已取消");
-                } else {
-                    // 玩家按下「取消」或關閉視窗：什麼都不做，讓計時繼續
-                    System.out.println("玩家取消了放棄操作");
-                }
+                new MiniDialog.Builder(stopBtn.getScene().getWindow())
+                        .type(MiniDialog.Type.DANGER)
+                        .title("放棄冒險")
+                        .message("現在放棄的話，將無法獲得任何專注幣與經驗值喔！")
+                        .primaryBtn("繼續冒險", null)
+                        .dangerBtn("確定放棄", () -> {
+                            engine.shutdown();
+                            engine = createFocusEngine();
+                            resetUI();
+                            statusLabel.setText("冒險已取消");
+                        })
+                        .show();
             }
         });
     }
