@@ -5,6 +5,11 @@
 
 .label {
     -fx-line-spacing: 5px;
+    -fx-text-fill: -my-label-text-fill;
+}
+
+.label.changeColor {
+    -fx-text-fill: -my-label-change-color;
 }
 
 .label.inputLabel {
@@ -41,7 +46,7 @@
     -fx-mark-color: -my-text-color;
 }
 .choice-box > .label {
-    -fx-text-fill: -my-text-color;
+    -fx-text-fill: -my-choice-box-text-color;
 }
 .choice-box .context-menu {
     -fx-background-color: -my-secondary-color;
@@ -54,7 +59,7 @@
     -fx-background-color: -my-primary-color;
 }
 .choice-box .menu-item:focused > .label {
-    -fx-text-fill: -my-text-color;
+    -fx-text-fill: -my-choice-box-text-color;
 }
 .choice-box.mode-selector {
     -fx-pref-width: 100px;
@@ -101,7 +106,7 @@
     -fx-background-color: -my-primary-color;
 }
 .tab:selected .tab-label {
-    -fx-text-fill: -my-text-color;
+    -fx-text-fill: -my-tab-selected-text-color;
 }
 .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
     -fx-border-color: transparent;
@@ -191,7 +196,7 @@
 /* 詳細視窗 */
 .detailView {
     -fx-border-width: 4 3 3 3;
-    -fx-border-color: -my-tab-border-color;
+    -fx-border-color: -my-detail-view-border-color;
     -fx-border-radius: 0 0 12 12;
 }
 
@@ -316,4 +321,131 @@
 }
 .alert-keyword-btn:selected:hover {
     -fx-background-color: -my-btn-secondary-color;
+}
+
+/* --- 數據分析自定義樣式 (共用結構) --- */
+.heatmap-cell {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-alignment: center;
+    -fx-effect: null;
+}
+.heatmap-cell:hover {
+    -fx-translate-y: 0px;
+}
+
+.heatmap-cell-0 { -fx-background-color: -my-heatmap-0; -fx-text-fill: -my-heatmap-text-0; }
+.heatmap-cell-1 { -fx-background-color: -my-heatmap-1; -fx-text-fill: -my-heatmap-text-1; }
+.heatmap-cell-2 { -fx-background-color: -my-heatmap-2; -fx-text-fill: -my-heatmap-text-2; }
+.heatmap-cell-3 { -fx-background-color: -my-heatmap-3; -fx-text-fill: -my-heatmap-text-3; }
+.heatmap-cell-4 { -fx-background-color: -my-heatmap-4; -fx-text-fill: -my-heatmap-text-4; }
+.heatmap-cell-0:hover { -fx-background-color: -my-heatmap-0; }
+.heatmap-cell-1:hover { -fx-background-color: -my-heatmap-1; }
+.heatmap-cell-2:hover { -fx-background-color: -my-heatmap-2; }
+.heatmap-cell-3:hover { -fx-background-color: -my-heatmap-3; }
+.heatmap-cell-4:hover { -fx-background-color: -my-heatmap-4; }
+.heatmap-cell-active {
+    -fx-border-color: -my-heatmap-active-border;
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+    -fx-background-radius: 0;
+}
+
+.stats-card {
+    -fx-background-color: -my-stats-card-bg;
+    -fx-opacity: -my-stats-card-opacity;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, -my-stats-card-shadow-color, 5, 0, 0, 2);
+    -fx-border-color: -my-stats-card-border-color;
+    -fx-border-width: -my-stats-card-border-width;
+    -fx-border-radius: 8;
+}
+.stats-card-title {
+    -fx-text-fill: -my-stats-card-title-color;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.stats-card-value {
+    -fx-text-fill: -my-stats-card-value-color;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.stats-card-comment {
+    -fx-text-fill: -my-stats-card-comment-color;
+    -fx-font-size: 12px;
+}
+
+/* 正圓形按鈕 */
+.circular-btn {
+    -fx-background-radius: 50%;
+    -fx-min-width: 30px;
+    -fx-min-height: 30px;
+    -fx-max-width: 30px;
+    -fx-max-height: 30px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-font-size: 12px;
+}
+
+/* 圓餅圖 */
+.chart-pie {
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+}
+.chart-pie-label-line {
+    -fx-stroke: transparent;
+}
+
+/* 圖表背景與格線樣式優化 */
+.chart {
+    -fx-background-color: transparent;
+}
+.chart-content {
+    -fx-background-color: transparent;
+}
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: -my-chart-grid-color;
+}
+.axis {
+    -fx-tick-label-fill: -my-chart-tick-label-color;
+}
+.axis-label {
+    -fx-text-fill: -my-chart-axis-label-color;
+}
+.chart-legend {
+    -fx-background-color: transparent;
+}
+.chart-legend-item {
+    -fx-text-fill: -my-chart-legend-text-color;
+}
+
+.stats-view .label.rank-comment {
+    -fx-font-size: 12px; 
+    -fx-font-weight: bold; 
+    -fx-text-fill: -my-rank-comment-color;
+}
+
+/* 月專注趨勢折線圖自訂樣式 */
+.monthly-trend-line .chart-series-line {
+    -fx-stroke: -my-trend-line-color;
+    -fx-stroke-width: 3px;
+}
+.monthly-trend-line .chart-line-symbol {
+    -fx-background-color: -my-trend-line-color, white;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px;
+}
+
+.stats-view .label {
+    -fx-text-fill: -my-stats-label-color;
 }
