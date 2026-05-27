@@ -34,17 +34,43 @@
     -fx-font-family: 'Chiron GoRound TC';
     -fx-font-weight: 700;
     -fx-background-color: -my-primary-color;
-}
 
-.label {
-    -fx-text-fill: -my-text-soft-color;
-}
-.label.changeColor {
-    -fx-text-fill: #cc0000;
-}
+    /* Theme color variables used by global.css */
+    -my-label-text-fill: -my-text-soft-color;
+    -my-label-change-color: #cc0000;
 
-/* Red-specific overrides */
-.choice-box > .label { -fx-text-fill: -my-text-soft-color; }
-.choice-box .menu-item:focused > .label { -fx-text-fill: -my-text-soft-color; }
-.tab:selected .tab-label { -fx-text-fill: -my-text-soft-color; }
-.detailView { -fx-border-color: -my-shadow-hover-color; }
+    -my-choice-box-text-color: -my-text-soft-color;
+    -my-tab-selected-text-color: -my-text-soft-color;
+    -my-detail-view-border-color: -my-shadow-hover-color;
+
+    /* Stats Page Variables */
+    -my-heatmap-0: #2a2a2a;
+    -my-heatmap-1: #6e2e2e;
+    -my-heatmap-2: #a33e3e;
+    -my-heatmap-3: #d95252;
+    -my-heatmap-4: #f26d6d;
+    -my-heatmap-text-0: #ffffff;
+    -my-heatmap-text-1: #ffffff;
+    -my-heatmap-text-2: #ffffff;
+    -my-heatmap-text-3: #ffffff;
+    -my-heatmap-text-4: #ffffff;
+    -my-heatmap-active-border: #FFCB05;
+
+    -my-stats-card-bg: #f26d6d;
+    -my-stats-card-opacity: 0.5;
+    -my-stats-card-border-color: transparent;
+    -my-stats-card-border-width: 0;
+    -my-stats-card-shadow-color: rgba(0, 0, 0, 0.1);
+    -my-stats-card-title-color: #e4b5b5;
+    -my-stats-card-value-color: #ffffff;
+    -my-stats-card-comment-color: #ffffff;
+
+    -my-chart-grid-color: rgba(255, 255, 255, 0.08);
+    -my-chart-tick-label-color: #888888;
+    -my-chart-axis-label-color: #aaaaaa;
+    -my-chart-legend-text-color: #cccccc;
+
+    -my-rank-comment-color: #FFCB05;
+    -my-trend-line-color: #FFCB05;
+    -my-stats-label-color: #333333;
+}
