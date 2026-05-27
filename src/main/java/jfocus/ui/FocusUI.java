@@ -35,7 +35,6 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -57,7 +56,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import jfocus.ai.distraction.DistractionHandlingMode;
 import jfocus.ai.distraction.JdbcDistractionModeRepository;
-import jfocus.db.DatabaseCore;
 import jfocus.io.UserData;
 import jfocus.main.FocusApp;
 
@@ -811,7 +809,15 @@ public class FocusUI extends Application {
 
         Button confirmBtn = new Button("確認");
         confirmBtn.getStyleClass().add("select-button");
-        confirmBtn.setOnAction(e -> dialog.close());
+        confirmBtn.setOnAction(e -> {
+            dialog.close();
+            if (!selectedStageMap.containsKey(data.getId())) {
+                int keepStage = unlockedStage - 1;
+                selectedStageMap.put(data.getId(), keepStage);
+                jfocus.io.UserData.saveSelectedStage(data.getId(), keepStage);
+            }
+            refreshPokedexGrid();
+        });
 
         Button selectBtn = new Button("選擇出戰");
         selectBtn.getStyleClass().add("select-button");
@@ -1257,7 +1263,6 @@ public class FocusUI extends Application {
     public void startBorderFlash(double durationSeconds, Runnable onComplete) {
         if (borderCanvas == null) return;
         if (currentBorderTimer != null) currentBorderTimer.stop();
-        final double yOffset = resolveBorderParams()[0];
         final Color flashColor = Color.web("#cd0000");
         long[] t0 = {-1L};
         currentBorderTimer = new AnimationTimer() {
@@ -1273,10 +1278,38 @@ public class FocusUI extends Application {
                 }
                 double alpha = 0.55 + 0.45 * Math.sin(elapsed * Math.PI * 2.5);
                 alpha = Math.max(0.05, alpha);
-                drawBorderErase(0.0, yOffset, Color.color(flashColor.getRed(), flashColor.getGreen(), flashColor.getBlue(), alpha));
+                drawFullBorder(Color.color(flashColor.getRed(), flashColor.getGreen(), flashColor.getBlue(), alpha));
             }
         };
         currentBorderTimer.start();
+    }
+
+    private void drawFullBorder(Color strokeColor) {
+        double W = borderCanvas.getWidth();
+        double H = borderCanvas.getHeight();
+        GraphicsContext gc = borderCanvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, W, H);
+        if (W == 0 || H == 0) return;
+
+        double pad  = 1.5;
+        double r    = FullScreenAlert.isMacOS() ? 11 : 7;
+        double topY = 3.5;
+
+        gc.setStroke(strokeColor);
+        gc.setLineWidth(3);
+        gc.setLineCap(StrokeLineCap.ROUND);
+        gc.setLineJoin(StrokeLineJoin.ROUND);
+
+        // 上角直角、下角圓角
+        gc.beginPath();
+        gc.moveTo(pad, topY);
+        gc.lineTo(W - pad, topY);                                          // 頂邊
+        gc.lineTo(W - pad, H - pad - r);                                   // 右側
+        gc.arcTo(W - pad, H - pad, W - pad - r, H - pad, r);              // 右下圓角
+        gc.lineTo(pad + r, H - pad);                                       // 底邊
+        gc.arcTo(pad, H - pad, pad, H - pad - r, r);                      // 左下圓角
+        gc.lineTo(pad, topY);                                              // 左側
+        gc.stroke();
     }
 
     private double[] resolveBorderParams() {
@@ -1319,7 +1352,7 @@ public class FocusUI extends Application {
         if (progress >= 1.0 || W == 0 || H == 0) return;
 
         double pad = 1;
-        double r = 11.0;
+        double r = FullScreenAlert.isMacOS() ? 11 : 7;
         double x = pad, y = yOffset, w = W - pad * 2, h = H - y - pad;
 
         gc.setStroke(strokeColor);

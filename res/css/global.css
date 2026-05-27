@@ -122,7 +122,7 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
 }
 .button:hover {
-    -fx-background-color: -my-btn-secondary-color;
+    -fx-background-color: -my-btn-primary-hover-color;
     -fx-translate-y: -1px;
     -fx-cursor: hand;
 }
@@ -214,7 +214,7 @@
 
 .mini-dialog-message {
     -fx-font-size: 13px;
-    -fx-text-fill: rgba(200, 210, 230, 0.85);
+    -fx-text-fill: -my-text-color;
     -fx-line-spacing: 3px;
 }
 
@@ -277,7 +277,7 @@
     -fx-font-size: 14px;
 }
 .alert-btn-primary:hover {
-    -fx-background-color: -my-btn-secondary-color;
+    -fx-background-color: -my-btn-primary-hover-color;
     -fx-cursor: hand;
     -fx-translate-y: -1px;
 }
@@ -317,10 +317,10 @@
     -fx-background-color: -my-btn-primary-color;
     -fx-text-fill: -my-text-color;
     -fx-font-weight: bold;
-    -fx-border-color: -my-btn-secondary-color;
+    -fx-border-color: -my-btn-primary-hover-color;
 }
 .alert-keyword-btn:selected:hover {
-    -fx-background-color: -my-btn-secondary-color;
+    -fx-background-color: -my-btn-primary-hover-color;
 }
 
 /* --- 數據分析自定義樣式 (共用結構) --- */
@@ -364,7 +364,7 @@
     -fx-padding: 10;
     -fx-effect: dropshadow(gaussian, -my-stats-card-shadow-color, 5, 0, 0, 2);
     -fx-border-color: -my-stats-card-border-color;
-    -fx-border-width: -my-stats-card-border-width;
+    -fx-border-width: 1px;
     -fx-border-radius: 8;
 }
 .stats-card-title {

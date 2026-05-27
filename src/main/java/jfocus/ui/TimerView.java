@@ -353,11 +353,11 @@ public class TimerView extends VBox implements FocusListener {
                 gameManager.addFocusTime(elapsedMinutes, currentId);
                 int showTime;
                 if (elapsedMinutes > 0) {
-                    showTime = 10;
+                    showTime = 5;
                     focusUI.startBorderCountdown(showTime, () -> startBtn.setDisable(false));
                     statusLabel.setText("冒險結束！專注了 " + elapsedMinutes + " 分鐘，獲得 " + elapsedMinutes + " 枚專注幣！");
                 } else {
-                    showTime = 5;
+                    showTime = 3;
                     focusUI.startBorderCountdown(showTime, () -> startBtn.setDisable(false));
                     statusLabel.setText("冒險結束！本次太短暫，未獲得專注幣。");
                 }
@@ -374,8 +374,11 @@ public class TimerView extends VBox implements FocusListener {
                         .dangerBtn("確定放棄", () -> {
                             engine.shutdown();
                             engine = createFocusEngine();
-                            resetUI();
                             statusLabel.setText("冒險已取消");
+                            updateTimerLabelFromWorkInput();
+                            startBtn.setDisable(true);
+                            focusUI.startBorderCountdown(3, () -> startBtn.setDisable(false));
+                            resetUI(3);
                         })
                         .show();
             }
@@ -461,7 +464,7 @@ public class TimerView extends VBox implements FocusListener {
     }
 
     private void resetUI(boolean isBreakTime) {
-        resetUI(10, isBreakTime);
+        resetUI(5, isBreakTime);
     }
 
     private void resetUI(double setTime, boolean isBreakTime) {
@@ -487,11 +490,6 @@ public class TimerView extends VBox implements FocusListener {
             debugBtn5m.setVisible(true);
             debugBtn5m.setManaged(true);
         } else {
-            if ("正向碼表".equals(modeSelector.getValue())) {
-                timerLabel.setText(String.format("%02d:00", 0));  
-            } else {
-                updateTimerLabelFromWorkInput();
-            }
             startBtn.setVisible(true);
             startBtn.setManaged(true);
             pauseBtn.setVisible(false);
@@ -524,6 +522,9 @@ public class TimerView extends VBox implements FocusListener {
                 statusLabel.setText("休息一下吧");
                 timerLabel.setText(String.format("%02d:00", finalMin));
             } else {
+                if ("正向碼表".equals(modeSelector.getValue())) {
+                    timerLabel.setText(String.format("%02d:00", 0));  
+                }
                 statusLabel.setText("準備就緒");
             }
         });
@@ -561,19 +562,16 @@ public class TimerView extends VBox implements FocusListener {
 
                 resetUI(true);
                 userStatus = status.CHILLING;
-                focusUI.startBorderCountdown(10.0);
-
-                PauseTransition delay = new PauseTransition(Duration.seconds(10));
                 int rawBreak = parsePositiveMinutes(breakInput.getText());
                 final int breakMinutes = rawBreak > 0 ? rawBreak : 5;
-                delay.setOnFinished(event -> {
-                    engine.startBreak(breakMinutes * 60);
-                });
-                delay.play();
+                focusUI.startBorderCountdown(5, () -> engine.startBreak(breakMinutes * 60));
                 // 這裡未來可以加一段更新經驗值條 (xpBar) 的邏輯
             } else {
                 statusLabel.setText("休息時間已結束!準備繼續工作啦!");
-                resetUI();
+                updateTimerLabelFromWorkInput();
+                startBtn.setDisable(true);
+                focusUI.startBorderCountdown(3, () -> startBtn.setDisable(false));
+                resetUI(3);
                 userStatus = status.IDLEING;
             }
         });
@@ -681,13 +679,19 @@ public class TimerView extends VBox implements FocusListener {
                     new javafx.animation.KeyFrame(Duration.millis(600),
                         new javafx.animation.KeyValue(xpBar.progressProperty(), targetProgress, Interpolator.EASE_BOTH))
                 );
+                fillToNew.setOnFinished(e3 -> {
+                    PauseTransition pause2 = new PauseTransition(Duration.millis(500));
+                    pause2.setOnFinished(e4 -> {
+                        pokemonImageView.setImage(newImage);
+                        focusUI.showEvolutionUnlockDialog(pokemonId, newStage);
+                    });
+                    pause2.play();
+                });
                 fillToNew.play();
             });
             pause.play();
         });
         fillToFull.play();
-        pokemonImageView.setImage(newImage);
-        focusUI.showEvolutionUnlockDialog(pokemonId, newStage);
     }
 
     private void fadeOutInputArea() {

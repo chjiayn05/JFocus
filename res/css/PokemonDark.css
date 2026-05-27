@@ -11,7 +11,8 @@
     -my-shadow-hover-color: #ffffff;
 
     -my-btn-primary-color: #828282;
-    -my-btn-secondary-color: #9a9a9a;
+    -my-btn-primary-hover-color: #9a9a9a;
+    -my-btn-secondary-color: #5a5a5a;
 
     -my-text-color: #ffffff;
     -my-text-soft-color: #d5d5d5;
@@ -59,7 +60,7 @@
     -my-stats-card-bg: #2a2a2a;
     -my-stats-card-opacity: 1.0;
     -my-stats-card-border-color: transparent;
-    -my-stats-card-border-width: 0;
+    -my-stats-card-border-width: 0px;
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.3);
     -my-stats-card-title-color: #888888;
     -my-stats-card-value-color: #ffffff;

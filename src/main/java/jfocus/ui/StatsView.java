@@ -119,9 +119,9 @@ public class StatsView extends VBox {
         // activeBtn.setStyle("-fx-background-color: #FFCB05; -fx-text-fill: #1a1a1a; -fx-background-radius: 20; -fx-font-weight: bold;");
         // btn1.setStyle("-fx-background-color: #2a2a2a; -fx-text-fill: #888888; -fx-background-radius: 20; -fx-font-weight: bold;");
         // btn2.setStyle("-fx-background-color: #2a2a2a; -fx-text-fill: #888888; -fx-background-radius: 20; -fx-font-weight: bold;");
-        activeBtn.setStyle("-fx-opacity: 1;");
-        btn1.setStyle("-fx-opacity: 0.5;");
-        btn2.setStyle("-fx-opacity: 0.5;");
+        activeBtn.setStyle("-fx-background-color: -my-btn-primary-color; -fx-text-fill: #ffffff;");
+        btn1.setStyle("-fx-background-color: -my-btn-secondary-color; -fx-text-fill: #ffffff;");
+        btn2.setStyle("-fx-background-color: -my-btn-secondary-color; -fx-text-fill: #ffffff;");
     }
 
     private void clearSubjectColors() {

@@ -10,8 +10,9 @@
     -my-shadow-color: #6b0000;
     -my-shadow-hover-color: #cc0000;
 
-    -my-btn-primary-color: #8c0000;
-    -my-btn-secondary-color: #c00000;
+    -my-btn-primary-color: #a60000;
+    -my-btn-primary-hover-color: #c00000;
+    -my-btn-secondary-color: #6e2222;
 
     -my-text-color: #ffffff;
     -my-text-soft-color: #333333;
@@ -59,7 +60,7 @@
     -my-stats-card-bg: #f26d6d;
     -my-stats-card-opacity: 0.5;
     -my-stats-card-border-color: transparent;
-    -my-stats-card-border-width: 0;
+    -my-stats-card-border-width: 0px;
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.1);
     -my-stats-card-title-color: #e4b5b5;
     -my-stats-card-value-color: #ffffff;
@@ -73,4 +74,9 @@
     -my-rank-comment-color: #FFCB05;
     -my-trend-line-color: #FFCB05;
     -my-stats-label-color: #333333;
+}
+
+.mini-dialog-title,
+.mini-dialog-message {
+    -fx-text-fill: #333333;
 }

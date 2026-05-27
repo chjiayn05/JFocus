@@ -266,7 +266,7 @@ abstract class FullScreenAlert {
         foregroundThread.start();
     }
 
-    protected boolean isMacOS() {
+    public static boolean isMacOS() {
         return System.getProperty("os.name", "")
                 .toLowerCase(Locale.ROOT)
                 .contains("mac");
