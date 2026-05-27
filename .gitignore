@@ -28,3 +28,6 @@ target/
 jfocus-data/
 .DS_Store
 .idea/*
+.obsidian/
+graphify-out/
+CLAUDE.md
