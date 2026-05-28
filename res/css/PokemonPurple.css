@@ -57,21 +57,27 @@
     -my-heatmap-text-4: #ffffff;
     -my-heatmap-active-border: #E22B6D;
 
-    -my-stats-card-bg: #2a2a3b;
-    -my-stats-card-opacity: 0.5;
+    -my-stats-card-bg: #4b2e6e;
+    -my-stats-card-opacity: 1.0;
     -my-stats-card-border-color: transparent;
     -my-stats-card-border-width: 0px;
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.3);
     -my-stats-card-title-color: #bfa3e8;
     -my-stats-card-value-color: #ffffff;
-    -my-stats-card-comment-color: #e0e0e0;
+    -my-stats-card-comment-color: #ffffff;
+    -my-stats-soft-text-color: #aaaaaa;
 
     -my-chart-grid-color: rgba(255, 255, 255, 0.08);
-    -my-chart-tick-label-color: #888888;
-    -my-chart-axis-label-color: #aaaaaa;
+    -my-chart-tick-label-color: #777777;
+    -my-chart-axis-label-color: #777777;
     -my-chart-legend-text-color: #cccccc;
 
     -my-rank-comment-color: #E22B6D;
     -my-trend-line-color: #E22B6D;
-    -my-stats-label-color: #e0e0e0;
 }
+
+.stats-container .label {
+    -fx-text-fill: #ffffff;
+}
+
+

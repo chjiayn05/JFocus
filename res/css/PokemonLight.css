@@ -10,9 +10,9 @@
     -my-shadow-color: #767676;
     -my-shadow-hover-color: #2e2e2e;
 
-    -my-btn-primary-color: #9a9a9a;
+    -my-btn-primary-color: #6f6f6f;
     -my-btn-primary-hover-color: #b7b7b7;
-    -my-btn-secondary-color: #6f6f6f;
+    -my-btn-secondary-color: #9a9a9a;
 
     -my-text-color: #000000;
     -my-text-soft-color: #333333;
@@ -26,8 +26,8 @@
     -my-pokemon-card-lock: #a6a6a6;
     -my-pokemon-card-hover: #d6d4d4;
 
-    -my-progress-track: #000000;
-    -my-progress-bar: #ffcb05;
+    -my-progress-track: #878787;
+    -my-progress-bar: #475569;
     -my-lock-color: #850000;
     -my-stage-color: #b4b4b450;
     -my-stage-hover-color: #b4b4b499;
@@ -45,33 +45,33 @@
     -my-detail-view-border-color: -my-tab-border-color;
 
     /* Stats Page Variables */
-    -my-heatmap-0: #ffffff;
-    -my-heatmap-1: #f0f0f0;
-    -my-heatmap-2: #dcdcdc;
-    -my-heatmap-3: #aaaaaa;
-    -my-heatmap-4: #808080;
-    -my-heatmap-text-0: #7f8c8d;
-    -my-heatmap-text-1: #333333;
-    -my-heatmap-text-2: #111111;
+    -my-heatmap-0: #9eb3cf;
+    -my-heatmap-1: #8091a8;
+    -my-heatmap-2: #6f7d91;
+    -my-heatmap-3: #4a5871;
+    -my-heatmap-4: #374c67;
+    -my-heatmap-text-0: #000000;
+    -my-heatmap-text-1: #000000;
+    -my-heatmap-text-2: #000000;
     -my-heatmap-text-3: #ffffff;
     -my-heatmap-text-4: #ffffff;
-    -my-heatmap-active-border: #FFCB05;
+    -my-heatmap-active-border: #17324c;
 
-    -my-stats-card-bg: #ffffff;
+    -my-stats-card-bg: #d8d8d8;
     -my-stats-card-opacity: 1.0;
-    -my-stats-card-border-color: #e2e8f0;
+    -my-stats-card-border-color: transparent;
     -my-stats-card-border-width: 1px;
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.05);
-    -my-stats-card-title-color: #64748b;
-    -my-stats-card-value-color: #2c3e50;
-    -my-stats-card-comment-color: #475569;
+    -my-stats-card-title-color: #888888;
+    -my-stats-card-value-color: #000000;
+    -my-stats-card-comment-color: #000000;
+    -my-stats-soft-text-color: #555555;
 
     -my-chart-grid-color: rgba(0, 0, 0, 0.08);
-    -my-chart-tick-label-color: #555555;
-    -my-chart-axis-label-color: #333333;
+    -my-chart-tick-label-color: #888888;
+    -my-chart-axis-label-color: #888888;
     -my-chart-legend-text-color: #333333;
 
-    -my-rank-comment-color: #FFCB05;
-    -my-trend-line-color: #FFCB05;
-    -my-stats-label-color: #2c3e50;
+    -my-rank-comment-color: #2c3e50;
+    -my-trend-line-color: #475569;
 }

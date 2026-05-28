@@ -323,7 +323,7 @@
     -fx-background-color: -my-btn-primary-hover-color;
 }
 
-/* --- 數據分析自定義樣式 (共用結構) --- */
+/* --- 數據分析自定義樣式 --- */
 .heatmap-cell {
     -fx-font-size: 10px;
     -fx-font-weight: bold;
@@ -352,7 +352,7 @@
 .heatmap-cell-4:hover { -fx-background-color: -my-heatmap-4; }
 .heatmap-cell-active {
     -fx-border-color: -my-heatmap-active-border;
-    -fx-border-width: 1px;
+    -fx-border-width: 2px;
     -fx-border-style: solid;
     -fx-background-radius: 0;
 }
@@ -367,23 +367,25 @@
     -fx-border-width: 1px;
     -fx-border-radius: 8;
 }
-.stats-card-title {
+.stats-container .label.stats-card-title {
     -fx-text-fill: -my-stats-card-title-color;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
-.stats-card-value {
+.stats-container .label.stats-card-value {
     -fx-text-fill: -my-stats-card-value-color;
     -fx-font-size: 16px;
     -fx-font-weight: bold;
 }
-.stats-card-comment {
+.stats-container .label.stats-card-comment {
     -fx-text-fill: -my-stats-card-comment-color;
     -fx-font-size: 12px;
 }
 
 /* 正圓形按鈕 */
 .circular-btn {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: #ffffff;
     -fx-background-radius: 50%;
     -fx-min-width: 30px;
     -fx-min-height: 30px;
@@ -392,6 +394,9 @@
     -fx-padding: 0;
     -fx-alignment: center;
     -fx-font-size: 12px;
+}
+.circular-btn:hover {
+    -fx-background-color: -my-btn-primary-color;
 }
 
 /* 圓餅圖 */
@@ -413,13 +418,20 @@
 .chart-plot-background {
     -fx-background-color: transparent;
 }
-.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines,
+.chart-vertical-zero-line, .chart-horizontal-zero-line {
     -fx-stroke: -my-chart-grid-color;
 }
-.axis {
+.stats-container .chart .axis .axis-axis-line,
+.stats-container .chart .axis .axis-tick-mark,
+.stats-container .chart .axis .axis-minor-tick-mark {
+    -fx-stroke: -my-chart-grid-color;
+}
+.stats-container .chart .axis {
+    -fx-border-color: transparent;
     -fx-tick-label-fill: -my-chart-tick-label-color;
 }
-.axis-label {
+.stats-container .chart .axis-label {
     -fx-text-fill: -my-chart-axis-label-color;
 }
 .chart-legend {
@@ -429,7 +441,7 @@
     -fx-text-fill: -my-chart-legend-text-color;
 }
 
-.stats-view .label.rank-comment {
+.stats-container .label.rank-comment {
     -fx-font-size: 12px; 
     -fx-font-weight: bold; 
     -fx-text-fill: -my-rank-comment-color;
@@ -446,6 +458,6 @@
     -fx-padding: 4px;
 }
 
-.stats-view .label {
-    -fx-text-fill: -my-stats-label-color;
+.stats-container .label.stats-soft-text {
+    -fx-text-fill: -my-stats-soft-text-color;
 }

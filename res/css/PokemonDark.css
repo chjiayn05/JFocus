@@ -64,14 +64,14 @@
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.3);
     -my-stats-card-title-color: #888888;
     -my-stats-card-value-color: #ffffff;
-    -my-stats-card-comment-color: #cccccc;
+    -my-stats-card-comment-color: #ffffff;
+    -my-stats-soft-text-color: #888888;
 
     -my-chart-grid-color: rgba(255, 255, 255, 0.08);
-    -my-chart-tick-label-color: #888888;
-    -my-chart-axis-label-color: #aaaaaa;
+    -my-chart-tick-label-color: #777777;
+    -my-chart-axis-label-color: #777777;
     -my-chart-legend-text-color: #cccccc;
 
     -my-rank-comment-color: #FFCB05;
     -my-trend-line-color: #FFCB05;
-    -my-stats-label-color: #e0e0e0;
 }

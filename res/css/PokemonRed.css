@@ -55,25 +55,25 @@
     -my-heatmap-text-2: #ffffff;
     -my-heatmap-text-3: #ffffff;
     -my-heatmap-text-4: #ffffff;
-    -my-heatmap-active-border: #FFCB05;
+    -my-heatmap-active-border: #e70303;
 
-    -my-stats-card-bg: #f26d6d;
-    -my-stats-card-opacity: 0.5;
+    -my-stats-card-bg: #d49999;
+    -my-stats-card-opacity: 1.0;
     -my-stats-card-border-color: transparent;
     -my-stats-card-border-width: 0px;
     -my-stats-card-shadow-color: rgba(0, 0, 0, 0.1);
-    -my-stats-card-title-color: #e4b5b5;
-    -my-stats-card-value-color: #ffffff;
-    -my-stats-card-comment-color: #ffffff;
+    -my-stats-card-title-color: #a33e3e;
+    -my-stats-card-value-color: #333333;
+    -my-stats-card-comment-color: #333333;
+    -my-stats-soft-text-color: #555555;
 
-    -my-chart-grid-color: rgba(255, 255, 255, 0.08);
+    -my-chart-grid-color: rgba(0, 0, 0, 0.08);
     -my-chart-tick-label-color: #888888;
-    -my-chart-axis-label-color: #aaaaaa;
-    -my-chart-legend-text-color: #cccccc;
+    -my-chart-axis-label-color: #888888;
+    -my-chart-legend-text-color: #555555;
 
-    -my-rank-comment-color: #FFCB05;
-    -my-trend-line-color: #FFCB05;
-    -my-stats-label-color: #333333;
+    -my-rank-comment-color: #e70303;
+    -my-trend-line-color: #cc0000;
 }
 
 .mini-dialog-title,
