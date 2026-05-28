@@ -135,7 +135,10 @@ public final class UserData {
                  ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     String stageKey = rs.getString("stage_key");
-                    if (isValidStageKey(stageKey)) {
+                    
+                    // 🌟 【關鍵修改】：不要再用那個嚴格的 isValidStageKey 了！
+                    // 只要資料庫裡抓出來的東西不是 null 也不是空白，就直接加進去！
+                    if (stageKey != null && !stageKey.trim().isEmpty()) {
                         result.add(stageKey);
                     }
                 }
@@ -286,11 +289,9 @@ public final class UserData {
         }
     }
 
-    private static boolean isValidStageKey(String stageKey) {
-        return stageKey != null
-                && !stageKey.isBlank()
-                && STAGE_KEY_PATTERN.matcher(stageKey.trim()).matches();
-    }
+private static boolean isValidStageKey(String key) {
+    return key != null && !key.trim().isEmpty(); // ✅ 變成超級寬鬆模式
+}
 
     private static boolean isValidPokemonId(String pokemonId) {
         return pokemonId != null

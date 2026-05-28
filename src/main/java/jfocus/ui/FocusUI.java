@@ -124,60 +124,41 @@ public class FocusUI extends Application {
     // 2. 建立一個內部類別來對應 JSON 資料格式 (POJO)
     // 1. 確保類別定義是這樣的 (在 FocusApp 類別內)
 
-    public static class PokemonData {
+public static class PokemonData {
         private String id;
         private String folderName;
         private String name;
         private List<String> types;
-        private List<String> descriptions; // 負責裝描述文字
-        private List<String> stageNames; // 負責裝各階段專屬名稱
+        private List<String> descriptions; 
+        private List<String> stageNames; 
+        private String rarity; // 🌟 新增：稀有度變數
 
-        // 建構子 (Constructor)
+        // 🌟 建構子最後面加上 String rarity
         public PokemonData(String id, String folderName, String name, List<String> types,
-                List<String> descriptions, List<String> stageNames) {
+                List<String> descriptions, List<String> stageNames, String rarity) {
             this.id = id;
             this.folderName = folderName;
             this.name = name;
             this.types = types;
             this.descriptions = descriptions;
             this.stageNames = stageNames;
+            this.rarity = rarity; // 🌟 綁定稀有度
         }
 
-        // ==========================================
-        // 下面是被你不小心吃掉的所有 Getters，一次補齊！
-        // ==========================================
+        // 🌟 新增：給 GameManager 讀取稀有度的方法 (防呆預設為普通池)
+        public String getRarity() { return this.rarity == null ? "STANDARD" : this.rarity; }
 
-        public String getId() {
-            return id;
-        }
+        public String getId() { return id; }
+        public String getFolderName() { return folderName; }
+        public String getName() { return name; }
+        public List<String> getTypes() { return types; }
+        public List<String> getDescriptions() { return descriptions; }
+        public List<String> getStageNames() { return stageNames; }
 
-        public String getFolderName() {
-            return folderName;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public List<String> getTypes() {
-            return types;
-        }
-
-        public List<String> getDescriptions() {
-            return descriptions;
-        }
-
-        public List<String> getStageNames() {
-            return stageNames;
-        }
-
-        // --- 這是你原本寫好的防呆小幫手，用來抓取「特定階段」的名字 ---
         public String getStageName(int stage) {
-            // 如果清單有資料，而且長度足夠，就回傳對應階段的名字 (注意 index 是 stage - 1)
             if (stageNames != null && stageNames.size() >= stage) {
                 return stageNames.get(stage - 1);
             }
-            // 萬一沒抓到，就退一步回傳最初始的名字
             return name;
         }
     }
@@ -392,13 +373,34 @@ public class FocusUI extends Application {
                 }
 
                 // 5. 所有的參數現在型態都對了 (String, String, String, List, List, List)
-                pokedexList.add(new PokemonData(id, folderName, name, types, descriptions, stageNames));
+                // 🌟 新增：從 JSON 抓出 rarity，如果沒寫就預設給 "STANDARD"
+                String rarity = obj.has("rarity") ? obj.get("rarity").getAsString() : "STANDARD";
+
+                // 🌟 把 rarity 傳進去！
+                pokedexList.add(new PokemonData(id, folderName, name, types, descriptions, stageNames, rarity));
+
             }
 
-            System.out.println("數據載入成功！共 " + pokedexList.size() + " 隻。");
+            System.out.println("✅ 數據載入成功！共 " + pokedexList.size() + " 隻。");
+
+            // 🌟 【關鍵修改】：由 FocusUI 自己分類，只傳字串給 GameManager！
+            List<String> standardPool = new ArrayList<>();
+            List<String> rarePool = new ArrayList<>();
+
+            for (PokemonData data : pokedexList) {
+                // 不分大小寫檢查，只要是 RARE 就丟大師池，其餘丟普通池
+                if (data.getRarity() != null && data.getRarity().trim().equalsIgnoreCase("RARE")) {
+                    rarePool.add(data.getFolderName());
+                } else {
+                    standardPool.add(data.getFolderName());
+                }
+            }
+
+            // 將分類好的純字串名單交給 GameManager
+            gameManager.setGachaPools(standardPool, rarePool);
 
         } catch (Exception e) {
-            System.err.println("解析 JSON 失敗: " + e.getMessage());
+            System.err.println("❌ 解析 JSON 失敗: " + e.getMessage());
         }
     }
 
