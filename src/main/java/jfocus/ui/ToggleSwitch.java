@@ -12,7 +12,7 @@ import javafx.util.Duration;
 public class ToggleSwitch extends StackPane {
 
     private static final PseudoClass SELECTED_PC = PseudoClass.getPseudoClass("selected");
-    private static final double W = 46, H = 26, THUMB = 20, PAD = 3;
+    private static final double W = 46, H = 28, THUMB = 22, PAD = 4;
     private static final double THUMB_OFF = -(W / 2 - THUMB / 2 - PAD);
     private static final double THUMB_ON  =  (W / 2 - THUMB / 2 - PAD);
 

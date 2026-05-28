@@ -190,10 +190,13 @@ public class SettingsView extends VBox {
         HBox.setHgrow(notifSpacer, Priority.ALWAYS);
         HBox notifRow = new HBox(notifLabel, notifSpacer, notifToggle);
         notifRow.setAlignment(Pos.CENTER_LEFT);
+        
+        modeRow.getStyleClass().add("settings-card");
+        notifRow.getStyleClass().add("settings-card");
 
         VBox section = new VBox(14, modeRow, notifRow);
-        section.getStyleClass().add("settings-card");
-        section.setPadding(new Insets(14));
+        //section.getStyleClass().add("settings-card");
+        //section.setPadding(new Insets(14));
         return section;
     }
 
@@ -280,7 +283,7 @@ public class SettingsView extends VBox {
 
     private VBox buildAiSection() {
         Label titleLabel = new Label("分心偵測模型");
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ffffff;");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -my-text-color;");
 
         statusLabel.setStyle("-fx-font-size: 13px;");
         HBox.setHgrow(statusLabel, Priority.ALWAYS);
@@ -290,35 +293,62 @@ public class SettingsView extends VBox {
         HBox titleRow = new HBox(titleLabel, statusLabel);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
-        Button resetBtn = new Button("重置訓練資料");
-        resetBtn.getStyleClass().add("alert-btn-danger");
-        resetBtn.setMaxWidth(Double.MAX_VALUE);
-        resetBtn.setOnAction(e -> {
-            new MiniDialog.Builder(resetBtn.getScene().getWindow())
-                .type(MiniDialog.Type.DANGER)
-                .title("重置確認")
-                .message("確定要重置訓練資料？\n這會刪除 model.bin 並用預設訓練資料重新訓練。")
-                .primaryBtn("取消", null)
-                .dangerBtn("確定重置", () -> {
-                    resetBtn.setDisable(true);
-                    statusLabel.setText("重置中，請稍候...");
-                    new Thread(() -> {
-                        try {
-                            TrainingDataResetter.resetDefaultTrainingDataAndTrain();
-                            Platform.runLater(() -> { statusLabel.setText("重置完成！"); resetBtn.setDisable(false); });
-                        } catch (IOException ex) {
-                            Platform.runLater(() -> { statusLabel.setText("失敗：" + ex.getMessage()); resetBtn.setDisable(false); });
-                        }
-                    }).start();
-                })
-                .show();
-        });
+        Button resetModelBtn = new Button("重置訓練模型");
+        resetModelBtn.getStyleClass().add("alert-btn-danger");
+        resetModelBtn.setMaxWidth(Double.MAX_VALUE);
 
-        VBox section = new VBox(10, titleRow, resetBtn);
+        Button retrainBtn = new Button("重新訓練資料");
+        retrainBtn.getStyleClass().add("alert-btn-danger");
+        retrainBtn.setMaxWidth(Double.MAX_VALUE);
+
+        resetModelBtn.setOnAction(e -> new MiniDialog.Builder(resetModelBtn.getScene().getWindow())
+            .type(MiniDialog.Type.DANGER)
+            .title("重置訓練模型")
+            .message("將模型還原為預設值。\n訓練 ID 保持不變，之後只訓練新增資料。")
+            .primaryBtn("取消", null)
+            .dangerBtn("確定重置", () -> runAsync(
+                TrainingDataResetter::resetModelToDefault,
+                "重置中，請稍候...", "重置完成！",
+                resetModelBtn, retrainBtn))
+            .show());
+
+        retrainBtn.setOnAction(e -> new MiniDialog.Builder(retrainBtn.getScene().getWindow())
+            .type(MiniDialog.Type.WARNING)
+            .title("重新訓練資料")
+            .message("訓練 ID 歸零，重新拉取所有資料重新訓練。\n這可能需要較長時間。")
+            .primaryBtn("取消", null)
+            .dangerBtn("確定重新訓練", () -> runAsync(
+                TrainingDataResetter::retrainWithAllData,
+                "重新訓練中，請稍候...", "重新訓練完成！",
+                resetModelBtn, retrainBtn))
+            .show());
+
+        HBox resetBtnBox = new HBox(8, resetModelBtn, retrainBtn);
+        HBox.setHgrow(resetModelBtn, Priority.ALWAYS);
+        HBox.setHgrow(retrainBtn, Priority.ALWAYS);
+        resetBtnBox.setAlignment(Pos.CENTER);
+
+        VBox section = new VBox(10, titleRow, resetBtnBox);
         section.getStyleClass().add("settings-card");
         section.setPadding(new Insets(14));
         return section;
     }
+
+    private void runAsync(IORunnable task, String running, String done, Button... btns) {
+        for (Button b : btns) b.setDisable(true);
+        statusLabel.setText(running);
+        new Thread(() -> {
+            try {
+                task.run();
+                Platform.runLater(() -> { statusLabel.setText(done); for (Button b : btns) b.setDisable(false); });
+            } catch (IOException ex) {
+                Platform.runLater(() -> { statusLabel.setText("失敗：" + ex.getMessage()); for (Button b : btns) b.setDisable(false); });
+            }
+        }).start();
+    }
+
+    @FunctionalInterface
+    private interface IORunnable { void run() throws IOException; }
 
     public void refresh() {
         refreshSubjects();
