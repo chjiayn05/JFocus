@@ -61,7 +61,7 @@ public class StatsView extends VBox {
         this.setSpacing(10);
         this.setPadding(new Insets(10));
         this.setAlignment(Pos.TOP_CENTER);
-        this.getStyleClass().add("stats-view");
+        this.getStyleClass().add("stats-container");
 
         // 1. 頂部按鈕 (每日、每週、每月)
         HBox navBar = new HBox(12);
@@ -116,12 +116,9 @@ public class StatsView extends VBox {
     }
 
     private void updateNavButtons(Button activeBtn, Button btn1, Button btn2) {
-        // activeBtn.setStyle("-fx-background-color: #FFCB05; -fx-text-fill: #1a1a1a; -fx-background-radius: 20; -fx-font-weight: bold;");
-        // btn1.setStyle("-fx-background-color: #2a2a2a; -fx-text-fill: #888888; -fx-background-radius: 20; -fx-font-weight: bold;");
-        // btn2.setStyle("-fx-background-color: #2a2a2a; -fx-text-fill: #888888; -fx-background-radius: 20; -fx-font-weight: bold;");
-        activeBtn.setStyle("-fx-opacity: 1;");
-        btn1.setStyle("-fx-opacity: 0.5;");
-        btn2.setStyle("-fx-opacity: 0.5;");
+        activeBtn.setStyle("-fx-background-color: -my-btn-primary-color; -fx-text-fill: #ffffff;");
+        btn1.setStyle("-fx-background-color: -my-btn-secondary-color; -fx-text-fill: #ffffff;");
+        btn2.setStyle("-fx-background-color: -my-btn-secondary-color; -fx-text-fill: #ffffff;");
     }
 
     private void clearSubjectColors() {
@@ -176,19 +173,6 @@ public class StatsView extends VBox {
         return color;
     }
 
-    private String hexToRgba(String hex, double opacity) {
-        if (hex.startsWith("#")) {
-            hex = hex.substring(1);
-        }
-        if (hex.length() == 6) {
-            int r = Integer.parseInt(hex.substring(0, 2), 16);
-            int g = Integer.parseInt(hex.substring(2, 4), 16);
-            int b = Integer.parseInt(hex.substring(4, 6), 16);
-            return String.format("rgba(%d, %d, %d, %.2f)", r, g, b, opacity);
-        }
-        return "rgba(52, 152, 219, " + opacity + ")";
-    }
-
     // 每日分析視圖
     private void showDailyView() {
         currentViewType = "Daily";
@@ -202,7 +186,7 @@ public class StatsView extends VBox {
         btnPrevMonth.getStyleClass().add("circular-btn");
         Button btnNextMonth = new Button("▶");
         btnNextMonth.getStyleClass().add("circular-btn");
-        Label lblMonth = new Label(currentMonth.getYear() + "年" + currentMonth.getMonthValue() + "月");
+        Label lblMonth = new Label(currentMonth.format(DateTimeFormatter.ofPattern("yyyy年MM月")));
         lblMonth.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         calHeader.getChildren().addAll(btnPrevMonth, lblMonth, btnNextMonth);
 
@@ -246,13 +230,14 @@ public class StatsView extends VBox {
         for (int col = 0; col < 7; col++) {
             grid.getColumnConstraints().add(new ColumnConstraints(48));
         }
-        lblMonth.setText(currentMonth.getYear() + "年" + currentMonth.getMonthValue() + "月");
+        lblMonth.setText(currentMonth.format(DateTimeFormatter.ofPattern("yyyy年MM月")));
 
         // 星期標頭 (週一為 column 0, 週日為 column 6)
         String[] headers = {"一", "二", "三", "四", "五", "六", "日"};
         for (int col = 0; col < 7; col++) {
             Label label = new Label(headers[col]);
-            label.setStyle("-fx-font-weight: bold; -fx-text-fill: #888888; -fx-font-size: 11px; -fx-padding: 5 0 5 0;");
+            label.getStyleClass().add("stats-soft-text");
+            label.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 5 0 5 0;");
             grid.add(label, col, 0);
             GridPane.setHalignment(label, HPos.CENTER);
         }
@@ -436,7 +421,8 @@ public class StatsView extends VBox {
                 colorIndicator.setFill(Color.web(color));
 
                 Label pctLbl = new Label(String.format("%.1f%%", pct));
-                pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+                pctLbl.getStyleClass().add("stats-soft-text");
+                pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
                 pctLbl.setPrefWidth(45);
                 pctLbl.setAlignment(Pos.CENTER_LEFT);
 
@@ -504,7 +490,7 @@ public class StatsView extends VBox {
 
                 Label subjectLbl = new Label(event.getSubject());
                 String subjectColor = getSubjectColor(event.getSubject());
-                subjectLbl.setStyle("-fx-background-color: " + hexToRgba(subjectColor, 0.15) + "; -fx-text-fill: "
+                subjectLbl.setStyle("-fx-background-color: -my-stats-card-bg; -fx-text-fill: "
                         + subjectColor
                         + "; -fx-padding: 3 8; -fx-background-radius: 8; -fx-font-size: 11px; -fx-font-weight: bold;");
                 subjectLbl.setPrefWidth(80);
@@ -512,7 +498,8 @@ public class StatsView extends VBox {
 
                 long durationSec = java.time.Duration.between(event.getStartTime(), event.getEndTime()).getSeconds();
                 Label durationLbl = new Label("(" + formatSeconds(durationSec) + ")");
-                durationLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #888888;");
+                durationLbl.getStyleClass().add("stats-soft-text");
+                durationLbl.setStyle("-fx-font-size: 11px;");
 
                 infoRow.getChildren().addAll(timeLbl, subjectLbl, durationLbl);
                 row.getChildren().addAll(lineBox, infoRow);
@@ -613,7 +600,7 @@ public class StatsView extends VBox {
 
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel(null);
+        yAxis.setLabel("(小時)");
         StackedBarChart<String, Number> barChart = new StackedBarChart<>(xAxis, yAxis);
         barChart.setPrefHeight(240);
         barChart.setLegendSide(Side.BOTTOM);
@@ -716,7 +703,8 @@ public class StatsView extends VBox {
             colorIndicator.setFill(Color.web(color));
 
             Label pctLbl = new Label(String.format("%.1f%%", pct));
-            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+            pctLbl.getStyleClass().add("stats-soft-text");
+            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
             pctLbl.setPrefWidth(45);
             pctLbl.setAlignment(Pos.CENTER_LEFT);
 
@@ -759,7 +747,7 @@ public class StatsView extends VBox {
         btnPrevMonth.getStyleClass().add("circular-btn");
         Button btnNextMonth = new Button("▶");
         btnNextMonth.getStyleClass().add("circular-btn");
-        Label lblMonth = new Label(currentMonthlyMonth.format(DateTimeFormatter.ofPattern("yyyy/MM")));
+        Label lblMonth = new Label(currentMonthlyMonth.format(DateTimeFormatter.ofPattern("yyyy年MM月")));
         lblMonth.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         monthHeader.getChildren().addAll(btnPrevMonth, lblMonth, btnNextMonth);
 
@@ -824,7 +812,7 @@ public class StatsView extends VBox {
         });
 
         NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel(null);
+        yAxis.setLabel("(小時)");
 
         Label lblTrendTitle = new Label("月專注趨勢");
         lblTrendTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
@@ -893,7 +881,8 @@ public class StatsView extends VBox {
             colorIndicator.setFill(Color.web(color));
 
             Label pctLbl = new Label(String.format("%.1f%%", pct));
-            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #888888;");
+            pctLbl.getStyleClass().add("stats-soft-text");
+            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
             pctLbl.setPrefWidth(45);
             pctLbl.setAlignment(Pos.CENTER_LEFT);
 
@@ -1024,8 +1013,9 @@ public class StatsView extends VBox {
         double totalFocusHours = data.getTotalFocusSeconds() / 3600.0;
         String comment = FocusCommentGenerator.getWeeklyComment(distRatio, totalFocusHours, topSubject, this.currentWeeklyDate);
         Label commentLbl = new Label(comment);
+        commentLbl.getStyleClass().add("stats-card-comment");
         commentLbl.setWrapText(true);
-        commentLbl.setStyle("-fx-font-size: 12px; -fx-line-spacing: 2; -fx-text-fill: #bdc3c7;");
+        commentLbl.setStyle("-fx-font-size: 12px; -fx-line-spacing: 2;");
 
         card.getChildren().addAll(titleLbl, fldDistRatio, fldRank, new Separator(), commentLbl);
         return card;
@@ -1091,8 +1081,9 @@ public class StatsView extends VBox {
         double totalFocusHours = data.getTotalFocusSeconds() / 3600.0;
         String comment = FocusCommentGenerator.getMonthlyComment(distRatio, totalFocusHours, topSubject, this.currentMonthlyMonth.atDay(1));
         Label commentLbl = new Label(comment);
+        commentLbl.getStyleClass().add("stats-card-comment");
         commentLbl.setWrapText(true);
-        commentLbl.setStyle("-fx-font-size: 12px; -fx-line-spacing: 2; -fx-text-fill: #bdc3c7;");
+        commentLbl.setStyle("-fx-font-size: 12px; -fx-line-spacing: 2;");
 
         card.getChildren().addAll(titleLbl, fldDistRatio, fldRank, new Separator(), commentLbl);
         return card;
@@ -1121,7 +1112,8 @@ public class StatsView extends VBox {
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             Label durationLbl = new Label(formatSeconds(app.getDurationSeconds()));
-            durationLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #888888;");
+            durationLbl.getStyleClass().add("stats-soft-text");
+            durationLbl.setStyle("-fx-font-size: 11px;");
 
             header.getChildren().addAll(nameLbl, spacer, durationLbl);
 

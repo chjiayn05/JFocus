@@ -1,0 +1,463 @@
+/* ==========================================
+   global.css — 共用結構規則
+   配色由主題 CSS 的 -my-* 變數決定
+   ========================================== */
+
+.label {
+    -fx-line-spacing: 5px;
+    -fx-text-fill: -my-label-text-fill;
+}
+
+.label.changeColor {
+    -fx-text-fill: -my-label-change-color;
+}
+
+.label.inputLabel {
+    -fx-font-size: 20px;
+}
+
+.label.statusLabel{
+    -fx-pref-width: 300px;
+    -fx-pref-height: 37px;
+    -fx-alignment: bottom-center;
+    -fx-text-alignment: center;
+}
+
+.label.error {
+    -fx-text-fill: #e50000;
+}
+
+/* 頂部狀態列 */
+.top-bar {
+    -fx-background-color: -my-background-color;
+}
+
+.top-bar .label {
+    -fx-text-fill: -my-text-color;
+    -fx-font-weight: bold;
+}
+
+/* ChoiceBox */
+.choice-box {
+    -fx-background-color: -my-primary-color;
+    -fx-border-color: -my-border-color;
+    -fx-background-radius: 6;
+    -fx-border-radius: 5;
+    -fx-mark-color: -my-text-color;
+}
+.choice-box > .label {
+    -fx-text-fill: -my-choice-box-text-color;
+}
+.choice-box .context-menu {
+    -fx-background-color: -my-secondary-color;
+}
+.choice-box .menu-item > .label {
+    -fx-text-fill: -my-text-color;
+}
+.choice-box .menu-item:focused {
+    -fx-cursor: hand;
+    -fx-background-color: -my-primary-color;
+}
+.choice-box .menu-item:focused > .label {
+    -fx-text-fill: -my-choice-box-text-color;
+}
+.choice-box.mode-selector {
+    -fx-pref-width: 100px;
+}
+
+/* TextField */
+.text-field {
+    -fx-background-color: -my-secondary-color;
+    -fx-border-color: -my-border-color;
+    -fx-border-radius: 5;
+    -fx-background-radius: 6;
+    -fx-text-fill: -my-text-color;
+    -fx-prompt-text-fill: -my-label-text-color;
+    -fx-padding: 4 6;
+}
+.text-field:focused {
+    -fx-border-color: -my-text-color;
+}
+
+/* 分頁標籤 */
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: -my-background-color;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: -my-tab-border-color;
+}
+.tab {
+    -fx-background-insets: 0 2 0 2;
+    -fx-cursor: hand;
+    -fx-padding: 6 15;
+    -fx-background-color: -my-secondary-color;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-insets: 0 2 0 2;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-color: -my-tab-border-color;
+}
+.tab .tab-label {
+    -fx-text-fill: -my-label-text-color;
+    -fx-font-weight: bold;
+}
+.tab:selected {
+    -fx-border-width: 2;
+    -fx-border-color: -my-tab-border-color -my-tab-border-color -my-primary-color -my-tab-border-color;
+    -fx-border-radius: 8 8 0 0;
+    -fx-background-color: -my-primary-color;
+}
+.tab:selected .tab-label {
+    -fx-text-fill: -my-tab-selected-text-color;
+}
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+/* 按鈕 */
+.button {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: -my-text-color;
+    -fx-background-radius: 10;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
+}
+.button:hover {
+    -fx-background-color: -my-btn-primary-hover-color;
+    -fx-translate-y: -1px;
+    -fx-cursor: hand;
+}
+
+/* 透明化 ScrollPane / TabPane */
+.tab-pane,
+.tab-pane .tab-content-area,
+.scroll-pane,
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* 寶可夢卡片 */
+.pokemon-card {
+    -fx-border-color: -my-pokemon-card;
+    -fx-border-width: 1;
+    -fx-border-radius: 13;
+    -fx-background-color: -my-pokemon-card;
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, -my-shadow-color, 10, 0, 0, 0);
+}
+.pokemon-card:hover,
+.pokemon-card.active-partner:hover {
+    -fx-border-color: -my-pokemon-card-hover;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, -my-shadow-hover-color, 10, 0, 0, 0);
+}
+.pokemon-card.locked {
+    -fx-background-color: -my-pokemon-card-lock;
+    -fx-border-color: -my-pokemon-card-lock;
+    -fx-effect: none;
+}
+
+/* 經驗條 */
+.progress-bar .track {
+    -fx-background-color: -my-progress-track;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+}
+.progress-bar .bar {
+    -fx-background-color: -my-progress-bar;
+    -fx-background-insets: 2;
+    -fx-background-radius: 8;
+    -fx-pref-height: 15;
+    -fx-pref-width: 250;
+}
+
+/* 分隔線 */
+.separator .line {
+    -fx-border-color: -my-line-color;
+    -fx-border-width: 1px;
+}
+
+/* 捲軸 */
+.scroll-bar .thumb {
+    -fx-background-color: -my-secondary-color;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+.scroll-bar,
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button,
+.scroll-bar .corner {
+    -fx-background-color: -my-primary-color;
+}
+
+/* 詳細視窗 */
+.detailView {
+    -fx-border-width: 4 3 3 3;
+    -fx-border-color: -my-detail-view-border-color;
+    -fx-border-radius: 0 0 12 12;
+}
+
+/* === MiniDialog (小視窗公版) === */
+
+.mini-dialog-panel {
+    -fx-background-color: -my-primary-color;
+}
+
+.mini-dialog-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -my-text-color;
+}
+
+.mini-dialog-message {
+    -fx-font-size: 13px;
+    -fx-text-fill: -my-text-color;
+    -fx-line-spacing: 3px;
+}
+
+.mini-dialog-divider {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+}
+
+/* === 全屏提醒 (FullScreenAlert) === */
+
+.alert-overlay {
+    -fx-background-color: rgba(8, 12, 22, 0.45);
+}
+
+.alert-panel {
+    -fx-background-color: -my-primary-color;
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(255, 255, 255, 0.12);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.65), 48, 0, 0, 14);
+}
+
+.alert-icon {
+    -fx-font-size: 26px;
+}
+
+.alert-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.alert-title-distraction {
+    -fx-text-fill: #e73623;
+}
+
+.alert-title-idle {
+    -fx-text-fill: #e67e22;
+}
+
+.alert-body {
+    -fx-font-size: 14px;
+    -fx-text-fill: rgba(200, 210, 230, 0.9);
+    -fx-line-spacing: 3px;
+}
+
+.alert-divider {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-pref-height: 1;
+    -fx-max-height: 1;
+}
+
+/* 確認/主要動作按鈕 */
+.alert-btn-primary {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: -my-text-color;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-font-size: 14px;
+}
+.alert-btn-primary:hover {
+    -fx-background-color: -my-btn-primary-hover-color;
+    -fx-cursor: hand;
+    -fx-translate-y: -1px;
+}
+
+/* 危險動作按鈕（關閉視窗）*/
+.alert-btn-danger {
+    -fx-background-color: #c0392b;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+}
+.alert-btn-danger:hover {
+    -fx-background-color: #e74c3c;
+    -fx-cursor: hand;
+    -fx-translate-y: -1px;
+}
+
+/* 關鍵字選擇按鈕 */
+.alert-keyword-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-text-fill: rgba(200, 210, 230, 0.9);
+    -fx-font-size: 14px;
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(255, 255, 255, 0.15);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 9 12;
+    -fx-alignment: center-left;
+    -fx-effect: none;
+}
+.alert-keyword-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.14);
+    -fx-cursor: hand;
+    -fx-translate-y: 0;
+}
+.alert-keyword-btn:selected {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: -my-text-color;
+    -fx-font-weight: bold;
+    -fx-border-color: -my-btn-primary-hover-color;
+}
+.alert-keyword-btn:selected:hover {
+    -fx-background-color: -my-btn-primary-hover-color;
+}
+
+/* --- 數據分析自定義樣式 --- */
+.heatmap-cell {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-alignment: center;
+    -fx-effect: null;
+}
+.heatmap-cell:hover {
+    -fx-translate-y: 0px;
+}
+
+.heatmap-cell-0 { -fx-background-color: -my-heatmap-0; -fx-text-fill: -my-heatmap-text-0; }
+.heatmap-cell-1 { -fx-background-color: -my-heatmap-1; -fx-text-fill: -my-heatmap-text-1; }
+.heatmap-cell-2 { -fx-background-color: -my-heatmap-2; -fx-text-fill: -my-heatmap-text-2; }
+.heatmap-cell-3 { -fx-background-color: -my-heatmap-3; -fx-text-fill: -my-heatmap-text-3; }
+.heatmap-cell-4 { -fx-background-color: -my-heatmap-4; -fx-text-fill: -my-heatmap-text-4; }
+.heatmap-cell-0:hover { -fx-background-color: -my-heatmap-0; }
+.heatmap-cell-1:hover { -fx-background-color: -my-heatmap-1; }
+.heatmap-cell-2:hover { -fx-background-color: -my-heatmap-2; }
+.heatmap-cell-3:hover { -fx-background-color: -my-heatmap-3; }
+.heatmap-cell-4:hover { -fx-background-color: -my-heatmap-4; }
+.heatmap-cell-active {
+    -fx-border-color: -my-heatmap-active-border;
+    -fx-border-width: 2px;
+    -fx-border-style: solid;
+    -fx-background-radius: 0;
+}
+
+.stats-card {
+    -fx-background-color: -my-stats-card-bg;
+    -fx-opacity: -my-stats-card-opacity;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, -my-stats-card-shadow-color, 5, 0, 0, 2);
+    -fx-border-color: -my-stats-card-border-color;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8;
+}
+.stats-container .label.stats-card-title {
+    -fx-text-fill: -my-stats-card-title-color;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.stats-container .label.stats-card-value {
+    -fx-text-fill: -my-stats-card-value-color;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.stats-container .label.stats-card-comment {
+    -fx-text-fill: -my-stats-card-comment-color;
+    -fx-font-size: 12px;
+}
+
+/* 正圓形按鈕 */
+.circular-btn {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 50%;
+    -fx-min-width: 30px;
+    -fx-min-height: 30px;
+    -fx-max-width: 30px;
+    -fx-max-height: 30px;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-font-size: 12px;
+}
+.circular-btn:hover {
+    -fx-background-color: -my-btn-primary-color;
+}
+
+/* 圓餅圖 */
+.chart-pie {
+    -fx-border-width: 0px;
+    -fx-border-color: transparent;
+}
+.chart-pie-label-line {
+    -fx-stroke: transparent;
+}
+
+/* 圖表背景與格線樣式優化 */
+.chart {
+    -fx-background-color: transparent;
+}
+.chart-content {
+    -fx-background-color: transparent;
+}
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines,
+.chart-vertical-zero-line, .chart-horizontal-zero-line {
+    -fx-stroke: -my-chart-grid-color;
+}
+.stats-container .chart .axis .axis-axis-line,
+.stats-container .chart .axis .axis-tick-mark,
+.stats-container .chart .axis .axis-minor-tick-mark {
+    -fx-stroke: -my-chart-grid-color;
+}
+.stats-container .chart .axis {
+    -fx-border-color: transparent;
+    -fx-tick-label-fill: -my-chart-tick-label-color;
+}
+.stats-container .chart .axis-label {
+    -fx-text-fill: -my-chart-axis-label-color;
+}
+.chart-legend {
+    -fx-background-color: transparent;
+}
+.chart-legend-item {
+    -fx-text-fill: -my-chart-legend-text-color;
+}
+
+.stats-container .label.rank-comment {
+    -fx-font-size: 12px; 
+    -fx-font-weight: bold; 
+    -fx-text-fill: -my-rank-comment-color;
+}
+
+/* 月專注趨勢折線圖自訂樣式 */
+.monthly-trend-line .chart-series-line {
+    -fx-stroke: -my-trend-line-color;
+    -fx-stroke-width: 3px;
+}
+.monthly-trend-line .chart-line-symbol {
+    -fx-background-color: -my-trend-line-color, white;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px;
+}
+
+.stats-container .label.stats-soft-text {
+    -fx-text-fill: -my-stats-soft-text-color;
+}

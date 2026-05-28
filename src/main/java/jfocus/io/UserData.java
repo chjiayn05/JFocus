@@ -297,4 +297,63 @@ public final class UserData {
                 && !pokemonId.isBlank()
                 && POKEMON_ID_PATTERN.matcher(pokemonId.trim()).matches();
     }
+
+    public static java.util.Map<String, Integer> loadSelectedStages() {
+        String sql = "SELECT pokemon_id, stage FROM pokemon_selected_stage";
+        java.util.Map<String, Integer> map = new java.util.HashMap<>();
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString("pokemon_id"), rs.getInt("stage"));
+            }
+        } catch (SQLException e) {
+            System.err.println("讀取選擇 stage 失敗: " + e.getMessage());
+        }
+        return map;
+    }
+
+    public static void saveSelectedStage(String pokemonId, int stage) {
+        String sql = "INSERT INTO pokemon_selected_stage(pokemon_id, stage) VALUES (?, ?) "
+                   + "ON CONFLICT(pokemon_id) DO UPDATE SET stage = excluded.stage";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, pokemonId);
+            pstmt.setInt(2, stage);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("儲存選擇 stage 失敗: " + e.getMessage());
+        }
+    }
+
+    public static void saveAppSetting(String key, String value) {
+        String sql = "INSERT INTO app_settings(setting_key, setting_value) VALUES (?, ?) "
+                   + "ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, "
+                   + "updated_at = datetime('now')";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, key);
+            pstmt.setString(2, value);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("儲存設定失敗: " + e.getMessage());
+        }
+    }
+
+    public static String loadAppSetting(String key, String defaultValue) {
+        String sql = "SELECT setting_value FROM app_settings WHERE setting_key = ?";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, key);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String val = rs.getString("setting_value");
+                    return val != null ? val : defaultValue;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("讀取設定失敗: " + e.getMessage());
+        }
+        return defaultValue;
+    }
 }

@@ -1,215 +1,77 @@
 /* ==========================================
-   PokemonDark.css (純淨深色 + 白底卡片)
+   PokemonDark.css — 暗黑電競
    ========================================== */
 
-   
 .root {
-    -fx-background-color: #1a1a1a; /* 純淨深色背景 */
-    -fx-font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-}
-.label { -fx-text-fill: #726464; }
+    -my-primary-color: #363636;
+    -my-secondary-color: #222222;
+    -my-background-color: #101010;
 
-/* 頂部狀態列 */
-.top-bar { -fx-background-color: #121212; }
-.top-bar .label { -fx-text-fill: #ffffff; -fx-font-weight: bold; }
+    -my-shadow-color: #3a3a3a;
+    -my-shadow-hover-color: #ffffff;
 
-/* 分頁標籤 */
-.tab-pane .tab-header-area .tab-header-background { -fx-background-color: #0a0a0a; }
-.tab {
-    -fx-background-color: #2a2a2a;
-    -fx-background-radius: 8 8 0 0;
-    -fx-padding: 8 20;
-}
-.tab .tab-label { -fx-text-fill: #888888; -fx-font-weight: bold; }
-.tab:selected { -fx-background-color: #FFCB05; }
-.tab:selected .tab-label { -fx-text-fill: #1a1a1a; }
+    -my-btn-primary-color: #828282;
+    -my-btn-primary-hover-color: #9a9a9a;
+    -my-btn-secondary-color: #5a5a5a;
 
-/* 按鈕 */
-.button {
-    -fx-background-color: #FFCB05;
-    -fx-text-fill: white;
-    -fx-background-radius: 20;
-    -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);
-}
-.button:hover { -fx-background-color: #2980b9; -fx-translate-y: -2px; }
+    -my-text-color: #ffffff;
+    -my-text-soft-color: #d5d5d5;
+    -my-label-text-color: #a0a0a0;
 
-/* ==========================================
-   【關鍵修復】拔除 ScrollPane 的刺眼白底
-   ========================================== */
-.scroll-pane, .scroll-pane > .viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
+    -my-border-color: #c5c5c5;
+    -my-tab-border-color: #cacaca;
+    -my-line-color: #ffffff60;
 
-/* 黃底卡片 (浮在深色背景上) */
-.pokemon-card {
-    -fx-background-color: #f1e0b1; 
-    -fx-background-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 10, 0, 0, 4); /* 加深陰影，讓卡片更立體 */
-}
-.pokemon-card:hover {
-    -fx-border-color: #FFCB05; 
-    -fx-border-width: 2;
-    -fx-border-radius: 12;
-}
+    -my-pokemon-card: #222222;
+    -my-pokemon-card-lock: #4a4a4a;
+    -my-pokemon-card-hover: #484848;
 
-/* 經驗條 */
-.progress-bar .track { -fx-background-color: #2a2a2a; -fx-background-radius: 10; }
-.progress-bar .bar { -fx-background-color: #FFCB05; -fx-background-radius: 8; }
+    -my-progress-track: #ffffff;
+    -my-progress-bar: #ffcb05;
+    -my-lock-color: #850000;
+    -my-stage-color: #22222250;
+    -my-stage-hover-color: #22222299;
 
-/* 屬性標籤 */
-.type-tag { -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 12px; }
-.fire { -fx-background-color: #e84118; }
-.water { -fx-background-color: #00a8ff; }
-.grass { -fx-background-color: #4cd137; }
-.electric { -fx-background-color: #fbc531; -fx-text-fill: #2f3640; }
-.normal { -fx-background-color: #7f8fa6; }
+    -fx-font-family: 'Chiron GoRound TC';
+    -fx-font-weight: 700;
+    -fx-background-color: -my-primary-color;
 
-/* ==========================================
-   【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
-   讓最底層 (.root) 的漂亮背景色完美透出來
-   ========================================== */
-.tab-pane,
-.tab-pane .tab-content-area,
-.scroll-pane, 
-.scroll-pane > .viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
+    /* Theme color variables used by global.css */
+    -my-label-text-fill: -my-text-color;
+    -my-label-change-color: #ffffff;
 
-/* 讓屬性變成一個漂亮的圓角標籤 */
-.type-badge {
-    -fx-background-color: #3498db; /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
-    -fx-background-radius: 15;     /* 圓角 */
-    -fx-padding: 5 15 5 15;        /* 內邊距，讓它看起來像一顆膠囊 */
-}
+    -my-choice-box-text-color: -my-text-color;
+    -my-tab-selected-text-color: -my-text-color;
+    -my-detail-view-border-color: -my-tab-border-color;
 
-/* 確保裡面的字永遠是白色且清晰 */
-.type-text {
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-font-size: 14px;
-}
+    /* Stats Page Variables */
+    -my-heatmap-0: #808080;
+    -my-heatmap-1: #666666;
+    -my-heatmap-2: #4d4d4d;
+    -my-heatmap-3: #333333;
+    -my-heatmap-4: #1a1a1a;
+    -my-heatmap-text-0: #ffffff;
+    -my-heatmap-text-1: #ffffff;
+    -my-heatmap-text-2: #ffffff;
+    -my-heatmap-text-3: #ffffff;
+    -my-heatmap-text-4: #ffffff;
+    -my-heatmap-active-border: #FFCB05;
 
-/* --- 數據分析自定義樣式 (深色系) --- */
-.heatmap-cell {
-    -fx-font-size: 10px;
-    -fx-font-weight: bold;
-    -fx-background-radius: 0;
-    -fx-background-insets: 0;
-    -fx-border-width: 0;
-    -fx-border-color: transparent;
-    -fx-min-width: 44;
-    -fx-min-height: 44;
-    -fx-alignment: center;
-    -fx-effect: null; /* 移除按鈕預設陰影 */
-}
-.heatmap-cell:hover {-fx-translate-y: 0px;}
+    -my-stats-card-bg: #2a2a2a;
+    -my-stats-card-opacity: 1.0;
+    -my-stats-card-border-color: transparent;
+    -my-stats-card-border-width: 0px;
+    -my-stats-card-shadow-color: rgba(0, 0, 0, 0.3);
+    -my-stats-card-title-color: #888888;
+    -my-stats-card-value-color: #ffffff;
+    -my-stats-card-comment-color: #ffffff;
+    -my-stats-soft-text-color: #888888;
 
-.heatmap-cell-0 { -fx-background-color: #808080; -fx-text-fill: #ffffff; }
-.heatmap-cell-1 { -fx-background-color: #666666; -fx-text-fill: #ffffff; }
-.heatmap-cell-2 { -fx-background-color: #4d4d4d; -fx-text-fill: #ffffff; }
-.heatmap-cell-3 { -fx-background-color: #333333; -fx-text-fill: #ffffff; }
-.heatmap-cell-4 { -fx-background-color: #1a1a1a; -fx-text-fill: #ffffff; }
-.heatmap-cell-0:hover { -fx-background-color: #808080; }
-.heatmap-cell-1:hover { -fx-background-color: #666666; }
-.heatmap-cell-2:hover { -fx-background-color: #4d4d4d; }
-.heatmap-cell-3:hover { -fx-background-color: #333333; }
-.heatmap-cell-4:hover { -fx-background-color: #1a1a1a; }
-.heatmap-cell-active { -fx-border-color: #FFCB05; -fx-border-width: 1px; -fx-border-style: solid; -fx-background-radius: 0; }
-/* TODO: 要改active顏色 */
+    -my-chart-grid-color: rgba(255, 255, 255, 0.08);
+    -my-chart-tick-label-color: #777777;
+    -my-chart-axis-label-color: #777777;
+    -my-chart-legend-text-color: #cccccc;
 
-.stats-card {
-    -fx-background-color: #2a2a2a;
-    -fx-background-radius: 8;
-    -fx-padding: 10;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+    -my-rank-comment-color: #FFCB05;
+    -my-trend-line-color: #FFCB05;
 }
-.stats-card-title {
-    -fx-text-fill: #888888;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
-}
-.stats-card-value {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-}
-.stats-card-comment {
-    -fx-text-fill: #cccccc;
-    -fx-font-size: 12px;
-}
-
-/* 正圓形按鈕 */
-.circular-btn {
-    -fx-background-radius: 50%;
-    -fx-min-width: 30px;
-    -fx-min-height: 30px;
-    -fx-max-width: 30px;
-    -fx-max-height: 30px;
-    -fx-padding: 0;
-    -fx-alignment: center;
-    -fx-font-size: 12px;
-}
-
-/* 圓餅圖 */
-.chart-pie {
-    -fx-border-width: 0px;
-    -fx-border-color: transparent;
-}
-.chart-pie-label-line {
-    -fx-stroke: transparent;
-}
-
-/* 圖表背景與格線樣式優化 */
-.chart {
-    -fx-background-color: transparent;
-}
-.chart-content {
-    -fx-background-color: transparent;
-}
-.chart-plot-background {
-    -fx-background-color: transparent;
-}
-.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
-    -fx-stroke: rgba(255, 255, 255, 0.08);
-}
-.axis {
-    -fx-tick-label-fill: #888888;
-}
-.axis-label {
-    -fx-text-fill: #aaaaaa;
-}
-.chart-legend {
-    -fx-background-color: transparent;
-}
-.chart-legend-item {
-    -fx-text-fill: #cccccc;
-}
-
-.stats-view .label.rank-comment {
-    -fx-font-size: 12px; 
-    -fx-font-weight: bold; 
-    -fx-text-fill: #FFCB05;
-}
-/* TODO: 要改顏色 */
-
-/* 月專注趨勢折線圖自訂樣式 */
-.monthly-trend-line .chart-series-line {
-    -fx-stroke: #FFCB05;
-    -fx-stroke-width: 3px;
-}
-.monthly-trend-line .chart-line-symbol {
-    -fx-background-color: #FFCB05, white;
-    -fx-background-radius: 4px;
-    -fx-padding: 4px;
-}
-
-.stats-view .label {
-    -fx-text-fill: #e0e0e0;
-}
-
-

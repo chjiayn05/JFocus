@@ -11,7 +11,7 @@ public record ActivityRecord(
         String appName,
         String windowTitle,
         LocalDateTime startTime,
-    LocalDateTime endTime,
+        LocalDateTime endTime,
         boolean focus,
         String sessionId) {
 
@@ -19,7 +19,7 @@ public record ActivityRecord(
      * 建立尚未寫入資料庫的活動紀錄。
      *
      * @param appName 應用程式名稱
-    * @param windowTitle 視窗標題，可為 null
+     * @param windowTitle 視窗標題，可為 null
      * @param startTime 開始時間
      * @param endTime 結束時間
      * @param focus 是否為專注活動

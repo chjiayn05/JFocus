@@ -1,0 +1,142 @@
+.type-tag {
+    -fx-padding: 4 8;
+    -fx-background-radius: 16;
+    -fx-alignment: center-left;
+    -fx-spacing: 4;
+}
+
+.type-badge {
+    -fx-min-height: 16;
+    -fx-min-width: 16;
+    -fx-background-radius: 15;
+    -fx-padding: 2;
+    -fx-font-size: 10px;
+}
+
+.type-text {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 0 6 0 0;
+}
+
+/* ── Per-type background + contrast text ── */
+
+.type-tag.normal {
+    -fx-background-color: #9fa19f;
+}
+
+.type-tag.fire {
+    -fx-background-color: #e62829;
+}
+
+.type-tag.water {
+    -fx-background-color: #2980ef;
+}
+
+.type-tag.electric {
+    -fx-background-color: #fac000;
+}
+
+.type-tag.grass {
+    -fx-background-color: #3fa129;
+}
+
+.type-tag.ice {
+    -fx-background-color: #3fd8ff;
+}
+
+.type-tag.fighting {
+    -fx-background-color: #ff8001;
+}
+
+.type-tag.poison {
+    -fx-background-color: #9141cb;
+}
+
+.type-tag.ground {
+    -fx-background-color: #915121;
+}
+
+.type-tag.flying {
+    -fx-background-color: #84baef;
+}
+
+.type-tag.psychic {
+    -fx-background-color: #ef4179;
+}
+
+.type-tag.bug {
+    -fx-background-color: #91a019;
+}
+
+.type-tag.rock {
+    -fx-background-color: #afa981;
+}
+
+.type-tag.ghost {
+    -fx-background-color: #704170;
+}
+
+.type-tag.dragon {
+    -fx-background-color: #5061e1;
+}
+
+.type-tag.dark {
+    -fx-background-color: #514040;    
+}
+
+.type-tag.steel {
+    -fx-background-color: #60a1b8;
+}
+
+.type-tag.fairy {
+    -fx-background-color: #ef70ef;
+}
+
+
+.select-button {
+    -fx-text-fill: -my-text-color;
+}
+
+/* ── Stage selector in detail view ── */
+
+.button.stage-select-btn {
+    -fx-background-color: -my-pokemon-card;
+    -fx-border: 0;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 6;
+    -fx-effect: none;
+    -fx-translate-y: 0;
+}
+
+.button.stage-select-btn.locked {
+    -fx-background-color: -my-pokemon-card-lock;
+    -fx-cursor: none;
+}
+
+.button.stage-select-btn:hover {
+    -fx-background-color: -my-pokemon-card-hover;
+    -fx-translate-y: 0;
+}
+
+.button.stage-select-btn.locked .label {
+    -fx-text-fill: none;
+}
+.button.stage-select-btn .label {
+    -fx-text-fill: -my-text-color;
+}
+
+.button.stage-select-btn.stage-selected {
+    -fx-border-color: -my-border-color;
+    -fx-border-width: 2;
+    -fx-border-insets: -2;
+}
+
+/* ── Active partner card in pokedex grid ── */
+.pokemon-card.active-partner {
+    -fx-border-color: -my-pokemon-card;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, #ffca09, 12, 0.4, 0, 0);
+}

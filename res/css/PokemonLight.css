@@ -1,218 +1,77 @@
-/* 大木博士實驗室/明亮風 (PokemonLight.css) */
+/* ==========================================
+   PokemonLight.css — 明亮清新
+   ========================================== */
+
 .root {
-    -fx-background-color: #f0f4f88d; /* 帶有科技感的極淺灰藍 */
-    -fx-font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-}
-.label { -fx-text-fill: #2c3e50; }
+    -my-primary-color: #c8c8c8;
+    -my-secondary-color: #a1a1a1;
+    -my-background-color: #878787;
 
-/* 頂部狀態列 (乾淨白) */
-.top-bar { 
-    -fx-background-color: #ffffff; 
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);
-}
-.top-bar .label { 
-    -fx-text-fill: #2c3e50; /* 覆蓋掉預設的白色文字 */
-    -fx-font-weight: bold; 
-}
+    -my-shadow-color: #767676;
+    -my-shadow-hover-color: #2e2e2e;
 
-/* 分頁標籤 */
-.tab-pane .tab-header-area .tab-header-background { -fx-background-color: #e2e8f0; }
-.tab {
-    -fx-background-color: #cbd5e1;
-    -fx-background-radius: 8 8 0 0;
-    -fx-padding: 8 20;
-}
-.tab .tab-label { -fx-text-fill: #64748b; -fx-font-weight: bold; }
-.tab:selected {
-    -fx-background-color: #ffffff;
-}
-.tab:selected .tab-label { -fx-text-fill: #3b82f6; } /* 選中時變成科技藍 */
+    -my-btn-primary-color: #6f6f6f;
+    -my-btn-primary-hover-color: #b7b7b7;
+    -my-btn-secondary-color: #9a9a9a;
 
-/* 按鈕 */
-.button {
-    -fx-background-color: #3b82f6; /* 實驗室科技藍 */
-    -fx-text-fill: white;
-    -fx-background-radius: 20;
-    -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.3), 8, 0, 0, 3);
-}
-.button:hover { -fx-background-color: #2563eb; -fx-translate-y: -2px; }
+    -my-text-color: #000000;
+    -my-text-soft-color: #333333;
+    -my-label-text-color: #3e3e3e;
 
-/* ==========================================
-   統一固定的圖鑑卡片樣式 (所有主題共用)
-   ========================================== */
-.pokemon-card {
-    -fx-background-color: #f1e0b1; 
-    -fx-background-radius: 12;
-    -fx-border-color: #e0e0e0;
-    -fx-border-width: 1;
-    -fx-border-radius: 12;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 4);
-}
-.pokemon-card:hover {
-    -fx-border-color: #FFCB05; 
-    -fx-border-width: 2;
-    -fx-effect: dropshadow(gaussian, rgba(255,203,5,0.4), 12, 0, 0, 0);
-}
+    -my-border-color: #333333;
+    -my-tab-border-color: #353535;
+    -my-line-color: #1d1d1d50;
 
-/* 經驗條 */
-.progress-bar .track { -fx-background-color: #e2e8f0; -fx-background-radius: 10; }
-.progress-bar .bar { -fx-background-color: #3b82f6; -fx-background-radius: 8; }
+    -my-pokemon-card: #e3e1e1;
+    -my-pokemon-card-lock: #a6a6a6;
+    -my-pokemon-card-hover: #d6d4d4;
 
-/* 屬性標籤 */
-.type-tag { -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 12px; }
-.fire { -fx-background-color: #e84118; }
-.water { -fx-background-color: #00a8ff; }
-.grass { -fx-background-color: #4cd137; }
-.electric { -fx-background-color: #fbc531; -fx-text-fill: #2f3640; }
-.normal { -fx-background-color: #7f8fa6; }
+    -my-progress-track: #878787;
+    -my-progress-bar: #475569;
+    -my-lock-color: #850000;
+    -my-stage-color: #b4b4b450;
+    -my-stage-hover-color: #b4b4b499;
 
-/* ==========================================
-   【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
-   讓最底層 (.root) 的漂亮背景色完美透出來
-   ========================================== */
-.tab-pane,
-.tab-pane .tab-content-area,
-.scroll-pane, 
-.scroll-pane > .viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-}
+    -fx-font-family: 'Chiron GoRound TC';
+    -fx-font-weight: 700;
+    -fx-background-color: -my-primary-color;
 
-/* 讓屬性變成一個漂亮的圓角標籤 */
-.type-badge {
-    -fx-background-color: #3498db; /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
-    -fx-background-radius: 15;     /* 圓角 */
-    -fx-padding: 5 15 5 15;        /* 內邊距，讓它看起來像一顆膠囊 */
-}
+    /* Theme color variables used by global.css */
+    -my-label-text-fill: -my-text-soft-color;
+    -my-label-change-color: #000000;
 
-/* 確保裡面的字永遠是白色且清晰 */
-.type-text {
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-font-size: 14px;
-}
+    -my-choice-box-text-color: -my-text-color;
+    -my-tab-selected-text-color: -my-text-color;
+    -my-detail-view-border-color: -my-tab-border-color;
 
-/* --- 數據分析自定義樣式 (明亮系) --- */
-.heatmap-cell {
-    -fx-font-size: 10px;
-    -fx-font-weight: bold;
-    -fx-background-radius: 0;
-    -fx-background-insets: 0;
-    -fx-border-width: 0;
-    -fx-border-color: transparent;
-    -fx-min-width: 44;
-    -fx-min-height: 44;
-    -fx-alignment: center;
-    -fx-effect: null; /* 移除按鈕預設陰影 */
-}
-.heatmap-cell:hover {-fx-translate-y: 0px;}
+    /* Stats Page Variables */
+    -my-heatmap-0: #9eb3cf;
+    -my-heatmap-1: #8091a8;
+    -my-heatmap-2: #6f7d91;
+    -my-heatmap-3: #4a5871;
+    -my-heatmap-4: #374c67;
+    -my-heatmap-text-0: #000000;
+    -my-heatmap-text-1: #000000;
+    -my-heatmap-text-2: #000000;
+    -my-heatmap-text-3: #ffffff;
+    -my-heatmap-text-4: #ffffff;
+    -my-heatmap-active-border: #17324c;
 
-.heatmap-cell-0 { -fx-background-color: #ffffff; -fx-text-fill: #7f8c8d; }
-.heatmap-cell-1 { -fx-background-color: #f0f0f0; -fx-text-fill: #333333; }
-.heatmap-cell-2 { -fx-background-color: #dcdcdc; -fx-text-fill: #111111; }
-.heatmap-cell-3 { -fx-background-color: #aaaaaa; -fx-text-fill: #ffffff; }
-.heatmap-cell-4 { -fx-background-color: #808080; -fx-text-fill: #ffffff; }
-.heatmap-cell-0:hover { -fx-background-color: #ffffff; }
-.heatmap-cell-1:hover { -fx-background-color: #f0f0f0; }
-.heatmap-cell-2:hover { -fx-background-color: #dcdcdc; }
-.heatmap-cell-3:hover { -fx-background-color: #aaaaaa; }
-.heatmap-cell-4:hover { -fx-background-color: #808080; }
-.heatmap-cell-active { -fx-border-color: #FFCB05; -fx-border-width: 1px; -fx-border-style: solid; -fx-background-radius: 0;; }
-/* TODO: 要改active顏色 */
+    -my-stats-card-bg: #d8d8d8;
+    -my-stats-card-opacity: 1.0;
+    -my-stats-card-border-color: transparent;
+    -my-stats-card-border-width: 1px;
+    -my-stats-card-shadow-color: rgba(0, 0, 0, 0.05);
+    -my-stats-card-title-color: #888888;
+    -my-stats-card-value-color: #000000;
+    -my-stats-card-comment-color: #000000;
+    -my-stats-soft-text-color: #555555;
 
-.stats-card {
-    -fx-background-color: #ffffff;
-    -fx-background-radius: 8;
-    -fx-padding: 10;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);
-    -fx-border-color: #e2e8f0;
-    -fx-border-width: 1;
-    -fx-border-radius: 8;
-}
-.stats-card-title {
-    -fx-text-fill: #64748b;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
-}
-.stats-card-value {
-    -fx-text-fill: #2c3e50;
-    -fx-font-size: 16px;
-    -fx-font-weight: bold;
-}
-.stats-card-comment {
-    -fx-text-fill: #475569;
-    -fx-font-size: 12px;
-}
+    -my-chart-grid-color: rgba(0, 0, 0, 0.08);
+    -my-chart-tick-label-color: #888888;
+    -my-chart-axis-label-color: #888888;
+    -my-chart-legend-text-color: #333333;
 
-/* 正圓形按鈕 */
-.circular-btn {
-    -fx-background-radius: 50%;
-    -fx-min-width: 30px;
-    -fx-min-height: 30px;
-    -fx-max-width: 30px;
-    -fx-max-height: 30px;
-    -fx-padding: 0;
-    -fx-alignment: center;
-    -fx-font-size: 12px;
+    -my-rank-comment-color: #2c3e50;
+    -my-trend-line-color: #475569;
 }
-
-/* 圓餅圖 */
-.chart-pie {
-    -fx-border-width: 0px;
-    -fx-border-color: transparent;
-}
-.chart-pie-label-line {
-    -fx-stroke: transparent;
-}
-
-/* 圖表背景與格線樣式優化 */
-.chart {
-    -fx-background-color: transparent;
-}
-.chart-content {
-    -fx-background-color: transparent;
-}
-.chart-plot-background {
-    -fx-background-color: transparent;
-}
-.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
-    -fx-stroke: rgba(0, 0, 0, 0.08);
-}
-.axis {
-    -fx-tick-label-fill: #555555;
-}
-.axis-label {
-    -fx-text-fill: #333333;
-}
-.chart-legend {
-    -fx-background-color: transparent;
-}
-.chart-legend-item {
-    -fx-text-fill: #333333;
-}
-
-.stats-view .label.rank-comment {
-    -fx-font-size: 12px; 
-    -fx-font-weight: bold; 
-    -fx-text-fill: #FFCB05;
-}
-/* TODO: 要改顏色 */
-
-/* 月專注趨勢折線圖自訂樣式 */
-.monthly-trend-line .chart-series-line {
-    -fx-stroke: #FFCB05;
-    -fx-stroke-width: 3px;
-}
-.monthly-trend-line .chart-line-symbol {
-    -fx-background-color: #FFCB05, white;
-    -fx-background-radius: 4px;
-    -fx-padding: 4px;
-}
-
-.stats-view .label {
-    -fx-text-fill: #2c3e50;
-}
-
-

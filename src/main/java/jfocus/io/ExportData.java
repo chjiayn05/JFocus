@@ -129,9 +129,9 @@ public class ExportData {
         }
 
         if (processed == 0) {
-            System.out.println("ℹ️ 無新活動資料可匯出。lastId=" + lastExportedId + ", 輸出檔=" + outputPath);
+            System.out.println("ℹ無新活動資料可匯出。lastId=" + lastExportedId + ", 輸出檔=" + outputPath);
         } else {
-            System.out.println("📊 匯出摘要 -> 處理: " + processed + ", 寫入: " + written + ", 略過: " + skipped + ", 最新ID: " + currentMaxId);
+            System.out.println("匯出摘要 -> 處理: " + processed + ", 寫入: " + written + ", 略過: " + skipped + ", 最新ID: " + currentMaxId);
         }
 
         return currentMaxId;
