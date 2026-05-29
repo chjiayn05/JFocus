@@ -27,6 +27,12 @@ public class ModelTrainer {
 
     private static final int TRAIN_BATCH_SIZE = 50;
 
+    /** 直接從指定檔案訓練，不匯出新資料、不更新 metadata。 */
+    public static void forceTrainFromFile(Path txtPath, Path modelPath) throws IOException {
+        boolean success = trainModel(txtPath, modelPath);
+        if (!success) throw new IOException("模型訓練失敗，語料可能為空。");
+    }
+
     /* 使用預設路徑訓練模型。 */
     public static void trainModel() {
         Path trainingPath = AppPaths.getTrainingDataPath();

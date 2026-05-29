@@ -327,6 +327,7 @@ public class TimerView extends VBox implements FocusListener {
                     engine.start(minutes * 60); // 呼叫番茄鐘引擎倒數
                 }
                 userStatus = status.WORKING;
+                focusUI.sessionActiveProperty().set(true);
             } catch (NumberFormatException ex) {
                 statusLabel.setText("請輸入有效的數字！");
                 resetUI();
@@ -365,6 +366,7 @@ public class TimerView extends VBox implements FocusListener {
                 resetUI(showTime);
                 startBtn.setDisable(true);
                 userStatus = status.IDLEING;
+                focusUI.sessionActiveProperty().set(false);
             } else {
                 new MiniDialog.Builder(stopBtn.getScene().getWindow())
                         .type(MiniDialog.Type.DANGER)
@@ -379,6 +381,7 @@ public class TimerView extends VBox implements FocusListener {
                             startBtn.setDisable(true);
                             focusUI.startBorderCountdown(3, () -> startBtn.setDisable(false));
                             resetUI(3);
+                            focusUI.sessionActiveProperty().set(false);
                         })
                         .show();
             }
@@ -573,6 +576,7 @@ public class TimerView extends VBox implements FocusListener {
                 focusUI.startBorderCountdown(3, () -> startBtn.setDisable(false));
                 resetUI(3);
                 userStatus = status.IDLEING;
+                focusUI.sessionActiveProperty().set(false);
             }
         });
     }
