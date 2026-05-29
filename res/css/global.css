@@ -547,6 +547,10 @@
     -fx-translate-y: 0;
     -fx-opacity: 1.0;
 }
+.settings-status-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: -my-text-color;
+}
 .settings-hint-label {
     -fx-font-size: 11px;
     -fx-text-fill: derive(-my-text-color, -15%);

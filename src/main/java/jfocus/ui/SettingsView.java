@@ -182,7 +182,7 @@ public class SettingsView extends VBox {
         Region modeSpacer = new Region();
         HBox.setHgrow(modeSpacer, Priority.ALWAYS);
         HBox modeRow = new HBox(5, modeLabel, modeSpacer, modeHint,  new HBox(warnBtn, closeBtn));
-        modeRow.setAlignment(Pos.BOTTOM_LEFT);
+        modeRow.setAlignment(Pos.CENTER_LEFT);
 
         // ── System Notifications ──
         DistractionSettings ds = distractionSettingsRepo.loadSettings();
@@ -295,7 +295,7 @@ public class SettingsView extends VBox {
         Label titleLabel = new Label("分心偵測模型");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: -my-text-color;");
 
-        statusLabel.setStyle("-fx-font-size: 13px;");
+        statusLabel.getStyleClass().add("settings-status-label");
         HBox.setHgrow(statusLabel, Priority.ALWAYS);
         statusLabel.setMaxWidth(Double.MAX_VALUE);
         statusLabel.setAlignment(Pos.CENTER_RIGHT);
@@ -350,10 +350,23 @@ public class SettingsView extends VBox {
         new Thread(() -> {
             try {
                 task.run();
-                Platform.runLater(() -> { statusLabel.setText(done); for (Button b : btns) b.setDisable(false); });
+                Platform.runLater(() -> {
+                    statusLabel.setText(done);
+                    for (Button b : btns) b.setDisable(false);
+                    scheduleStatusClear(done);
+                });
             } catch (IOException ex) {
                 Platform.runLater(() -> { statusLabel.setText("失敗：" + ex.getMessage()); for (Button b : btns) b.setDisable(false); });
             }
+        }).start();
+    }
+
+    private void scheduleStatusClear(String expectedText) {
+        new Thread(() -> {
+            try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
+            Platform.runLater(() -> {
+                if (expectedText.equals(statusLabel.getText())) statusLabel.setText("");
+            });
         }).start();
     }
 

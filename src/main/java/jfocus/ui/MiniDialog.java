@@ -42,10 +42,13 @@ public class MiniDialog {
     }
 
     private static final double PANEL_WIDTH = 350;
+    private static final double PANEL_HEIGHT_ESTIMATE = 175;
 
     private final Stage stage;
+    private final Window owner;
 
     private MiniDialog(Builder b) {
+        this.owner = b.owner;
         stage = new Stage();
         if (b.owner != null) stage.initOwner(b.owner);
         stage.initModality(Modality.WINDOW_MODAL);
@@ -59,15 +62,17 @@ public class MiniDialog {
             scene.getStylesheets().addAll(FocusUI.activeStylesheets);
         }
         stage.setScene(scene);
-        centerOnOwner(b.owner);
+        centerOnOwner();
     }
 
     public void show() {
+        // pre-position before show so title bar appears at correct location
+        if (owner != null) {
+            stage.setX(owner.getX() + (owner.getWidth()  - PANEL_WIDTH)          / 2);
+            stage.setY(owner.getY() + (owner.getHeight() - PANEL_HEIGHT_ESTIMATE) / 2);
+        }
+        stage.setOpacity(0);
         stage.show();
-        FadeTransition fade = new FadeTransition(Duration.millis(120), stage.getScene().getRoot());
-        fade.setFromValue(0);
-        fade.setToValue(1);
-        fade.play();
     }
 
     private VBox buildPanel(Builder b) {
@@ -154,12 +159,17 @@ public class MiniDialog {
         return badge;
     }
 
-    private void centerOnOwner(Window owner) {
+    private void centerOnOwner() {
         stage.setOnShown(e -> {
             if (owner != null) {
                 stage.setX(owner.getX() + (owner.getWidth()  - stage.getWidth())  / 2);
                 stage.setY(owner.getY() + (owner.getHeight() - stage.getHeight()) / 2);
             }
+            stage.setOpacity(1);
+            FadeTransition fade = new FadeTransition(Duration.millis(120), stage.getScene().getRoot());
+            fade.setFromValue(0);
+            fade.setToValue(1);
+            fade.play();
         });
     }
 
