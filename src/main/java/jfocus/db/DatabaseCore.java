@@ -113,7 +113,8 @@ public class DatabaseCore {
                 task     TEXT    NOT NULL,
                 deadline TEXT,
                 is_done  INTEGER NOT NULL DEFAULT 0,
-                notes    TEXT
+                notes    TEXT,
+                subject  TEXT
             );
             """;
 
@@ -165,6 +166,7 @@ public class DatabaseCore {
             ensureColumnExists(conn, "activities", "end_time", "TEXT");
             ensureColumnExists(conn, "activities", "duration", "INTEGER");
             ensureColumnExists(conn, "activities", "session_id", "TEXT");
+            ensureColumnExists(conn, "todos", "subject", "TEXT");
             ensureKeywordOnlyDistractionRulesTable(conn);
             ensureIndexes(stmt);
             System.out.println("DatabaseCore: SQLite 資料庫與資料表已就緒！");

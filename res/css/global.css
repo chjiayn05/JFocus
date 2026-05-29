@@ -461,3 +461,149 @@
 .stats-container .label.stats-soft-text {
     -fx-text-fill: -my-stats-soft-text-color;
 }
+
+/* ==========================================
+   待辦事項
+   ========================================== */
+
+/* CheckBox */
+.check-box {
+    -fx-text-fill: -my-text-color;
+    -fx-cursor: hand;
+}
+.check-box > .box {
+    -fx-background-color: -my-secondary-color;
+    -fx-border-color: -my-border-color;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 3;
+}
+.check-box > .box > .mark {
+    -fx-background-color: transparent;
+    -fx-shape: "M530.8 134.1C545.1 144.5 548.3 164.5 537.9 178.8L281.9 530.8C276.4 538.4 267.9 543.1 258.5 543.9C249.1 544.7 240 541.2 233.4 534.6L105.4 406.6C92.9 394.1 92.9 373.8 105.4 361.3C117.9 348.8 138.2 348.8 150.7 361.3L252.2 462.8L486.2 141.1C496.6 126.8 516.6 123.6 530.9 134";
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+.check-box:selected > .box > .mark {
+    -fx-background-color: -my-text-color;
+}
+
+/* DatePicker 美化 */
+.date-picker {
+    -fx-background-color: -my-secondary-color;
+    -fx-border-color: -my-border-color;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+.date-picker > .text-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-text-fill: -my-text-color;
+    -fx-padding: 4 6;
+}
+.date-picker > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0 5 5 0;
+    -fx-cursor: hand;
+    -fx-padding: 4 8;
+}
+.date-picker > .arrow-button > .arrow {
+    -fx-background-color: -my-text-color;
+    -fx-shape: "M2 0v2h8v-2h2v2h1c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1h-12c-.55 0-1-.45-1-1v-12c0-.55.45-1 1-1h1v-2zm-1 4v11h12v-11zm2 2h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2z";
+    -fx-scale-x: 1.1;
+    -fx-scale-y: 1.1;
+}
+.date-picker > .arrow-button:hover > .arrow {
+    -fx-background-color: -my-btn-primary-color;
+}
+
+/* DatePicker */
+.date-picker-popup {
+    -fx-background-color: -my-border-color, -my-primary-color;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 8, 6.5;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 12, 0, 0, 3);
+    -fx-padding: 6;
+}
+.date-picker-popup .month-year-pane {
+    -fx-background-color: -my-secondary-color;
+    -fx-background-radius: 6 6 0 0;
+    -fx-padding: 6;
+}
+.date-picker-popup .month-year-pane .label {
+    -fx-text-fill: -my-text-color;
+    -fx-font-weight: bold;
+}
+.date-picker-popup .month-year-pane .button {
+    -fx-background-color: transparent;
+    /* -fx-text-fill: -my-text-color; */
+    -fx-cursor: hand;
+    -fx-effect: none;
+}
+.date-picker-popup .month-year-pane .button .left-arrow,
+.date-picker-popup .month-year-pane .button .right-arrow {
+    -fx-background-color: -my-text-color;
+}
+.date-picker-popup .calendar-grid {
+    -fx-background-color: transparent;
+    -fx-padding: 4;
+}
+.date-picker-popup .calendar-grid .day-name-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -my-stats-card-title-color;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+}
+.date-picker-popup .calendar-grid .day-cell {
+    -fx-background-color: -my-primary-color;
+    -fx-background-insets: 0;
+    -fx-text-fill: -my-text-color;
+    -fx-alignment: center;
+    -fx-font-size: 11px;
+    -fx-border-color: -my-stats-card-title-color;
+    -fx-border-width: 0.5px;
+}
+.date-picker-popup .calendar-grid .day-cell:hover {
+    -fx-background-color: -my-btn-primary-hover-color;
+    -fx-text-fill: white;
+}
+.date-picker-popup .calendar-grid .selected {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.date-picker-popup > .calendar-grid > .week-number-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -my-stats-soft-text-color;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* 讓新增事項的科目 ChoiceBox 樣式與 TextField (輸入框) 一致 */
+.choice-box.todo-subject-choice {
+    -fx-background-color: -my-secondary-color;
+    -fx-border-color: -my-border-color;
+}
+/* 預設/未分類時，文字呈現類似 placeholder 的提示色 */
+.choice-box.todo-subject-choice.placeholder-active > .label,
+.choice-box.todo-subject-choice.placeholder-active:hover > .label,
+.choice-box.todo-subject-choice.placeholder-active:focused > .label,
+.choice-box.todo-subject-choice.placeholder-active:showing > .label {
+    -fx-text-fill: -my-label-text-color;
+}
+/* 選擇具體科目時，文字呈現正常輸入後的白色 */
+.choice-box.todo-subject-choice > .label,
+.choice-box.todo-subject-choice:hover > .label,
+.choice-box.todo-subject-choice:focused > .label,
+.choice-box.todo-subject-choice:showing > .label {
+    -fx-text-fill: -my-text-color;
+}
+.choice-box.todo-subject-choice:focused {
+    -fx-border-color: -my-text-color;
+}
+
+

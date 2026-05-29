@@ -16,11 +16,16 @@ public record TodoRecord(
         String task,
         LocalDateTime deadline,
         boolean isDone,
-        String notes) {
+        String notes,
+        String subject) {
 
     public TodoRecord {
         if (task == null || task.isBlank()) {
             throw new IllegalArgumentException("task cannot be null or blank");
         }
+    }
+
+    public TodoRecord(int id, String task, LocalDateTime deadline, boolean isDone, String notes) {
+        this(id, task, deadline, isDone, notes, "未分類");
     }
 }

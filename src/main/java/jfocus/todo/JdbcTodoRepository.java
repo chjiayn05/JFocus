@@ -32,13 +32,14 @@ public class JdbcTodoRepository implements TodoRepository {
     @Override
     public void saveTodo(TodoRecord todo) {
         Objects.requireNonNull(todo, "todo cannot be null");
-        String sql = "INSERT INTO todos (task, deadline, is_done, notes) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO todos (task, deadline, is_done, notes, subject) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, todo.task());
             ps.setString(2, todo.deadline() != null ? todo.deadline().toString() : null);
             ps.setInt(3, todo.isDone() ? 1 : 0);
             ps.setString(4, todo.notes());
+            ps.setString(5, todo.subject());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("新增待辦事項失敗", e);
@@ -48,14 +49,15 @@ public class JdbcTodoRepository implements TodoRepository {
     @Override
     public void updateTodo(TodoRecord todo) {
         Objects.requireNonNull(todo, "todo cannot be null");
-        String sql = "UPDATE todos SET task = ?, deadline = ?, is_done = ?, notes = ? WHERE id = ?";
+        String sql = "UPDATE todos SET task = ?, deadline = ?, is_done = ?, notes = ?, subject = ? WHERE id = ?";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, todo.task());
             ps.setString(2, todo.deadline() != null ? todo.deadline().toString() : null);
             ps.setInt(3, todo.isDone() ? 1 : 0);
             ps.setString(4, todo.notes());
-            ps.setInt(5, todo.id());
+            ps.setString(5, todo.subject());
+            ps.setInt(6, todo.id());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("更新待辦事項失敗", e);
@@ -76,7 +78,7 @@ public class JdbcTodoRepository implements TodoRepository {
 
     @Override
     public List<TodoRecord> getAllTodos() {
-        String sql = "SELECT id, task, deadline, is_done, notes FROM todos ORDER BY deadline ASC NULLS LAST";
+        String sql = "SELECT id, task, deadline, is_done, notes, subject FROM todos ORDER BY deadline ASC NULLS LAST";
         List<TodoRecord> results = new ArrayList<>();
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -92,7 +94,7 @@ public class JdbcTodoRepository implements TodoRepository {
 
     @Override
     public Optional<TodoRecord> getTodoById(int id) {
-        String sql = "SELECT id, task, deadline, is_done, notes FROM todos WHERE id = ?";
+        String sql = "SELECT id, task, deadline, is_done, notes, subject FROM todos WHERE id = ?";
         try (Connection conn = db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -114,6 +116,10 @@ public class JdbcTodoRepository implements TodoRepository {
         LocalDateTime deadline = deadlineStr != null ? LocalDateTime.parse(deadlineStr) : null;
         boolean isDone = rs.getInt("is_done") == 1;
         String notes = rs.getString("notes");
-        return new TodoRecord(id, task, deadline, isDone, notes);
+        String subject = rs.getString("subject");
+        if (subject == null) {
+            subject = "未分類";
+        }
+        return new TodoRecord(id, task, deadline, isDone, notes, subject);
     }
 }

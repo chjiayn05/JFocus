@@ -125,7 +125,20 @@ public class PushData {
      * @param notes 備註，可為 null
      */
     public void insertTodo(String task, LocalDateTime deadline, boolean isDone, String notes) {
-        TodoRecord todo = new TodoRecord(0, task, deadline, isDone, notes);
+        insertTodo(task, deadline, isDone, notes, "未分類");
+    }
+
+    /**
+     * 新增一筆待辦事項（含科目）。
+     *
+     * @param task 待辦事情
+     * @param deadline 時限，可為 null
+     * @param isDone 是否完成
+     * @param notes 備註，可為 null
+     * @param subject 科目，可為 null
+     */
+    public void insertTodo(String task, LocalDateTime deadline, boolean isDone, String notes, String subject) {
+        TodoRecord todo = new TodoRecord(0, task, deadline, isDone, notes, subject);
         requireTodoRepository().saveTodo(todo);
         System.out.println("新增待辦: " + task);
     }
@@ -140,7 +153,21 @@ public class PushData {
      * @param notes 備註，可為 null
      */
     public void updateTodo(int id, String task, LocalDateTime deadline, boolean isDone, String notes) {
-        TodoRecord todo = new TodoRecord(id, task, deadline, isDone, notes);
+        updateTodo(id, task, deadline, isDone, notes, "未分類");
+    }
+
+    /**
+     * 更新一筆待辦事項的所有欄位（含科目）。
+     *
+     * @param id 待辦事項的 id
+     * @param task 待辦事情
+     * @param deadline 時限，可為 null
+     * @param isDone 是否完成
+     * @param notes 備註，可為 null
+     * @param subject 科目，可為 null
+     */
+    public void updateTodo(int id, String task, LocalDateTime deadline, boolean isDone, String notes, String subject) {
+        TodoRecord todo = new TodoRecord(id, task, deadline, isDone, notes, subject);
         requireTodoRepository().updateTodo(todo);
         System.out.println("更新待辦 id=" + id + ": " + task);
     }

@@ -109,6 +109,7 @@ public class FocusUI extends Application {
     private String css = "PokemonDark.css";
     static final List<String> activeStylesheets = new ArrayList<>();
     private StatsView statsView;
+    private TodoView todoView;
     // 圖鑑相關元件
     // private ImageView bigView;
     // private ComboBox<String> stageSelector;
@@ -431,6 +432,9 @@ public static class PokemonData {
         if (statsView != null) {
             statsView.refreshCurrentView();
         }
+        if (todoView != null) {
+            todoView.refreshTodoList();
+        }
     }
 
 
@@ -501,13 +505,15 @@ public static class PokemonData {
         statsTab.setClosable(false);
         Tab gachaTab = createGachaTab();
         gachaTab.setClosable(false);
+        Tab todoTab = createTodoTab();
+        todoTab.setClosable(false);
 
         gachaTab.setOnSelectionChanged(e -> {
             if (gachaTab.isSelected())
                 refreshDrawBtnStatus();
         });
         
-        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab);
+        tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab, todoTab);
 
         // 2. 頂部狀態列 (主題切換 + 貨幣)
         ChoiceBox<String> themeSelector = new ChoiceBox<>();
@@ -1171,6 +1177,18 @@ public static class PokemonData {
         tab.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 statsView.refreshCurrentView();
+            }
+        });
+        return tab;
+    }
+
+    private Tab createTodoTab() {
+        this.todoView = new TodoView(this);
+        Tab tab = new Tab("待辦事項", todoView);
+        tab.setClosable(false);
+        tab.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                todoView.refreshTodoList();
             }
         });
         return tab;
