@@ -30,6 +30,7 @@ import jfocus.ai.rules.KeywordRule;
 import jfocus.ai.rules.RuleListType;
 import jfocus.ai.rules.SqliteDistractionRuleRepository;
 import jfocus.db.DatabaseCore;
+import jfocus.main.FocusApp;
 import jfocus.settings.DistractionSettings;
 import jfocus.settings.JdbcDistractionSettingsRepository;
 import jfocus.subjects.JdbcSubjectRepository;
@@ -169,20 +170,29 @@ public class SettingsView extends VBox {
             if (nw == null) { old.setSelected(true); return; }
             modeRepo.saveMode(nw == warnBtn ? DistractionHandlingMode.WARN_USER : DistractionHandlingMode.CLOSE_DISTRACTION);
         });
+        warnBtn.disableProperty().bind(mainApp.sessionActiveProperty());
+        closeBtn.disableProperty().bind(mainApp.sessionActiveProperty());
 
         Label modeLabel = new Label("分心處理模式");
         modeLabel.getStyleClass().add("settings-toggle-label");
+        Label modeHint = new Label("專注計時中無法切換");
+        modeHint.getStyleClass().add("settings-hint-label");
+        modeHint.visibleProperty().bind(mainApp.sessionActiveProperty());
+        modeHint.managedProperty().bind(mainApp.sessionActiveProperty());
         Region modeSpacer = new Region();
         HBox.setHgrow(modeSpacer, Priority.ALWAYS);
-        HBox modeRow = new HBox(modeLabel, modeSpacer, new HBox(warnBtn, closeBtn));
-        modeRow.setAlignment(Pos.CENTER_LEFT);
+        HBox modeRow = new HBox(5, modeLabel, modeSpacer, modeHint,  new HBox(warnBtn, closeBtn));
+        modeRow.setAlignment(Pos.BOTTOM_LEFT);
 
         // ── System Notifications ──
         DistractionSettings ds = distractionSettingsRepo.loadSettings();
         ToggleSwitch notifToggle = new ToggleSwitch();
         notifToggle.setSelected(ds.systemNotificationsEnabled());
-        notifToggle.selectedProperty().addListener((obs, old, val) ->
-                distractionSettingsRepo.saveSystemNotificationsEnabled(val));
+        notifToggle.selectedProperty().addListener((obs, old, val) -> {
+            distractionSettingsRepo.saveSystemNotificationsEnabled(val);
+            if (val) FocusApp.initializeNotificationService();
+            else     FocusApp.shutdownNotificationService();
+        });
 
         Label notifLabel = new Label("系統通知");
         notifLabel.getStyleClass().add("settings-toggle-label");

@@ -101,6 +101,10 @@ public class FocusUI extends Application {
     private ImageView ballView;
     private Button normalBtn;
     private Button premiumBtn;
+    private final javafx.beans.property.BooleanProperty sessionActive =
+            new javafx.beans.property.SimpleBooleanProperty(false);
+    public javafx.beans.property.BooleanProperty sessionActiveProperty() { return sessionActive; }
+
     // 加在最上面的變數宣告區
     private TimerView timerView;
     private Canvas borderCanvas;

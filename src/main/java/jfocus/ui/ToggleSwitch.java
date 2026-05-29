@@ -51,7 +51,7 @@ public class ToggleSwitch extends StackPane {
         tt.play();
     }
 
-    public boolean isSelected()              { return selected.get(); }
-    public void setSelected(boolean val)     { selected.set(val); }
+    public boolean isSelected() { return selected.get(); }
+    public void setSelected(boolean val) { selected.set(val); }
     public BooleanProperty selectedProperty(){ return selected; }
 }

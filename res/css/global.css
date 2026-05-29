@@ -547,6 +547,18 @@
     -fx-translate-y: 0;
     -fx-opacity: 1.0;
 }
+.settings-hint-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: derive(-my-text-color, -15%);
+}
+.segment-btn:disabled {
+    -fx-opacity: 0.28;
+    -fx-cursor: default;
+}
+.segment-btn:selected:disabled {
+    -fx-opacity: 0.45;
+    -fx-cursor: default;
+}
 .toggle-switch .toggle-track {
     -fx-background-color: #555;
     -fx-background-radius: 13;
