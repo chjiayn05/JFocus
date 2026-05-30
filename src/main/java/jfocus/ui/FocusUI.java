@@ -147,7 +147,7 @@ public static class PokemonData {
         // 🌟 新增：給 GameManager 讀取稀有度的方法 (防呆預設為普通池)
         public String getRarity() { return this.rarity == null ? "STANDARD" : this.rarity; }
 
-        public String getId() { return id; }
+        public String getId() { return folderName; }
         public String getFolderName() { return folderName; }
         public String getName() { return name; }
         public List<String> getTypes() { return types; }
@@ -637,9 +637,13 @@ public static class PokemonData {
             String caughtName = "未知精靈";
             String drawnPokemonId = null;
             for (PokemonData data : pokedexList) {
-                if (data.getFolderName().equals(resultId)) {
-                    caughtName = data.getName();
-                    drawnPokemonId = data.getId();
+            if (data.getFolderName().equals(resultId)) {
+                    // 🌟 修正：使用 getStageName(1) 確保拿到的是 API 抓下來的中文「一階名稱」（如：新葉喵）
+                    // 如果用 data.getName() 有可能拿到的是當初資料夾切出來的英文大寫（如：Sprigatito）
+                    caughtName = data.getStageName(1); 
+                    
+                    // 🌟 關鍵修正：出戰與存檔 ID 強制使用獨一無二的完整資料夾名稱！
+                    drawnPokemonId = data.getFolderName(); 
                     break;
                 }
             }
