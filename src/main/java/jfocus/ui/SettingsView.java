@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -50,6 +49,7 @@ public class SettingsView extends VBox {
     private final TextField whiteInput = new TextField();
     private final TextField blackInput = new TextField();
     private final Label statusLabel = new Label("");
+    private ScrollPane scroll;
 
     public SettingsView(FocusUI mainApp) {
         this.mainApp = mainApp;
@@ -148,7 +148,7 @@ public class SettingsView extends VBox {
         VBox content = new VBox(16, buildBehaviorSection(), subjectSection, whiteSection, blackSection, buildAiSection());
         content.setPadding(new Insets(16));
 
-        ScrollPane scroll = new ScrollPane(content);
+        scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background-color: transparent;");
         getChildren().add(scroll);
@@ -274,7 +274,7 @@ public class SettingsView extends VBox {
 
         addBtn.setOnAction(e -> onAdd.run());
         editBtn.setOnAction(e -> onEdit.run());
-        deleteBtn.setOnAction(e -> onDelete.run());
+        deleteBtn.setOnAction(e -> { onDelete.run(); Platform.runLater(lv::requestFocus); });
 
         // Enter on input → 新增
         input.setOnAction(e -> onAdd.run());
@@ -379,18 +379,28 @@ public class SettingsView extends VBox {
         refreshList(RuleListType.BLACKLIST);
     }
 
+    private void withScrollLocked(Runnable action) {
+        double v = scroll != null ? scroll.getVvalue() : 0;
+        action.run();
+        if (scroll != null) Platform.runLater(() -> scroll.setVvalue(v));
+    }
+
     private void refreshSubjects() {
-        String sel = subjectList.getSelectionModel().getSelectedItem();
-        List<String> items = subjectRepo.findAll();
-        subjectList.setItems(FXCollections.observableArrayList(items));
-        if (sel != null && items.contains(sel)) subjectList.getSelectionModel().select(sel);
+        withScrollLocked(() -> {
+            String sel = subjectList.getSelectionModel().getSelectedItem();
+            List<String> items = subjectRepo.findAll();
+            subjectList.getItems().setAll(items);
+            if (sel != null && items.contains(sel)) subjectList.getSelectionModel().select(sel);
+        });
     }
 
     private void refreshList(RuleListType listType) {
-        ListView<String> lv = listType == RuleListType.WHITELIST ? whiteList : blackList;
-        String sel = lv.getSelectionModel().getSelectedItem();
-        List<String> items = ruleRepo.getRules(listType).stream().map(KeywordRule::keyword).toList();
-        lv.setItems(FXCollections.observableArrayList(items));
-        if (sel != null && items.contains(sel)) lv.getSelectionModel().select(sel);
+        withScrollLocked(() -> {
+            ListView<String> lv = listType == RuleListType.WHITELIST ? whiteList : blackList;
+            String sel = lv.getSelectionModel().getSelectedItem();
+            List<String> items = ruleRepo.getRules(listType).stream().map(KeywordRule::keyword).toList();
+            lv.getItems().setAll(items);
+            if (sel != null && items.contains(sel)) lv.getSelectionModel().select(sel);
+        });
     }
 }
