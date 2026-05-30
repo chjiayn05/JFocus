@@ -4,6 +4,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -118,7 +120,14 @@ public class FocusUI extends Application {
     // Json
     // 1. 宣告清單變數
     private List<PokemonData> pokedexList = new ArrayList<>();
-    private FlowPane pokedexFlowGrid;
+    private final Set<String> activeTypeFilters = new HashSet<>();
+    private final Map<String, VBox> pokedexCardCache = new HashMap<>();
+    private FlowPane pokedexGrid1star;
+    private FlowPane pokedexGrid2star;
+    private FlowPane pokedexGrid3star;
+    private VBox pokedexSection1;
+    private VBox pokedexSection2;
+    private VBox pokedexSection3;
 
     // 2. 建立一個內部類別來對應 JSON 資料格式 (POJO)
     // 1. 確保類別定義是這樣的 (在 FocusApp 類別內)
@@ -388,7 +397,8 @@ public static class PokemonData {
 
             for (PokemonData data : pokedexList) {
                 // 不分大小寫檢查，只要是 RARE 就丟大師池，其餘丟普通池
-                if (data.getRarity() != null && data.getRarity().trim().equalsIgnoreCase("RARE")) {
+                String r = data.getRarity() == null ? "" : data.getRarity().trim().toUpperCase();
+                if (r.equals("RARE") || r.equals("UNCOMMON")) {
                     rarePool.add(data.getFolderName());
                 } else {
                     standardPool.add(data.getFolderName());
@@ -851,6 +861,7 @@ public static class PokemonData {
             updatePokemonDisplay(data.getFolderName(), unlockedStage);
             timerView.refreshXpDisplay();
             if (img != null) timerView.updatePartnerDisplay(battleName, img);
+            pokedexCardCache.remove(data.getId());
             refreshPokedexGrid();
         });
 
@@ -888,54 +899,204 @@ public static class PokemonData {
      * 建立圖鑑分頁
      */
     private Tab createPokedexTab() {
-        ScrollPane scrollPane = new ScrollPane();
-        // 使用 FlowPane 取代 VBox，設定間距為 10
-        pokedexFlowGrid = new FlowPane(10, 10);
-        pokedexFlowGrid.setStyle("-fx-padding: 15;");
-        pokedexFlowGrid.setPrefWrapLength(450); // 這裡設定跟你的視窗寬度差不多
-        pokedexFlowGrid.setAlignment(Pos.TOP_LEFT);
+        // ── 屬性篩選列 ──
+        FlowPane typeFilterBar = new FlowPane(6, 6);
+        typeFilterBar.setPadding(new Insets(10, 15, 8, 15));
+
+        List<HBox> typeChips = new ArrayList<>();
+
+        // 「全部」chip
+        HBox clearChip = new HBox();
+        clearChip.getStyleClass().addAll("type-filter-all", "active");
+        clearChip.setPadding(new Insets(2, 6, 2, 6));
+        clearChip.setAlignment(Pos.CENTER);
+        clearChip.setCursor(Cursor.HAND);
+        Label clearLabel = new Label("全部");
+        clearLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: white;");
+        clearChip.getChildren().add(clearLabel);
+        clearChip.setOnMouseClicked(e -> {
+            activeTypeFilters.clear();
+            typeChips.forEach(c -> c.getStyleClass().remove("active"));
+            if (!clearChip.getStyleClass().contains("active"))
+                clearChip.getStyleClass().add("active");
+            refreshPokedexGrid();
+        });
+        typeFilterBar.getChildren().add(clearChip);
+
+        // 各屬性 chip（按中文名排序）
+        List<Map.Entry<String, String>> sortedTypes = new ArrayList<>(TYPE_TO_FILE.entrySet());
+        sortedTypes.sort((a, b) -> a.getKey().compareTo(b.getKey()));
+
+        for (Map.Entry<String, String> entry : sortedTypes) {
+            String typeName = entry.getKey();
+            String engName = entry.getValue();
+
+            HBox chip = new HBox();
+            chip.getStyleClass().addAll("type-tag", "type-filter-chip", engName.toLowerCase());
+            chip.setAlignment(Pos.CENTER_LEFT);
+            chip.setCursor(Cursor.HAND);
+
+            java.io.File typeFile = new java.io.File("res/pokemon_type/" + engName + "_Icon.png");
+            if (typeFile.exists()) {
+                ImageView icon = new ImageView(new Image(typeFile.toURI().toString()));
+                icon.setFitHeight(14);
+                icon.setPreserveRatio(true);
+                chip.getChildren().add(icon);
+            }
+            Label lbl = new Label(typeName);
+            lbl.setStyle("-fx-font-size: 13px; -fx-text-fill: white; -fx-font-weight: bold;");
+            chip.getChildren().add(lbl);
+
+            chip.setOnMouseClicked(e -> {
+                clearChip.getStyleClass().remove("active");
+                if (activeTypeFilters.contains(typeName)) {
+                    activeTypeFilters.remove(typeName);
+                    chip.getStyleClass().remove("active");
+                    if (activeTypeFilters.isEmpty())
+                        clearChip.getStyleClass().add("active");
+                } else {
+                    activeTypeFilters.add(typeName);
+                    chip.getStyleClass().add("active");
+                }
+                refreshPokedexGrid();
+            });
+
+            typeChips.add(chip);
+            typeFilterBar.getChildren().add(chip);
+        }
+
+        // ── 稀有度區塊 ──
+        Label header3 = new Label("★★★  傳說");
+        header3.getStyleClass().add("rarity-header-3");
+        header3.setPadding(new Insets(12, 15, 4, 15));
+        pokedexGrid3star = new FlowPane(10, 10);
+        pokedexGrid3star.setPadding(new Insets(5, 15, 10, 15));
+        pokedexGrid3star.setAlignment(Pos.TOP_LEFT);
+        pokedexSection3 = new VBox(header3, pokedexGrid3star);
+
+        Label header2 = new Label("★★  稀有");
+        header2.getStyleClass().add("rarity-header-2");
+        header2.setPadding(new Insets(12, 15, 4, 15));
+        pokedexGrid2star = new FlowPane(10, 10);
+        pokedexGrid2star.setPadding(new Insets(5, 15, 10, 15));
+        pokedexGrid2star.setAlignment(Pos.TOP_LEFT);
+        pokedexSection2 = new VBox(header2, pokedexGrid2star);
+
+        Label header1 = new Label("★  普通");
+        header1.getStyleClass().add("rarity-header-1");
+        header1.setPadding(new Insets(12, 15, 4, 15));
+        pokedexGrid1star = new FlowPane(10, 10);
+        pokedexGrid1star.setPadding(new Insets(5, 15, 10, 15));
+        pokedexGrid1star.setAlignment(Pos.TOP_LEFT);
+        pokedexSection1 = new VBox(header1, pokedexGrid1star);
+
+        VBox sectionsContainer = new VBox(pokedexSection1, pokedexSection2, pokedexSection3);
+        sectionsContainer.setPadding(new Insets(0, 0, 15, 0));
 
         refreshPokedexGrid();
 
-        scrollPane.setContent(pokedexFlowGrid);
+        ScrollPane scrollPane = new ScrollPane(sectionsContainer);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
-        return new Tab("寶可夢圖鑑", scrollPane);
+
+        javafx.scene.layout.BorderPane tabContent = new javafx.scene.layout.BorderPane();
+        tabContent.setTop(typeFilterBar);
+        tabContent.setCenter(scrollPane);
+        tabContent.setStyle("-fx-background-color: transparent;");
+
+        return new Tab("寶可夢圖鑑", tabContent);
     }
 
     void refreshPokedexGrid() {
-        if (pokedexFlowGrid == null) {
-            return;
-        }
-
-        pokedexFlowGrid.getChildren().clear();
-        pokedexFlowGrid.setAlignment(Pos.CENTER);
+        if (pokedexGrid1star == null) return;
 
         for (PokemonData data : pokedexList) {
-            int displayStage = getDisplayStageForPokemon(data.getId());
-            VBox card = createPokemonCard(data, displayStage);
-            pokedexFlowGrid.getChildren().add(card);
+            VBox card = pokedexCardCache.get(data.getId());
+
+            if (card == null) {
+                int displayStage = getDisplayStageForPokemon(data.getId());
+                card = createPokemonCard(data, displayStage);
+                pokedexCardCache.put(data.getId(), card);
+
+                // 找對應 grid，有舊卡就 replace（cache invalidate 後），否則 add（第一次）
+                String rarity = data.getRarity().toUpperCase();
+                FlowPane targetGrid = "RARE".equals(rarity) ? pokedexGrid3star
+                        : "UNCOMMON".equals(rarity) ? pokedexGrid2star : pokedexGrid1star;
+                boolean replaced = false;
+                for (int i = 0; i < targetGrid.getChildren().size(); i++) {
+                    if (data.getId().equals(targetGrid.getChildren().get(i).getUserData())) {
+                        targetGrid.getChildren().set(i, card);
+                        replaced = true;
+                        break;
+                    }
+                }
+                if (!replaced) targetGrid.getChildren().add(card);
+            }
+
+            // 篩選只切 visible/managed，不重建
+            boolean show = activeTypeFilters.isEmpty();
+            if (!show) {
+                for (String t : data.getTypes()) {
+                    if (activeTypeFilters.contains(t.trim())) { show = true; break; }
+                }
+            }
+            card.setVisible(show);
+            card.setManaged(show);
+        }
+
+        boolean has3 = false, has2 = false, has1 = false;
+        for (javafx.scene.Node n : pokedexGrid3star.getChildren()) if (n.isManaged()) { has3 = true; break; }
+        for (javafx.scene.Node n : pokedexGrid2star.getChildren()) if (n.isManaged()) { has2 = true; break; }
+        for (javafx.scene.Node n : pokedexGrid1star.getChildren()) if (n.isManaged()) { has1 = true; break; }
+        pokedexSection3.setVisible(has3); pokedexSection3.setManaged(has3);
+        pokedexSection2.setVisible(has2); pokedexSection2.setManaged(has2);
+        pokedexSection1.setVisible(has1); pokedexSection1.setManaged(has1);
+
+        // 同步 active-partner 高亮（快取卡片不重建，直接更新 class）
+        String currentId = gameManager.getCurrentPokemonId();
+        for (Map.Entry<String, VBox> entry : pokedexCardCache.entrySet()) {
+            VBox card = entry.getValue();
+            if (entry.getKey().equals(currentId)) {
+                if (!card.getStyleClass().contains("active-partner"))
+                    card.getStyleClass().add("active-partner");
+            } else {
+                card.getStyleClass().remove("active-partner");
+            }
         }
     }
 
-    // FocusUI.java 裡面的 createPokemonCard 方法
-
     void refreshPokedexGrid(String pokemonId) {
-        if (pokedexFlowGrid == null) return;
+        if (pokedexGrid1star == null) return;
         PokemonData target = null;
         for (PokemonData d : pokedexList) {
             if (d.getId().equals(pokemonId)) { target = d; break; }
         }
         if (target == null) return;
+
+        // 快取失效，重建這一張
         int displayStage = getDisplayStageForPokemon(target.getId());
         VBox newCard = createPokemonCard(target, displayStage);
-        for (int i = 0; i < pokedexFlowGrid.getChildren().size(); i++) {
-            if (pokemonId.equals(pokedexFlowGrid.getChildren().get(i).getUserData())) {
-                pokedexFlowGrid.getChildren().set(i, newCard);
-                return;
+        pokedexCardCache.put(pokemonId, newCard);
+
+        // 套用目前篩選狀態
+        boolean show = activeTypeFilters.isEmpty();
+        if (!show) {
+            for (String t : target.getTypes()) {
+                if (activeTypeFilters.contains(t.trim())) { show = true; break; }
             }
         }
-        // 找不到舊卡（理論上不會），退回全量刷新
+        newCard.setVisible(show);
+        newCard.setManaged(show);
+
+        // 替換對應 grid 裡的舊卡
+        for (FlowPane grid : new FlowPane[]{pokedexGrid1star, pokedexGrid2star, pokedexGrid3star}) {
+            for (int i = 0; i < grid.getChildren().size(); i++) {
+                if (pokemonId.equals(grid.getChildren().get(i).getUserData())) {
+                    grid.getChildren().set(i, newCard);
+                    return;
+                }
+            }
+        }
         refreshPokedexGrid();
     }
 
@@ -1177,6 +1338,7 @@ public static class PokemonData {
             updatePokemonDisplay(data.getFolderName(), s);
             timerView.refreshXpDisplay();
             this.timerView.updatePartnerDisplay(battleName, bigView.getImage());
+            pokedexCardCache.remove(data.getId());
             refreshPokedexGrid();
             detailStage.close();
         });

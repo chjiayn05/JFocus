@@ -618,7 +618,7 @@
 
 
 .settings-card {
-    -fx-background-color: derive(-my-heatmap-1, -5%);
+    -fx-background-color: derive(-my-setting-list, -5%);
     -fx-background-radius: 8;
     -fx-padding: 12;
     -fx-effect: dropshadow(gaussian, -my-stats-card-shadow-color, 5, 0, 0, 2);
@@ -635,7 +635,7 @@
 }
 .settings-list {
     -fx-pref-height: 212;
-    -fx-background-color: derive(-my-heatmap-2, -20%);
+    -fx-background-color: derive(-my-setting-list-cell, -20%);
     -fx-background-insets: 0;
     -fx-border-color: -my-border-color;
     -fx-border-radius: 8;
@@ -643,8 +643,8 @@
     -fx-background-radius: 8;
 }
 .settings-list .list-cell {
-    -fx-background-color: derive(-my-heatmap-2, -10%);
-    -fx-text-fill: -my-text-color;
+    -fx-background-color: derive(-my-setting-list-cell, -10%);
+    -fx-text-fill: #ffffff;
     -fx-font-size: 14px;
     -fx-padding: 4 10;
     -fx-cursor: hand;
@@ -653,15 +653,25 @@
     -fx-border-width: 0;
 }
 .settings-list .list-cell:odd {
-    -fx-background-color: derive(-my-heatmap-2, -25%);
+    -fx-background-color: derive(-my-setting-list-cell, -25%);
+}
+.settings-list .list-cell:hover {
+    -fx-background-color: derive(-my-setting-list-cell, 10%);
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 7, 5;
+}
+.settings-list .list-cell:odd:hover {
+    -fx-background-color: derive(-my-setting-list-cell, 5%);
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 7, 5;
 }
 .settings-list .list-cell:selected {
-    -fx-background-color: -my-border-color, derive(-my-btn-primary-color, -10%);
+    -fx-background-color: -my-border-color, derive(-my-btn-primary-color, -15%);
     -fx-background-insets: 0, 1.5;
     -fx-background-radius: 7, 5;
 }
 .settings-list .list-cell:selected:hover {
-    -fx-background-color: -my-border-color, -my-btn-primary-hover-color;
+    -fx-background-color: -my-border-color, derive(-my-btn-primary-color, 5%);
     -fx-background-insets: 0, 1.5;
     -fx-background-radius: 7, 5;
 }
@@ -671,7 +681,7 @@
     -fx-font-size: 18px;
 }
 .segment-btn {
-    -fx-background-color: derive(-my-heatmap-2, -10%);
+    -fx-background-color: derive(-my-setting-list-cell, -10%);
     -fx-text-fill: -my-text-color;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
@@ -692,15 +702,15 @@
     -fx-border-radius: 0 8 8 0;
 }
 .segment-btn:selected {
-    -fx-background-color: derive(-my-heatmap-2, 35%);
+    -fx-background-color: derive(-my-setting-list-cell, 35%);
     -fx-opacity: 1.0;
+    -fx-cursor: default;
 }
 .segment-btn:hover {
     -fx-translate-y: 0;
     -fx-opacity: 0.75;
 }
 .segment-btn:selected:hover {
-    -fx-background-color: derive(-my-heatmap-2, 45%);
     -fx-translate-y: 0;
     -fx-opacity: 1.0;
 }
@@ -733,12 +743,67 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 4, 0, 0, 1);
 }
 .settings-list-row-even {
-    -fx-background-color: derive(-my-heatmap-2, -10%);
+    -fx-background-color: derive(-my-setting-list-cell, -10%);
     -fx-background-radius: 6;
     -fx-background-insets: 1;
 }
 .settings-list-row-odd {
-    -fx-background-color: derive(-my-heatmap-2, -25%);
+    -fx-background-color: derive(-my-setting-list-cell, -25%);
     -fx-background-radius: 6;
     -fx-background-insets: 1;
+}
+
+/* ── 圖鑑屬性篩選 ── */
+.type-filter-chip {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-opacity: 0.5;
+    -fx-border-width: 1;
+    -fx-border-color: transparent;
+}
+/* 覆蓋 .type-tag { -fx-padding: 4 8 } — 需要雙 class specificity 才贏 */
+.type-tag.type-filter-chip {
+    -fx-padding: 3 6 3 1;
+}
+.type-filter-chip.active {
+    -fx-opacity: 1.0;
+    -fx-border-color: white;
+}
+.type-filter-chip:hover {
+    -fx-opacity: 0.8;
+}
+
+.type-filter-all {
+    -fx-background-color: -my-btn-primary-color;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-cursor: hand;
+    -fx-opacity: 0.5;
+    -fx-border-width: 1;
+    -fx-border-color: transparent;
+}
+.type-filter-all.active {
+    -fx-opacity: 1.0;
+    -fx-border-color: white;
+}
+.type-filter-all:hover {
+    -fx-opacity: 0.8;
+}
+
+/* ── 圖鑑稀有度標題 ── */
+.rarity-header-3 {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd700;
+}
+.rarity-header-2 {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8ea9cd;
+}
+.rarity-header-1 {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -my-label-text-color;
 }

@@ -145,6 +145,7 @@ public class DatabaseCore {
             );
             """;
 
+        boolean isNewDb = isNewDatabase();
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
             stmt.execute("PRAGMA journal_mode=WAL");
@@ -158,7 +159,7 @@ public class DatabaseCore {
             stmt.execute(focusSessionsTableSql);
             stmt.execute(pokemonSelectedStageTableSql);
             stmt.execute(subjectsTableSql);
-            seedDefaultSubjects(conn);
+            if (isNewDb) seedDefaultSubjects(conn);
 
             // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");
@@ -305,6 +306,13 @@ public class DatabaseCore {
         }
 
         return columns;
+    }
+
+    private boolean isNewDatabase() {
+        if (!url.startsWith("jdbc:sqlite:")) return true;
+        String dbPath = url.substring("jdbc:sqlite:".length());
+        if (dbPath.isBlank() || dbPath.equals(":memory:") || dbPath.startsWith("file:")) return true;
+        return !Path.of(dbPath).toAbsolutePath().normalize().toFile().exists();
     }
 
     private void seedDefaultSubjects(Connection conn) throws SQLException {
