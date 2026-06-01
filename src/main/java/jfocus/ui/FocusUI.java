@@ -452,29 +452,6 @@ public static class PokemonData {
 
         this.timerView = new TimerView(this.gameManager, this);
 
-        // 👇 【新增這段：開機喚醒寶可夢！】
-        // 取得當前出戰夥伴的 ID
-        String currentPartnerId = gameManager.getCurrentPokemonId();
-
-        // 如果有存檔，就去圖鑑列表 (pokedexList) 找這隻寶可夢的資料
-        if (currentPartnerId != null && !currentPartnerId.isEmpty()) {
-            for (PokemonData data : pokedexList) {
-                if (data.getId().equals(currentPartnerId)) {
-                    int displayStage = this.currentStage > 0
-                            ? this.currentStage
-                            : getDisplayStageForPokemon(data.getId());
-                    String partnerName = data.getStageName(displayStage);
-                    String imgPath = "res/pokemon/" + data.getFolderName() + "/stage" + displayStage + ".png";
-                    java.io.File imgFile = new java.io.File(imgPath);
-                    if (imgFile.exists()) {
-                        javafx.scene.image.Image initImage = new javafx.scene.image.Image(imgFile.toURI().toString());
-                        this.timerView.updatePartnerDisplay(partnerName, initImage);
-                    }
-                    break;
-                }
-            }
-        }
-
         tab.setContent(this.timerView);
         return tab;
     }
@@ -492,12 +469,14 @@ public static class PokemonData {
         // 還原上次使用的角色與出戰狀態
         String savedPartnerId = gameManager.getCurrentPokemonId();
         if (savedPartnerId != null) {
-            for (PokemonData data : pokedexList) {
-                if (savedPartnerId.equals(data.getId())) {
-                    this.currentPokemonFolder = data.getFolderName();
-                    this.currentStage = selectedStageMap.getOrDefault(
-                        savedPartnerId, gameManager.getEvolutionStage(savedPartnerId));
-                    break;
+            PokemonData savedData = getPokemonDataById(savedPartnerId);
+            if (savedData != null) {
+                this.currentPokemonFolder = savedData.getFolderName();
+                this.currentStage = selectedStageMap.getOrDefault(
+                    savedData.getFolderName(), gameManager.getEvolutionStage(savedData.getFolderName()));
+                // migrate legacy numeric ID to full folder name
+                if (!savedPartnerId.equals(savedData.getFolderName())) {
+                    gameManager.setCurrentPokemonId(savedData.getFolderName());
                 }
             }
         }
@@ -647,7 +626,7 @@ public static class PokemonData {
             String caughtName = "未知精靈";
             String drawnPokemonId = null;
             for (PokemonData data : pokedexList) {
-            if (data.getFolderName().equals(resultId)) {
+                if (data.getFolderName().equals(resultId)) {
                     // 🌟 修正：使用 getStageName(1) 確保拿到的是 API 抓下來的中文「一階名稱」（如：新葉喵）
                     // 如果用 data.getName() 有可能拿到的是當初資料夾切出來的英文大寫（如：Sprigatito）
                     caughtName = data.getStageName(1); 
@@ -679,15 +658,22 @@ public static class PokemonData {
                         timerView.refreshXpDisplay();
                         new Thread(this::saveUserProgressSafely).start();
                     });
+                    // 4. 動畫啟動前只更新輕量 UI
+                    if (gameManager.isLastDrawDuplicate()) {
+                        String dupMsg = "MASTERBALL".equals(drawType)
+                                ? "抽到重複神獸: " + finalCaughtName + " ！已返還 1 顆大師晶石！"
+                                : "抽到重複精靈: " + finalCaughtName + " ！已返還 160 專注幣！";
+                        gachaMessageLabel.setText(dupMsg);
+                        gachaMessageLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
+                    } else {
+                        gachaMessageLabel.setText("恭喜！收服了: " + finalCaughtName + " !");
+                        gachaMessageLabel.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
+                    }
                     settle.play();
                 });
                 ballShrink.play();
             });
             ballExpand.play();
-
-            // 4. 動畫啟動前只更新輕量 UI
-            gachaMessageLabel.setText("恭喜！收服了：" + finalCaughtName + "！");
-            gachaMessageLabel.setStyle("-fx-text-fill: #2ecc71; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 10 20;");
 
             startBorderCountdown(3.5);
             PauseTransition delay = new PauseTransition(Duration.seconds(3.5));
@@ -697,7 +683,7 @@ public static class PokemonData {
                 ballExpandBack.setToY(0);
                 ballExpandBack.setOnFinished(e3 -> {
                     ScaleTransition settleBack = new ScaleTransition(javafx.util.Duration.millis(200), ballView);
-                    ballView.setImage(new Image("file:res/pokemon/000_ball.png"));
+                    ballView.setImage(new Image("MASTERBALL".equals(drawType) ? "file:res/pokemon/000_masterball.png" : "file:res/pokemon/000_ball.png"));
                     settleBack.setToX(1.0);
                     settleBack.setToY(1.0);
                     settleBack.play();
@@ -797,6 +783,10 @@ public static class PokemonData {
         if (pokemonId == null) return null;
         for (PokemonData d : pokedexList) {
             if (pokemonId.equals(d.getId())) return d;
+        }
+        // fallback: legacy numeric-only ID (e.g. "004" → "004_charmander")
+        for (PokemonData d : pokedexList) {
+            if (d.getFolderName().startsWith(pokemonId + "_")) return d;
         }
         return null;
     }
@@ -970,13 +960,13 @@ public static class PokemonData {
         }
 
         // ── 稀有度區塊 ──
-        Label header3 = new Label("★★★  傳說");
-        header3.getStyleClass().add("rarity-header-3");
-        header3.setPadding(new Insets(12, 15, 4, 15));
-        pokedexGrid3star = new FlowPane(10, 10);
-        pokedexGrid3star.setPadding(new Insets(5, 15, 10, 15));
-        pokedexGrid3star.setAlignment(Pos.TOP_LEFT);
-        pokedexSection3 = new VBox(header3, pokedexGrid3star);
+        Label header1 = new Label("★  普通");
+        header1.getStyleClass().add("rarity-header-1");
+        header1.setPadding(new Insets(12, 15, 4, 15));
+        pokedexGrid1star = new FlowPane(10, 10);
+        pokedexGrid1star.setPadding(new Insets(5, 15, 10, 15));
+        pokedexGrid1star.setAlignment(Pos.TOP_LEFT);
+        pokedexSection1 = new VBox(header1, pokedexGrid1star);
 
         Label header2 = new Label("★★  稀有");
         header2.getStyleClass().add("rarity-header-2");
@@ -986,13 +976,13 @@ public static class PokemonData {
         pokedexGrid2star.setAlignment(Pos.TOP_LEFT);
         pokedexSection2 = new VBox(header2, pokedexGrid2star);
 
-        Label header1 = new Label("★  普通");
-        header1.getStyleClass().add("rarity-header-1");
-        header1.setPadding(new Insets(12, 15, 4, 15));
-        pokedexGrid1star = new FlowPane(10, 10);
-        pokedexGrid1star.setPadding(new Insets(5, 15, 10, 15));
-        pokedexGrid1star.setAlignment(Pos.TOP_LEFT);
-        pokedexSection1 = new VBox(header1, pokedexGrid1star);
+        Label header3 = new Label("★★★  傳說");
+        header3.getStyleClass().add("rarity-header-3");
+        header3.setPadding(new Insets(12, 15, 4, 15));
+        pokedexGrid3star = new FlowPane(10, 10);
+        pokedexGrid3star.setPadding(new Insets(5, 15, 10, 15));
+        pokedexGrid3star.setAlignment(Pos.TOP_LEFT);
+        pokedexSection3 = new VBox(header3, pokedexGrid3star);
 
         VBox sectionsContainer = new VBox(pokedexSection1, pokedexSection2, pokedexSection3);
         sectionsContainer.setPadding(new Insets(0, 0, 15, 0));

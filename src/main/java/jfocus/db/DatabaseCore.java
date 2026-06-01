@@ -79,7 +79,7 @@ public class DatabaseCore {
                 coins INTEGER NOT NULL DEFAULT 0,
                 stones INTEGER NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL DEFAULT 0,
-                partner_id TEXT NOT NULL DEFAULT '004'
+                partner_id TEXT NOT NULL DEFAULT '004_charmander'
             );
             """;
 

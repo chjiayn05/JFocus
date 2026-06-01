@@ -20,7 +20,7 @@ import jfocus.db.StorageException;
 public final class UserData {
     private static final Pattern STAGE_KEY_PATTERN = Pattern.compile("\\d{3}_[1-3]");
     private static final Pattern POKEMON_ID_PATTERN = Pattern.compile("\\d{3}");
-    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_1", "004_1", "007_1");
+    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_bulbasaur", "004_charmander", "007_squirtle");
 
     private UserData() {
         // Utility class
@@ -103,7 +103,7 @@ public final class UserData {
         } catch (SQLException e) {
             System.err.println("讀取夥伴 ID 失敗，使用預設值。");
         }
-        return "004"; // 找不到就給預設值小火龍
+        return "004_charmander"; // 找不到就給預設值小火龍
     }
 
     /**

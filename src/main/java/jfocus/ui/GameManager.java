@@ -110,7 +110,7 @@ public class GameManager {
             }
         }
 
-// 🛡️ 二度防呆：如果抽到的池子是空的，強制降級
+        // 🛡️ 二度防呆：如果抽到的池子是空的，強制降級
         if (selectedPool == null || selectedPool.isEmpty()) {
             selectedPool = STANDARD_POOL;
         }

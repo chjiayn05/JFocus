@@ -185,13 +185,20 @@ public class TimerView extends VBox implements FocusListener {
         pokemonImageView.setFitWidth(200);
         pokemonImageView.setPreserveRatio(true);
 
-        try {
-            java.io.File defaultImg = new java.io.File("res/pokemon/000_masterball.png"); // 隨便放一張問號或精靈球的圖
-            if(defaultImg.exists()) {
-                pokemonImageView.setImage(new javafx.scene.image.Image(defaultImg.toURI().toString()));
+        String initPartnerId = this.gameManager.getCurrentPokemonId();
+        if (initPartnerId != null && !initPartnerId.isEmpty()) {
+            FocusUI.PokemonData initData = this.focusUI.getPokemonDataById(initPartnerId);
+            if (initData != null) {
+                int initStage = focusUI.getCurrentPokemonStage() > 0
+                        ? focusUI.getCurrentPokemonStage()
+                        : this.gameManager.getEvolutionStage(initPartnerId);
+                java.io.File initFile = new java.io.File(
+                        "res/pokemon/" + initData.getFolderName() + "/stage" + initStage + ".png");
+                if (initFile.exists()) {
+                    pokemonImageView.setImage(new javafx.scene.image.Image(initFile.toURI().toString()));
+                    this.currentPartnerName = initData.getStageName(initStage);
+                }
             }
-        } catch (Exception e) {
-            System.out.println("找不到預設圖片");
         }
 
         xpBar = new ProgressBar(0);
