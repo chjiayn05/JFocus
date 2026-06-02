@@ -36,7 +36,12 @@ public final class BrowserTitleCleaner {
             "new tab",
             "首頁",
             "home",
-            "起始頁面");
+            "起始頁面",
+            "音訊播放中",
+            "audio is playing",
+            "playing audio",
+            "音訊",
+            "播放中");
 
     private BrowserTitleCleaner() {
     }

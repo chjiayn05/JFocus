@@ -79,7 +79,7 @@ public class DatabaseCore {
                 coins INTEGER NOT NULL DEFAULT 0,
                 stones INTEGER NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL DEFAULT 0,
-                partner_id TEXT NOT NULL DEFAULT '004_charmander'
+                partner_id TEXT NOT NULL DEFAULT '004_charmander_1'
             );
             """;
 
@@ -160,6 +160,7 @@ public class DatabaseCore {
             stmt.execute(pokemonSelectedStageTableSql);
             stmt.execute(subjectsTableSql);
             if (isNewDb) seedDefaultSubjects(conn);
+            seedDefaultBlacklistRules(conn);
 
             // 若舊資料庫缺少 partner_id 欄位，初始化時補齊。
             ensureColumnExists(conn, "player_stats", "partner_id", "TEXT NOT NULL DEFAULT '004'");
@@ -313,6 +314,32 @@ public class DatabaseCore {
         String dbPath = url.substring("jdbc:sqlite:".length());
         if (dbPath.isBlank() || dbPath.equals(":memory:") || dbPath.startsWith("file:")) return true;
         return !Path.of(dbPath).toAbsolutePath().normalize().toFile().exists();
+    }
+
+    private void seedDefaultBlacklistRules(Connection conn) throws SQLException {
+        String[] keywords = {
+            // 影音串流 app
+            "netflix", "disney+", "disney plus", "hbo go", "hbo max",
+            // 台灣串流平台
+            "kktv", "litv", "catchplay", "myvideo", "friday影音", "friday video",
+            "line tv", "linetv", "viu",
+            // 愛爾達電視
+            "elta.tv", "elta tv",
+            // 國際平台
+            "hulu", "prime video", "apple tv", "crunchyroll",
+            // 動漫/影片平台
+            "bilibili", "b站",
+            // 直播平台
+            "twitch"
+        };
+        String sql = "INSERT OR IGNORE INTO distraction_rules(list_type, keyword) VALUES('BLACKLIST', ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (String keyword : keywords) {
+                ps.setString(1, keyword);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 
     private void seedDefaultSubjects(Connection conn) throws SQLException {

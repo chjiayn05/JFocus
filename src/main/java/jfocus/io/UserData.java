@@ -20,7 +20,7 @@ import jfocus.db.StorageException;
 public final class UserData {
     private static final Pattern STAGE_KEY_PATTERN = Pattern.compile("\\d{3}_[1-3]");
     private static final Pattern POKEMON_ID_PATTERN = Pattern.compile("\\d{3}");
-    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_bulbasaur", "004_charmander", "007_squirtle");
+    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_bulbasaur_1", "004_charmander_1", "007_squirtle_1");
 
     private UserData() {
         // Utility class

@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import jfocus.activity.ActivityRecord;
@@ -94,6 +96,7 @@ public class ExportData {
         int skipped = 0;
         Path outputPath = validateAndGetOutputPath(filePath);
         createParentDirectories(outputPath);
+        Set<String> seenLines = new HashSet<>();
 
         try (BufferedWriter writer = Files.newBufferedWriter(
                 outputPath,
@@ -111,7 +114,7 @@ public class ExportData {
                     processed++;
                     String line = toTrainingLine(activity);
                     currentMaxId = activity.id();
-                    if (line.isEmpty()) {
+                    if (line.isEmpty() || !seenLines.add(line)) {
                         skipped++;
                         continue;
                     }

@@ -3887,3 +3887,508 @@ PLAY 棒球精彩好球 精華
 STUDY environmental planning guide exam review
 PLAY 綜藝節目全集 funny moments
 PLAY heavy metal rock music relaxing video complete guide
+PLAY 遊戲實況 精華片段
+PLAY 電玩直播 精彩時刻
+PLAY 實況主 遊戲挑戰
+PLAY 速通挑戰 最速記錄
+PLAY 開箱抽卡 期待抽到
+PLAY 扭蛋開箱 限定角色
+PLAY 動漫剪輯 燃燒名場面
+PLAY 動漫推薦 必看十部
+PLAY 動漫 op ed 排行榜
+PLAY 劇情解析 結局討論
+PLAY 韓劇推薦 愛情故事
+PLAY 台劇 偶像劇 戀愛
+PLAY 美食探店 隱藏版美食
+PLAY 料理實況 今天吃什麼
+PLAY 吃播 大胃王挑戰
+PLAY 旅遊 vlog 東京自由行
+PLAY 跟我去旅行 首爾四天三夜
+PLAY 環島記錄 台灣美景
+PLAY 搞笑剪輯 失誤合集
+PLAY 整人惡作劇 朋友反應
+PLAY 迷因精華 本週爆笑
+PLAY 舞蹈翻跳 cover 挑戰
+PLAY kpop 舞蹈教學 跟跳
+PLAY 偶像 fancam 應援
+PLAY 演唱會精華 現場版
+PLAY 歌曲 ost 推薦排行
+PLAY 體育賽事精華 本週
+PLAY 籃球 nba 精彩灌籃
+PLAY 棒球 精彩好球 全壘打
+PLAY 足球 精華 進球
+PLAY 電競賽事 直播精華
+PLAY lol 精華 pentakill
+PLAY lck 賽事回顧 精華
+PLAY 寶可夢 對戰 ranked
+PLAY 原神 抽卡 新角色
+PLAY 原神 劇情 任務
+PLAY 崩壞 新角色 試玩
+PLAY minecraft 生存 建築
+PLAY minecraft 整人 伏擊
+PLAY gta 搞笑 任務
+PLAY 恐怖遊戲 嚇到尖叫
+PLAY 脫口秀 笑點 精華
+PLAY 綜藝節目 片段 笑翻
+PLAY 真人秀 戀愛島 觀察
+PLAY 怪奇物語 追劇紀錄
+PLAY netflix 新劇 強烈推薦
+PLAY 宮崎駿 電影 重看
+PLAY 漫威 電影 彩蛋解析
+PLAY 影評 爆米花電影
+PLAY 拆解名場面 細節分析
+PLAY 台灣街頭 採訪 路人
+PLAY 日本街拍 潮流穿搭
+PLAY 寵物影片 貓咪可愛
+PLAY 狗狗日常 汪星人
+PLAY 動物搞笑合集 精選
+PLAY 健身挑戰 30天變化
+PLAY 化妝教學 仿妝挑戰
+PLAY 開架彩妝 試用推薦
+PLAY 穿搭分享 今日outfit
+PLAY 購物分享 戰利品開箱
+PLAY 新手遊 試玩 第一印象
+PLAY 手遊 reroll 最強陣容
+PLAY 直播精華 哭笑不得
+PLAY 主播精華 本週名場面
+PLAY 說書 歷史趣聞 冷知識
+PLAY 科普娛樂 奇怪知識
+PLAY 都市傳說 怪談 深夜
+PLAY 恐怖故事 睡前別看
+PLAY 解謎遊戲 攻略 通關
+PLAY 密室逃脫 實境挑戰
+PLAY 卡牌遊戲 決鬥 精華
+PLAY 桌遊 派對 爆笑
+PLAY 看我玩 黑魂 受苦
+PLAY elden ring 初見 boss
+PLAY 艾爾登法環 攻略 打法
+PLAY 對馬幽魂 劇情 感動
+PLAY 最終幻想 七重製版 感想
+PLAY 賽博龐克 結局 劇情
+PLAY 火焰紋章 劇情 討論
+PLAY 動森 島嶼設計 分享
+PLAY 角色扮演 劇情 討論
+PLAY 機器人大戰 精彩對決
+PLAY 格鬥遊戲 combo 練習
+PLAY 音樂遊戲 高難度 fc
+PLAY 節奏遊戲 全連 全破
+PLAY 精彩比賽 回顧 重看
+PLAY 世界盃 精華 進球集錦
+PLAY 奧運 精彩 時刻
+PLAY 搖滾音樂 現場表演
+PLAY 獨立音樂 推薦 清單
+PLAY 輕音樂 放鬆 睡前
+PLAY lo-fi hip hop 讀書配樂
+PLAY 高清 mv 官方版
+PLAY 翻唱 vocal cover 好聽
+PLAY 街頭藝人 表演 感動
+PLAY 即興表演 驚喜路人
+PLAY 台灣 夜市 美食地圖
+PLAY 韓國 便利商店 購物
+PLAY 日本 百元店 開箱
+PLAY 超市購物 好物分享
+PLAY 零食評測 試吃反應
+PLAY 辣度挑戰 最辣泡麵
+PLAY 料理競賽 廚藝大比拼
+PLAY 家常菜 快速食譜 懶人
+PLAY 甜點製作 超萌造型
+PLAY 咖啡廳探訪 網美打卡
+PLAY 旅行 日記 vlog
+PLAY 背包客 窮遊 歐洲
+PLAY 打工度假 紐西蘭 生活
+PLAY 留學生活 日本 分享
+PLAY 宿舍 房間 改造
+PLAY 極限運動 跳傘 衝浪
+PLAY 登山 百岳 記錄
+PLAY 滑雪 初學者 摔倒
+PLAY 騎腳踏車 環島 挑戰
+PLAY 釣魚 大魚 收獲
+PLAY 老頻道 回顧 這些年
+PLAY 百萬訂閱 感謝 特別企劃
+PLAY 年終 回顧 精華集
+PLAY 挑戰三十天 成果分享
+PLAY 一週 吃遍 台北
+PLAY 一天花一萬 挑戰
+PLAY 連續 只吃 麥當勞
+PLAY 素顏挑戰 一週
+PLAY 黑暗料理 能吃嗎
+PLAY 仿製 名店料理 成功了
+PLAY 高難度食譜 失敗重來
+PLAY 快問快答 粉絲提問
+PLAY 與粉絲 連線 聊天
+PLAY 直播 Q&A 聊天室互動
+PLAY 開台 新遊戲 首播
+PLAY 跑團 TRPG 劇情精華
+PLAY 狼人殺 遊戲 實況
+PLAY lol 新賽季 排位上分
+PLAY apex 戰績 精華
+PLAY valorant 連殺 highlight
+PLAY overwatch 搞笑 失誤
+PLAY 槍戰遊戲 高手操作
+PLAY 大逃殺 吃雞 精華
+PLAY 模擬城市 都市建設
+PLAY 文明帝國 征服世界
+PLAY 星露谷 農場 生活
+PLAY 牧場物語 戀愛 結婚
+PLAY 哈利波特 魔法覺醒 遊戲
+PLAY pokemon go 抓寶 活動
+PLAY 王者榮耀 精彩 操作
+PLAY 傳說對決 高分局
+PLAY 第五人格 監管者 玩法
+PLAY 明日方舟 新活動 通關
+PLAY 少女前線 劇情 回顧
+PLAY 蔚藍檔案 故事 感動
+PLAY 碧藍航線 新船 介紹
+PLAY fgo 活動 農場
+PLAY 遊戲角色 cos 還原
+PLAY acg 同好 分享 討論
+PLAY 動漫 神作 我哭了
+PLAY 進擊的巨人 結局 感想
+PLAY 鬼滅之刃 劇場版 觀後感
+PLAY 咒術迴戰 打鬥 燃燒
+PLAY 鏈鋸人 名場面 剪輯
+PLAY spy family 可愛 日常
+PLAY 葬送的芙莉蓮 旅程
+PLAY 勝利女神 nikke 劇情
+PLAY 賽馬娘 育成 攻略
+STUDY react hooks tutorial
+STUDY python 基础教程
+STUDY mdn web docs css grid
+STUDY leetcode two sum python
+STUDY github my-project main
+STUDY vs code terminal bash
+STUDY java spring boot tutorial
+STUDY stack overflow async await
+STUDY docker compose up
+STUDY udemy complete python bootcamp
+STUDY 力扣 算法入门
+STUDY vue.js documentation
+STUDY system design interview primer
+STUDY git log one line
+STUDY intellij idea app.java
+STUDY machine learning
+STUDY calculus problem set
+STUDY 微积分期末复习
+STUDY linear algebra concepts
+STUDY 线性代数习题
+STUDY statistics homework help
+STUDY 概率论与数理统计
+STUDY physics lecture notes
+STUDY 物理学导论学习
+STUDY quantum mechanics reading
+STUDY 力学基础练习
+STUDY organic chemistry reactions
+STUDY 普通化学复习资料
+STUDY biochemistry pathways study
+STUDY 化学实验报告
+STUDY cell biology textbook
+STUDY 生物学导论
+PLAY league of legends client
+PLAY minecraft 1.20.4 java edition
+PLAY valorant vanguard
+PLAY 原神
+PLAY elden ring
+PLAY twitch shroud live
+PLAY bilibili 王者荣耀 直播
+PLAY fextralife elden ring wiki
+PLAY genshin impact wishes
+PLAY pokemon scarlet and violet
+PLAY clash of clans
+PLAY mobile legends bang bang
+PLAY honkai star rail
+PLAY youtube lol worlds 2023
+PLAY kpop 新歌 reaction
+PLAY 我的首爾旅行日記
+PLAY 大胃王挑戰吃播
+PLAY cooking for my boyfriend
+PLAY 爆笑整蠱挑戰
+PLAY trying korean street food
+PLAY 日本旅行vlog part 1
+PLAY my daily morning routine
+PLAY 古裝劇名場面解析
+PLAY cpop mv reaction time
+PLAY 挑戰24小時不睡覺
+PLAY what i eat in a day
+PLAY 電影值得看
+PLAY explore feed
+PLAY new reels for you
+PLAY friend's story update
+PLAY 看限時動態
+PLAY 熱門貼文推薦
+PLAY instagram explore
+PLAY ig 訊息
+PLAY swipe up for more
+PLAY discover new creators
+PLAY ig 探索頁面
+PLAY trending now for you
+PLAY latest tweets
+PLAY reply to thread
+PLAY x 貼文瀏覽
+PLAY 熱門話題
+PLAY twitter timeline
+PLAY 關注的推文
+PLAY read replies
+PLAY explore x posts
+PLAY search twitter
+PLAY facebook feed
+PLAY marketplace deals
+PLAY watch recommendations
+PLAY 臉書動態消息
+PLAY 社團貼文
+PLAY facebook groups
+PLAY messenger chat
+PLAY 朋友的動態
+PLAY fb 直播
+PLAY memories on facebook
+PLAY for you page
+PLAY 抖音推薦
+PLAY viral dance challenge
+PLAY 看短片
+PLAY 抖內直播中
+PLAY tiktok fyp
+PLAY 抖音熱門
+PLAY watch short videos
+PLAY following feed
+PLAY 搞笑短片
+PLAY youtube shorts feed
+PLAY comedy shorts
+PLAY 短影音推薦
+PLAY yt short clips
+PLAY gaming shorts
+PLAY music shorts
+PLAY 更多短片
+STUDY deep learning survey
+STUDY python asyncio tutorial
+STUDY 古代罗马历史
+STUDY mdn web apis
+STUDY reinforcement learning fundamentals
+STUDY ted talk innovation future
+STUDY 量子计算进展
+STUDY javascript closure scope
+STUDY khan academy calculus
+STUDY aws solutions architect study
+STUDY natural language processing review
+STUDY 气候变化原因
+STUDY java stream api guide
+STUDY hardcore history podcast
+STUDY react hook lifecycle
+STUDY 博士论文阅读
+STUDY evolutionary biology concepts
+STUDY sql join types explained
+PLAY my daily music playlist
+PLAY lofi hip hop beats
+PLAY 新歌推荐 discover
+PLAY billboard top 100
+PLAY 演唱会 live stream
+PLAY 华语 pop hits
+PLAY chill study music
+PLAY k-pop mv compilation
+PLAY 我的 workout songs
+PLAY 独立音乐人 playlist
+PLAY relaxing jazz radio
+PLAY 今日音乐榜单
+PLAY best of 80s
+PLAY folk songs 精选
+PLAY discover new artists
+PLAY 欧美流行
+STUDY draft annual report
+STUDY 论文大纲
+STUDY project proposal doc
+STUDY notion calculus notes
+STUDY investor deck
+STUDY calculus homework
+STUDY python script
+STUDY debug api error
+STUDY inbox review
+STUDY sprint planning
+STUDY review pull request #123
+STUDY psychology quiz
+STUDY python tutorial
+STUDY final essay edit
+STUDY 报告草稿
+STUDY budget spreadsheet
+STUDY history lecture notes
+STUDY marketing presentation
+STUDY algebra practice
+STUDY javascript project
+STUDY 修复 bug
+STUDY vscode index js
+STUDY python flask tutorial
+STUDY mdn web docs array
+STUDY stack overflow python list
+STUDY github my awesome project
+STUDY leetcode two sum
+STUDY 如何设计短链服务
+STUDY udemy complete web developer
+STUDY terminal zsh bash
+STUDY 算法导论 pdf
+STUDY react hook lifecycle
+STUDY spring boot reference
+STUDY js async await error
+STUDY my awesome project pr
+STUDY 动态规划 leetcode
+STUDY distributed systems concepts
+STUDY coursera machine
+STUDY calculus limits problems
+STUDY linear algebra vectors
+STUDY statistics probability theory
+STUDY physics mechanics lecture
+STUDY organic chemistry notes
+STUDY biology cell structure
+STUDY world history reading
+STUDY geography maps study
+STUDY economics micro theory
+STUDY literature analysis essay
+STUDY japanese grammar practice
+STUDY korean vocabulary drills
+STUDY english essay writing
+STUDY toeic listening practice
+STUDY jlpt n2 grammar
+STUDY gmat quant review
+STUDY college entrance prep
+STUDY 微積分練習題
+PLAY league of legends
+PLAY minecraft java edition
+PLAY valorant client
+PLAY 原神 genshin impact
+PLAY elden ring game
+PLAY pokemon scarlet violet
+PLAY 王者荣耀 mobile
+PLAY 崩坏 星穹铁道
+PLAY apex legends steam
+PLAY csgo global offensive
+PLAY 英雄联盟 lol
+PLAY 集合啦 动物森友会
+PLAY 賽博朋克 2077
+PLAY 絕地求生 pubg
+PLAY call of duty warzone
+PLAY 我的日常vlog
+PLAY 吃播麻辣燙
+PLAY kpop mv reaction
+PLAY 日本旅行日記
+PLAY 超簡單食譜
+PLAY 爆笑整人惡作劇
+PLAY 明星八卦爆料
+PLAY 舞蹈翻跳練習
+PLAY 我的購物分享
+PLAY try not to laugh
+PLAY 韓劇高能片段
+PLAY 台灣街頭美食
+PLAY 一個人旅行
+PLAY 挑戰吃超辣泡麵
+PLAY 開箱最新產品
+PLAY my daily
+PLAY instagram feed
+PLAY 看ig限動
+PLAY exploring reels
+PLAY ig 私訊
+PLAY new posts from friends
+PLAY 朋友的限時動態
+PLAY ig 探索
+PLAY instagram stories
+PLAY browse ig
+PLAY x feed
+PLAY 看看推特
+PLAY trending topics
+PLAY my twitter home
+PLAY 推文動態
+PLAY new tweets for you
+PLAY x 上的熱門
+PLAY scrolling x
+PLAY 推特時間軸
+PLAY facebook feed
+STUDY deep learning survey paper
+STUDY nlp transformer architecture
+STUDY quantum computing basics
+STUDY 最新 ai 研究報告
+STUDY 計算機視覺應用
+STUDY 自然語言處理進階
+STUDY machine learning algorithm
+STUDY cvpr 2023 論文
+STUDY arxiv daily new
+STUDY google scholar advanced search
+STUDY 學術論文寫作指南
+STUDY 生物信息學數據分析
+STUDY wikipedia quantum mechanics
+STUDY ancient greek philosophy
+STUDY 人類大腦神經網絡
+STUDY 維基百科 宇宙大爆炸
+STUDY differential equations series
+STUDY climate change policy
+STUDY 歷史事件深度解析
+STUDY 藝術史文藝復興
+STUDY psychology cognitive biases
+STUDY 哲學倫理學討論
+STUDY 生物學細胞結構
+STUDY mdn javascript promises
+STUDY java concurrency tutorial
+STUDY python data structures
+STUDY html css flexbox grid
+STUDY rest api security best
+STUDY 數據庫事務隔離
+STUDY golang goroutines channels
+STUDY react hooks state management
+STUDY spring boot microservices
+STUDY aws s3 storage options
+STUDY rust error handling
+STUDY kafka stream processing
+STUDY 編程語言設計原理
+STUDY 前端框架比較
+STUDY 設計模式工廠方法
+STUDY geopolitical conflict analysis
+STUDY 經濟增長模型
+STUDY tech industry mergers
+STUDY 國際關係理論
+STUDY environmental policy debate
+STUDY 深度新聞評論
+STUDY 政治學理論研究
+STUDY 市場經濟學原理
+STUDY ted talk on creativity
+STUDY ted 演講 人工智能
+STUDY future of work ted
+STUDY ted education math
+STUDY 科學發現 ted talks
+STUDY tedx talks innovation
+STUDY podcast science daily
+STUDY 心理學播客 思維
+STUDY data science interview prep
+STUDY 經濟學人 每週更新
+STUDY learning languages podcast
+STUDY khan academy linear algebra
+STUDY 可汗學院 微積分
+STUDY 統計學假設檢定
+PLAY my chill playlist
+PLAY nba 直播
+PLAY pop hits 2024
+PLAY 足球賽事集錦
+PLAY new indie discoveries
+PLAY f1 精華
+PLAY live concert footage
+PLAY 體育新聞
+PLAY best of edm mvs
+PLAY 棒球比賽
+PLAY global top 50
+PLAY 運動員日常
+PLAY workout music mix
+PLAY 中超直播
+PLAY today's new releases
+PLAY nba 季後賽
+STUDY report draft v2
+STUDY project budget sheet
+STUDY notion chemistry notes
+STUDY client presentation final
+STUDY calculus homework
+STUDY python script dev
+STUDY api endpoint debug
+STUDY focused email review
+STUDY sprint planning board
+STUDY pr review feature x
+STUDY history quiz chapter 7
+STUDY python pandas tutorial
+STUDY essay outline writing
+STUDY team meeting notes
+STUDY cs lecture notes notion
+STUDY sales deck draft
+STUDY algebra problem set
+STUDY react component coding
+STUDY frontend bug fix

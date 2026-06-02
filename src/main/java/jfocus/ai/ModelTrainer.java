@@ -11,11 +11,14 @@ import java.nio.file.Path;
 
 import jfocus.db.AppPaths;
 import jfocus.io.ExportData;
+import opennlp.tools.doccat.BagOfWordsFeatureGenerator;
 import opennlp.tools.doccat.DoccatFactory;
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;
 import opennlp.tools.doccat.DocumentSample;
 import opennlp.tools.doccat.DocumentSampleStream;
+import opennlp.tools.doccat.FeatureGenerator;
+import opennlp.tools.doccat.NGramFeatureGenerator;
 import opennlp.tools.util.InputStreamFactory;
 import opennlp.tools.util.MarkableFileInputStreamFactory;
 import opennlp.tools.util.ObjectStream;
@@ -126,7 +129,11 @@ public class ModelTrainer {
                 // 小資料集先保留較低門檻，避免早期特徵被過度過濾。
                 params.put(TrainingParameters.CUTOFF_PARAM, 1);
 
-                DoccatModel model = DocumentCategorizerME.train("zho", sampleStream, params, new DoccatFactory());
+                FeatureGenerator[] featureGenerators = {
+                    new BagOfWordsFeatureGenerator(),
+                    new NGramFeatureGenerator(2, 3)
+                };
+                DoccatModel model = DocumentCategorizerME.train("zho", sampleStream, params, new DoccatFactory(featureGenerators));
 
                 File outputFile = modelPath.toFile();
                 File parent = outputFile.getParentFile();

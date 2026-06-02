@@ -239,7 +239,7 @@ public static class PokemonData {
             if (tempCoins < 200) {
                 normalBtn.setDisable(true);
                 premiumBtn.setDisable(false);
-            } else if (tempStones < 1) {
+            } else if (tempStones < 2) {
                 normalBtn.setDisable(false);
                 premiumBtn.setDisable(true);
             } else {
@@ -733,7 +733,7 @@ public static class PokemonData {
         premiumBtn = new Button("大師球抽獎");
         premiumBtn.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
 
-        Label premiumCostLabel = new Label("1 / 抽");
+        Label premiumCostLabel = new Label("2 / 抽");
         setLabeledIcon(premiumCostLabel, "res/icon/stonelabel.png");
         premiumCostLabel.setStyle("-fx-font-size: 14px;");
 

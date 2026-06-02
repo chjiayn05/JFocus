@@ -85,8 +85,8 @@ public class GameManager {
         List<String> selectedPool;
 
         if ("MASTERBALL".equals(ballType)) {
-            if (this.masterStones < 1) return "INSUFFICIENT_FUNDS";
-            this.masterStones -= 1;
+            if (this.masterStones < 2) return "INSUFFICIENT_FUNDS";
+            this.masterStones -= 2;
             this.masterBallPity++;
 
             if (this.masterBallPity >= 10 || rand < 0.20) {
@@ -132,8 +132,8 @@ public class GameManager {
                 this.masterStones += 1; 
                 System.out.println("♻️ [重複] 大師球抽到重複神獸，已返還 1 顆大師晶石！");
             } else {
-                this.focusCoins += 160; 
-                System.out.println("♻️ [重複] 普通球抽到重複精靈，已返還 160 專注幣！");
+                this.focusCoins += 100; 
+                System.out.println("♻️ [重複] 普通球抽到重複精靈，已返還 100 專注幣！");
             }
         } else {
             if (pokemonId != null) {
