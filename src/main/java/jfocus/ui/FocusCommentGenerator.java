@@ -18,6 +18,10 @@ public class FocusCommentGenerator {
     }
 
     public static String getComment(double focusScore, long focusSeconds, long distractionSeconds, LocalDate date) {
+        if (focusSeconds <= 0) {
+            return "今天沒有專注";
+        }
+
         // 使用日期的雜湊值做隨機數種子，使得同一天的評語在相同數據下固定，但不同日期或數據會有生動的語氣變化
         int seed = date.getYear() * 10000 + date.getMonthValue() * 100 + date.getDayOfMonth();
         Random random = new Random(seed);

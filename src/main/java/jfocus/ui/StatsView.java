@@ -55,8 +55,8 @@ public class StatsView extends VBox {
         this.gameManager = gameManager;
         this.timerView = timerView;
         this.mainApp = mainApp;
-        this.dataManager = new MockDashboardDataManager();
-        // this.dataManager = new JdbcDashboardDataManager();
+        // this.dataManager = new MockDashboardDataManager();
+        this.dataManager = new JdbcDashboardDataManager();
 
         this.setSpacing(10);
         this.setPadding(new Insets(10));
@@ -374,14 +374,19 @@ public class StatsView extends VBox {
         container.getChildren().add(cardComment);
 
         // PieChart + 右側圖例
-        if (data.getSubjectTimes().isEmpty()) {
-            container.getChildren().add(new Label("本日無科目專注數據"));
-        } else {
-            Label lblChartTitle = new Label("科目專注分佈");
-            lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
-            lblChartTitle.setAlignment(Pos.CENTER);
-            lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+        Label lblChartTitle = new Label("科目專注分佈");
+        lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+        lblChartTitle.setAlignment(Pos.CENTER);
+        lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+        container.getChildren().add(lblChartTitle);
 
+        if (data.getSubjectTimes().isEmpty()) {
+            Label noSubjectLbl = new Label("本日無科目專注數據");
+            noSubjectLbl.setMaxWidth(Double.MAX_VALUE);
+            noSubjectLbl.setAlignment(Pos.CENTER);
+            noSubjectLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;"); 
+            container.getChildren().add(noSubjectLbl);
+        } else {
             HBox chartContainer = new HBox(15);
             chartContainer.setAlignment(Pos.CENTER);
             chartContainer.setPadding(new Insets(10));
@@ -434,12 +439,7 @@ public class StatsView extends VBox {
             }
 
             chartContainer.getChildren().addAll(pieChart, legendBox);
-
-            VBox chartSection = new VBox(5);
-            chartSection.setAlignment(Pos.TOP_CENTER);
-            chartSection.getChildren().addAll(lblChartTitle, chartContainer);
-
-            container.getChildren().add(chartSection);
+            container.getChildren().add(chartContainer);
         }
 
         // 專注時間軸
@@ -450,7 +450,11 @@ public class StatsView extends VBox {
         timelineBox.setPadding(new Insets(10, 20, 10, 20));
 
         if (data.getTimelineEvents().isEmpty()) {
-            timelineBox.getChildren().add(new Label("本日無時間軸數據"));
+            Label noTimelineLbl = new Label("本日無時間軸數據");
+            noTimelineLbl.setMaxWidth(Double.MAX_VALUE);
+            noTimelineLbl.setAlignment(Pos.CENTER);
+            noTimelineLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;"); 
+            timelineBox.getChildren().add(noTimelineLbl);
         } else {
             List<TimelineEvent> events = data.getTimelineEvents();
             for (int i = 0; i < events.size(); i++) {
@@ -514,7 +518,9 @@ public class StatsView extends VBox {
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
-            container.getChildren().add(new Label("本日無分心記錄"));
+            Label noDistractionLbl = new Label("本日無分心記錄");
+            noDistractionLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;");
+            container.getChildren().add(noDistractionLbl);
         } else {
             VBox distractLeaderboard = createDistractionLeaderboard(data.getTopDistractions());
             container.getChildren().add(distractLeaderboard);
@@ -666,60 +672,65 @@ public class StatsView extends VBox {
         lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         lblChartTitle.setAlignment(Pos.CENTER);
         lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+        container.getChildren().add(lblChartTitle);
 
-        HBox chartContainer = new HBox(15);
-        chartContainer.setAlignment(Pos.CENTER);
-        chartContainer.setPadding(new Insets(10));
+        if (data.getOverallSubjectTimes().isEmpty()) {
+            Label noSubjectLbl = new Label("本週無科目專注數據");
+            noSubjectLbl.setMaxWidth(Double.MAX_VALUE);
+            noSubjectLbl.setAlignment(Pos.CENTER);
+            noSubjectLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;");
+            container.getChildren().add(noSubjectLbl);
+        } else {
+            HBox chartContainer = new HBox(15);
+            chartContainer.setAlignment(Pos.CENTER);
+            chartContainer.setPadding(new Insets(10));
 
-        PieChart pieChart = new PieChart();
-        pieChart.setPrefHeight(180);
-        pieChart.setPrefWidth(160);
-        pieChart.setLegendVisible(false);
-        pieChart.setLabelsVisible(false);
+            PieChart pieChart = new PieChart();
+            pieChart.setPrefHeight(180);
+            pieChart.setPrefWidth(160);
+            pieChart.setLegendVisible(false);
+            pieChart.setLabelsVisible(false);
 
-        double totalSec = 0;
-        for (SubjectTime st : data.getOverallSubjectTimes()) {
-            totalSec += st.getDurationSeconds();
+            double totalSec = 0;
+            for (SubjectTime st : data.getOverallSubjectTimes()) {
+                totalSec += st.getDurationSeconds();
+            }
+
+            VBox legendBox = new VBox(8);
+            legendBox.setAlignment(Pos.CENTER_LEFT);
+            legendBox.setPadding(new Insets(10));
+
+            for (SubjectTime st : data.getOverallSubjectTimes()) {
+                double pct = totalSec == 0 ? 0 : (double) st.getDurationSeconds() / totalSec * 100;
+                PieChart.Data slice = new PieChart.Data(String.format("%.1f%%", pct), st.getDurationSeconds());
+                String color = getSubjectColor(st.getSubject());
+                slice.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                    if (newNode != null) {
+                        newNode.setStyle("-fx-pie-color: " + color + "; -fx-fill: " + color + "; -fx-stroke: transparent; -fx-stroke-width: 0px;");
+                    }
+                });
+                pieChart.getData().add(slice);
+
+                HBox legendItem = new HBox(8);
+                legendItem.setAlignment(Pos.CENTER_LEFT);
+                Circle colorIndicator = new Circle(6);
+                colorIndicator.setFill(Color.web(color));
+
+                Label pctLbl = new Label(String.format("%.1f%%", pct));
+                pctLbl.getStyleClass().add("stats-soft-text");
+                pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+                pctLbl.setPrefWidth(45);
+                pctLbl.setAlignment(Pos.CENTER_LEFT);
+
+                Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
+                descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+                legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
+                legendBox.getChildren().add(legendItem);
+            }
+
+            chartContainer.getChildren().addAll(pieChart, legendBox);
+            container.getChildren().add(chartContainer);
         }
-
-        VBox legendBox = new VBox(8);
-        legendBox.setAlignment(Pos.CENTER_LEFT);
-        legendBox.setPadding(new Insets(10));
-
-        for (SubjectTime st : data.getOverallSubjectTimes()) {
-            double pct = totalSec == 0 ? 0 : (double) st.getDurationSeconds() / totalSec * 100;
-            PieChart.Data slice = new PieChart.Data(String.format("%.1f%%", pct), st.getDurationSeconds());
-            String color = getSubjectColor(st.getSubject());
-            slice.nodeProperty().addListener((obs, oldNode, newNode) -> {
-                if (newNode != null) {
-                    newNode.setStyle("-fx-pie-color: " + color + "; -fx-fill: " + color + "; -fx-stroke: transparent; -fx-stroke-width: 0px;");
-                }
-            });
-            pieChart.getData().add(slice);
-
-            HBox legendItem = new HBox(8);
-            legendItem.setAlignment(Pos.CENTER_LEFT);
-            Circle colorIndicator = new Circle(6);
-            colorIndicator.setFill(Color.web(color));
-
-            Label pctLbl = new Label(String.format("%.1f%%", pct));
-            pctLbl.getStyleClass().add("stats-soft-text");
-            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            pctLbl.setPrefWidth(45);
-            pctLbl.setAlignment(Pos.CENTER_LEFT);
-
-            Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
-            descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
-            legendBox.getChildren().add(legendItem);
-        }
-
-        chartContainer.getChildren().addAll(pieChart, legendBox);
-
-        VBox chartSection = new VBox(5);
-        chartSection.setAlignment(Pos.TOP_CENTER);
-        chartSection.getChildren().addAll(lblChartTitle, chartContainer);
-        container.getChildren().add(chartSection);
 
         // 分心軟體排行榜
         Label lblDistractTitle = new Label("本週分心排行榜");
@@ -727,7 +738,9 @@ public class StatsView extends VBox {
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
-            container.getChildren().add(new Label("本週無分心記錄"));
+            Label noDistractionLbl = new Label("本週無分心記錄");
+            noDistractionLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;");
+            container.getChildren().add(noDistractionLbl);
         } else {
             VBox distractLeaderboard = createDistractionLeaderboard(data.getTopDistractions());
             container.getChildren().add(distractLeaderboard);
@@ -840,64 +853,69 @@ public class StatsView extends VBox {
         container.getChildren().add(trendSection);
 
         // 科目整體比例
-        Label lblChartTitle = new Label("科目整體比例");
+        Label lblChartTitle = new Label("專注科目比例");
         lblChartTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
         lblChartTitle.setAlignment(Pos.CENTER);
         lblChartTitle.setMaxWidth(Double.MAX_VALUE);
+        container.getChildren().add(lblChartTitle);
 
-        HBox chartContainer = new HBox(15);
-        chartContainer.setAlignment(Pos.CENTER);
-        chartContainer.setPadding(new Insets(10));
+        if (data.getOverallSubjectTimes().isEmpty()) {
+            Label noSubjectLbl = new Label("本月無科目專注數據");
+            noSubjectLbl.setMaxWidth(Double.MAX_VALUE);
+            noSubjectLbl.setAlignment(Pos.CENTER);
+            noSubjectLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;");
+            container.getChildren().add(noSubjectLbl);
+        } else {
+            HBox chartContainer = new HBox(15);
+            chartContainer.setAlignment(Pos.CENTER);
+            chartContainer.setPadding(new Insets(10));
 
-        PieChart pieChart = new PieChart();
-        pieChart.setPrefHeight(180);
-        pieChart.setPrefWidth(160);
-        pieChart.setLegendVisible(false);
-        pieChart.setLabelsVisible(false);
+            PieChart pieChart = new PieChart();
+            pieChart.setPrefHeight(180);
+            pieChart.setPrefWidth(160);
+            pieChart.setLegendVisible(false);
+            pieChart.setLabelsVisible(false);
 
-        double totalSec = 0;
-        for (SubjectTime st : data.getOverallSubjectTimes()) {
-            totalSec += st.getDurationSeconds();
+            double totalSec = 0;
+            for (SubjectTime st : data.getOverallSubjectTimes()) {
+                totalSec += st.getDurationSeconds();
+            }
+
+            VBox legendBox = new VBox(8);
+            legendBox.setAlignment(Pos.CENTER_LEFT);
+            legendBox.setPadding(new Insets(10));
+
+            for (SubjectTime st : data.getOverallSubjectTimes()) {
+                double pct = totalSec == 0 ? 0 : (double) st.getDurationSeconds() / totalSec * 100;
+                PieChart.Data slice = new PieChart.Data(String.format("%.1f%%", pct), st.getDurationSeconds());
+                String color = getSubjectColor(st.getSubject());
+                slice.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                    if (newNode != null) {
+                        newNode.setStyle("-fx-pie-color: " + color + "; -fx-fill: " + color + "; -fx-stroke: transparent; -fx-stroke-width: 0px;");
+                    }
+                });
+                pieChart.getData().add(slice);
+
+                HBox legendItem = new HBox(8);
+                legendItem.setAlignment(Pos.CENTER_LEFT);
+                Circle colorIndicator = new Circle(6);
+                colorIndicator.setFill(Color.web(color));
+
+                Label pctLbl = new Label(String.format("%.1f%%", pct));
+                pctLbl.getStyleClass().add("stats-soft-text");
+                pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+                pctLbl.setPrefWidth(45);
+                pctLbl.setAlignment(Pos.CENTER_LEFT);
+
+                Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
+                descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+                legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
+                legendBox.getChildren().add(legendItem);
+            }
+
+            chartContainer.getChildren().addAll(pieChart, legendBox);
+            container.getChildren().add(chartContainer);
         }
-
-        VBox legendBox = new VBox(8);
-        legendBox.setAlignment(Pos.CENTER_LEFT);
-        legendBox.setPadding(new Insets(10));
-
-        for (SubjectTime st : data.getOverallSubjectTimes()) {
-            double pct = totalSec == 0 ? 0 : (double) st.getDurationSeconds() / totalSec * 100;
-            PieChart.Data slice = new PieChart.Data(String.format("%.1f%%", pct), st.getDurationSeconds());
-            String color = getSubjectColor(st.getSubject());
-            slice.nodeProperty().addListener((obs, oldNode, newNode) -> {
-                if (newNode != null) {
-                    newNode.setStyle("-fx-pie-color: " + color + "; -fx-fill: " + color + "; -fx-stroke: transparent; -fx-stroke-width: 0px;");
-                }
-            });
-            pieChart.getData().add(slice);
-
-            HBox legendItem = new HBox(8);
-            legendItem.setAlignment(Pos.CENTER_LEFT);
-            Circle colorIndicator = new Circle(6);
-            colorIndicator.setFill(Color.web(color));
-
-            Label pctLbl = new Label(String.format("%.1f%%", pct));
-            pctLbl.getStyleClass().add("stats-soft-text");
-            pctLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            pctLbl.setPrefWidth(45);
-            pctLbl.setAlignment(Pos.CENTER_LEFT);
-
-            Label descLbl = new Label(st.getSubject() + "  " + formatSeconds(st.getDurationSeconds()));
-            descLbl.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
-            legendItem.getChildren().addAll(colorIndicator, pctLbl, descLbl);
-            legendBox.getChildren().add(legendItem);
-        }
-
-        chartContainer.getChildren().addAll(pieChart, legendBox);
-
-        VBox chartSection = new VBox(5);
-        chartSection.setAlignment(Pos.TOP_CENTER);
-        chartSection.getChildren().addAll(lblChartTitle, chartContainer);
-        container.getChildren().add(chartSection);
 
         // 3. 分心排行榜
         Label lblDistractTitle = new Label("本月分心排行榜");
@@ -905,7 +923,9 @@ public class StatsView extends VBox {
         container.getChildren().add(lblDistractTitle);
 
         if (data.getTopDistractions().isEmpty()) {
-            container.getChildren().add(new Label("本月無分心記錄"));
+            Label nodDistrarionLbl = new Label("本月無分心記錄");
+            nodDistrarionLbl.setStyle("-fx-text-fill: -my-stats-card-title-color;");
+            container.getChildren().add(nodDistrarionLbl);
         } else {
             VBox distractLeaderboard = createDistractionLeaderboard(data.getTopDistractions());
             container.getChildren().add(distractLeaderboard);
