@@ -5,11 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import jfocus.db.DatabaseCore;
 import jfocus.db.StorageException;
@@ -18,12 +18,10 @@ import jfocus.db.StorageException;
  * 玩家資料讀寫工具。
  */
 public final class UserData {
-    private static final Pattern STAGE_KEY_PATTERN = Pattern.compile("\\d{3}_[1-3]");
-    private static final Pattern POKEMON_ID_PATTERN = Pattern.compile("\\d{3}");
-    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_bulbasaur_1", "004_charmander_1", "007_squirtle_1");
+    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of(
+            "001_bulbasaur_1", "004_charmander_1", "007_squirtle_1");
 
     private UserData() {
-        // Utility class
     }
 
     /**
@@ -55,13 +53,9 @@ public final class UserData {
     }
 
     /**
-     * 儲存玩家數值資料。
-     */
-    /**
      * 儲存玩家數值資料（包含當前夥伴 ID）。
      */
     public static void savePlayerStats(int coins, int stones, int xp, String partnerId) {
-        // 這裡的 SQL 必須包含 partner_id，否則會報錯
         String sql = """
                 INSERT INTO player_stats(id, coins, stones, xp, partner_id)
                 VALUES (1, ?, ?, ?, ?)
@@ -79,14 +73,14 @@ public final class UserData {
                 pstmt.setInt(1, Math.max(0, coins));
                 pstmt.setInt(2, Math.max(0, stones));
                 pstmt.setInt(3, Math.max(0, xp));
-                pstmt.setString(4, partnerId); // 確保這行有寫入
+                pstmt.setString(4, partnerId);
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {
-            // 這就是你看到的報錯來源
             throw new StorageException("儲存玩家數值失敗", e);
         }
     }
+
     /**
      * 從資料庫讀取當前夥伴的 ID。
      */
@@ -103,7 +97,7 @@ public final class UserData {
         } catch (SQLException e) {
             System.err.println("讀取夥伴 ID 失敗，使用預設值。");
         }
-        return "004_charmander"; // 找不到就給預設值小火龍
+        return "004_charmander";
     }
 
     /**
@@ -121,29 +115,30 @@ public final class UserData {
             throw new StorageException("儲存夥伴 ID 失敗", e);
         }
     }
+
     /**
-     * 載入玩家已解鎖的關卡。
+     * 載入玩家已解鎖的關卡，返回 pokemonId → 已解鎖 stage 集合（1/2/3）。
      */
-    public static Set<String> loadUnlockedStages() {
-        String sql = "SELECT stage_key FROM unlocked_stages ORDER BY stage_key";
+    public static Map<String, Set<Integer>> loadUnlockedStages() {
+        String sql = "SELECT pokemon_id, stage1_unlocked, stage2_unlocked, stage3_unlocked "
+                   + "FROM pokemon_progress";
 
         try (Connection conn = new DatabaseCore().getConnection()) {
             ensureSchema(conn);
 
-            Set<String> result = new LinkedHashSet<>();
-            try (PreparedStatement pstmt = conn.prepareStatement(sql);
-                 ResultSet rs = pstmt.executeQuery()) {
+            Map<String, Set<Integer>> result = new LinkedHashMap<>();
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    String stageKey = rs.getString("stage_key");
-                    
-                    // 🌟 【關鍵修改】：不要再用那個嚴格的 isValidStageKey 了！
-                    // 只要資料庫裡抓出來的東西不是 null 也不是空白，就直接加進去！
-                    if (stageKey != null && !stageKey.trim().isEmpty()) {
-                        result.add(stageKey);
-                    }
+                    String id = rs.getString("pokemon_id");
+                    if (id == null || id.isBlank()) continue;
+                    Set<Integer> stages = new HashSet<>();
+                    if (rs.getInt("stage1_unlocked") == 1) stages.add(1);
+                    if (rs.getInt("stage2_unlocked") == 1) stages.add(2);
+                    if (rs.getInt("stage3_unlocked") == 1) stages.add(3);
+                    if (!stages.isEmpty()) result.put(id, stages);
                 }
             }
-
             return result;
         } catch (SQLException e) {
             throw new StorageException("讀取解鎖關卡失敗", e);
@@ -154,18 +149,18 @@ public final class UserData {
      * 載入每隻寶可夢的 XP。
      */
     public static Map<String, Integer> loadPokemonXp() {
-        String sql = "SELECT pokemon_id, xp FROM pokemon_xp ORDER BY pokemon_id";
+        String sql = "SELECT pokemon_id, xp FROM pokemon_progress ORDER BY pokemon_id";
 
         try (Connection conn = new DatabaseCore().getConnection()) {
             ensureSchema(conn);
 
             Map<String, Integer> result = new LinkedHashMap<>();
-            try (PreparedStatement pstmt = conn.prepareStatement(sql);
-                 ResultSet rs = pstmt.executeQuery()) {
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    String pokemonId = rs.getString("pokemon_id");
-                    if (isValidPokemonId(pokemonId)) {
-                        result.put(pokemonId, Math.max(0, rs.getInt("xp")));
+                    String id = rs.getString("pokemon_id");
+                    if (id != null && !id.isBlank()) {
+                        result.put(id, Math.max(0, rs.getInt("xp")));
                     }
                 }
             }
@@ -176,37 +171,29 @@ public final class UserData {
     }
 
     /**
-     * 以覆蓋方式儲存所有寶可夢 XP。
+     * 儲存所有寶可夢 XP（只更新 xp 欄位，保留其他欄位）。
      */
     public static void savePokemonXp(Map<String, Integer> pokemonXpMap) {
-        String deleteSql = "DELETE FROM pokemon_xp";
-        String upsertSql = "INSERT INTO pokemon_xp(pokemon_id, xp) VALUES (?, ?) "
-                + "ON CONFLICT(pokemon_id) DO UPDATE SET xp = excluded.xp";
+        String sql = "INSERT INTO pokemon_progress(pokemon_id, xp) VALUES (?, ?) "
+                   + "ON CONFLICT(pokemon_id) DO UPDATE SET xp = excluded.xp";
 
         try (Connection conn = new DatabaseCore().getConnection()) {
             ensureSchema(conn);
-
-            try (Statement deleteStmt = conn.createStatement()) {
-                deleteStmt.executeUpdate(deleteSql);
-            }
 
             if (pokemonXpMap == null || pokemonXpMap.isEmpty()) {
                 return;
             }
 
-            try (PreparedStatement upsertStmt = conn.prepareStatement(upsertSql)) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Map.Entry<String, Integer> entry : pokemonXpMap.entrySet()) {
-                    String pokemonId = entry.getKey();
-                    if (!isValidPokemonId(pokemonId)) {
-                        continue;
-                    }
-
+                    String id = entry.getKey();
+                    if (id == null || id.isBlank()) continue;
                     int xp = entry.getValue() == null ? 0 : Math.max(0, entry.getValue());
-                    upsertStmt.setString(1, pokemonId.trim());
-                    upsertStmt.setInt(2, xp);
-                    upsertStmt.addBatch();
+                    ps.setString(1, id.trim());
+                    ps.setInt(2, xp);
+                    ps.addBatch();
                 }
-                upsertStmt.executeBatch();
+                ps.executeBatch();
             }
         } catch (SQLException e) {
             throw new StorageException("儲存寶可夢 XP 失敗", e);
@@ -216,97 +203,45 @@ public final class UserData {
     /**
      * 儲存單一解鎖關卡（重複會自動忽略）。
      */
-    public static void saveUnlockedStage(String stageKey) {
-        if (!isValidStageKey(stageKey)) {
-            throw new IllegalArgumentException("stageKey must match pattern ddd_s (e.g. 004_2)");
+    public static void saveUnlockedStage(String pokemonId, int stage) {
+        if (pokemonId == null || pokemonId.isBlank()) {
+            throw new IllegalArgumentException("pokemonId cannot be blank");
         }
+        // col is derived from a switch on a 1-3 int — safe to interpolate
+        String col = switch (stage) {
+            case 1 -> "stage1_unlocked";
+            case 2 -> "stage2_unlocked";
+            case 3 -> "stage3_unlocked";
+            default -> throw new IllegalArgumentException("Stage must be 1-3: " + stage);
+        };
 
-        String sql = "INSERT OR IGNORE INTO unlocked_stages(stage_key) VALUES (?)";
+        String sql = "INSERT INTO pokemon_progress(pokemon_id, " + col + ") VALUES(?, 1) "
+                   + "ON CONFLICT(pokemon_id) DO UPDATE SET " + col + " = 1";
 
         try (Connection conn = new DatabaseCore().getConnection()) {
             ensureSchema(conn);
-
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, stageKey);
-                pstmt.executeUpdate();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, pokemonId.trim());
+                ps.executeUpdate();
             }
         } catch (SQLException e) {
             throw new StorageException("儲存解鎖關卡失敗", e);
         }
     }
 
-    private static void ensureSchema(Connection conn) throws SQLException {
-        String createStatsSql = """
-                CREATE TABLE IF NOT EXISTS player_stats (
-                    id INTEGER PRIMARY KEY CHECK (id = 1),
-                    coins INTEGER NOT NULL DEFAULT 0,
-                    stones INTEGER NOT NULL DEFAULT 0,
-                    xp INTEGER NOT NULL DEFAULT 0,
-                    partner_id TEXT NOT NULL DEFAULT '004'
-                )
-                """;
-
-        String createUnlockedSql = """
-                CREATE TABLE IF NOT EXISTS unlocked_stages (
-                    stage_key TEXT PRIMARY KEY
-                )
-                """;
-
-        String createPokemonXpSql = """
-                CREATE TABLE IF NOT EXISTS pokemon_xp (
-                    pokemon_id TEXT PRIMARY KEY,
-                    xp INTEGER NOT NULL DEFAULT 0
-                )
-                """;
-
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(createStatsSql);
-            stmt.execute(createUnlockedSql);
-            stmt.execute(createPokemonXpSql);
-            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp) VALUES (1, 0, 0, 0)");
-            stmt.execute("INSERT OR IGNORE INTO player_stats(id, coins, stones, xp, partner_id) VALUES (1, 0, 0, 0, '004')");
-        }
-
-        ensureDefaultUnlockedStages(conn);
-    }
-
-    private static void ensureDefaultUnlockedStages(Connection conn) throws SQLException {
-        String countSql = "SELECT COUNT(*) FROM unlocked_stages";
-        try (PreparedStatement countStmt = conn.prepareStatement(countSql);
-             ResultSet rs = countStmt.executeQuery()) {
-            if (rs.next() && rs.getInt(1) > 0) {
-                return;
-            }
-        }
-
-        String insertSql = "INSERT OR IGNORE INTO unlocked_stages(stage_key) VALUES (?)";
-        try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-            for (String stageKey : DEFAULT_UNLOCKED_STAGES) {
-                insertStmt.setString(1, stageKey);
-                insertStmt.addBatch();
-            }
-            insertStmt.executeBatch();
-        }
-    }
-
-private static boolean isValidStageKey(String key) {
-    return key != null && !key.trim().isEmpty(); // ✅ 變成超級寬鬆模式
-}
-
-    private static boolean isValidPokemonId(String pokemonId) {
-        return pokemonId != null
-                && !pokemonId.isBlank()
-                && POKEMON_ID_PATTERN.matcher(pokemonId.trim()).matches();
-    }
-
-    public static java.util.Map<String, Integer> loadSelectedStages() {
-        String sql = "SELECT pokemon_id, stage FROM pokemon_selected_stage";
-        java.util.Map<String, Integer> map = new java.util.HashMap<>();
-        try (Connection conn = new DatabaseCore().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                map.put(rs.getString("pokemon_id"), rs.getInt("stage"));
+    /**
+     * 載入每隻寶可夢目前選擇的顯示 stage。
+     */
+    public static Map<String, Integer> loadSelectedStages() {
+        String sql = "SELECT pokemon_id, selected_stage FROM pokemon_progress";
+        Map<String, Integer> map = new HashMap<>();
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getString("pokemon_id"), rs.getInt("selected_stage"));
+                }
             }
         } catch (SQLException e) {
             System.err.println("讀取選擇 stage 失敗: " + e.getMessage());
@@ -314,14 +249,19 @@ private static boolean isValidStageKey(String key) {
         return map;
     }
 
+    /**
+     * 儲存寶可夢目前選擇的顯示 stage。
+     */
     public static void saveSelectedStage(String pokemonId, int stage) {
-        String sql = "INSERT INTO pokemon_selected_stage(pokemon_id, stage) VALUES (?, ?) "
-                   + "ON CONFLICT(pokemon_id) DO UPDATE SET stage = excluded.stage";
-        try (Connection conn = new DatabaseCore().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, pokemonId);
-            pstmt.setInt(2, stage);
-            pstmt.executeUpdate();
+        String sql = "INSERT INTO pokemon_progress(pokemon_id, selected_stage) VALUES (?, ?) "
+                   + "ON CONFLICT(pokemon_id) DO UPDATE SET selected_stage = excluded.selected_stage";
+        try (Connection conn = new DatabaseCore().getConnection()) {
+            ensureSchema(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, pokemonId);
+                ps.setInt(2, stage);
+                ps.executeUpdate();
+            }
         } catch (SQLException e) {
             System.err.println("儲存選擇 stage 失敗: " + e.getMessage());
         }
@@ -356,5 +296,50 @@ private static boolean isValidStageKey(String key) {
             System.err.println("讀取設定失敗: " + e.getMessage());
         }
         return defaultValue;
+    }
+
+    private static void ensureSchema(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS player_stats (
+                        id INTEGER PRIMARY KEY CHECK (id = 1),
+                        coins INTEGER NOT NULL DEFAULT 0,
+                        stones INTEGER NOT NULL DEFAULT 0,
+                        xp INTEGER NOT NULL DEFAULT 0,
+                        partner_id TEXT NOT NULL DEFAULT '004'
+                    )
+                    """);
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS pokemon_progress (
+                        pokemon_id      TEXT    PRIMARY KEY,
+                        xp              INTEGER NOT NULL DEFAULT 0,
+                        stage1_unlocked INTEGER NOT NULL DEFAULT 0,
+                        stage2_unlocked INTEGER NOT NULL DEFAULT 0,
+                        stage3_unlocked INTEGER NOT NULL DEFAULT 0,
+                        selected_stage  INTEGER NOT NULL DEFAULT 1
+                    )
+                    """);
+            stmt.execute(
+                    "INSERT OR IGNORE INTO player_stats(id, coins, stones, xp, partner_id) VALUES (1, 0, 0, 0, '004')");
+        }
+        ensureDefaultProgress(conn);
+    }
+
+    private static void ensureDefaultProgress(Connection conn) throws SQLException {
+        String countSql = "SELECT COUNT(*) FROM pokemon_progress WHERE stage1_unlocked = 1";
+        try (PreparedStatement ps = conn.prepareStatement(countSql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next() && rs.getInt(1) > 0) return;
+        }
+
+        String insertSql = "INSERT OR IGNORE INTO pokemon_progress(pokemon_id, stage1_unlocked) VALUES (?, 1)";
+        try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+            for (String stageKey : DEFAULT_UNLOCKED_STAGES) {
+                int sep = stageKey.lastIndexOf('_');
+                ps.setString(1, stageKey.substring(0, sep));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
     }
 }

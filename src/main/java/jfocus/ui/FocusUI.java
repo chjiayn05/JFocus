@@ -98,6 +98,8 @@ public class FocusUI extends Application {
     private ImageView ballView;
     private Button normalBtn;
     private Button premiumBtn;
+    private javafx.scene.control.Tab gachaTab;
+    private boolean drawInProgress = false;
     private final javafx.beans.property.BooleanProperty sessionActive =
             new javafx.beans.property.SimpleBooleanProperty(false);
     public javafx.beans.property.BooleanProperty sessionActiveProperty() { return sessionActive; }
@@ -107,6 +109,7 @@ public class FocusUI extends Application {
     private Canvas borderCanvas;
     private AnimationTimer currentBorderTimer;
     private javafx.scene.control.TabPane tabPane;
+    private javafx.scene.control.ChoiceBox<String> themeSelector;
     private String css = "PokemonDark.css";
     static final List<String> activeStylesheets = new ArrayList<>();
     private StatsView statsView;
@@ -214,6 +217,7 @@ public static class PokemonData {
         refreshCurrencyLabels();
         refreshPokedexGrid();
         timerView.refreshXpDisplay();
+        saveUserProgressSafely();
     }
 
     void refreshCurrencyLabels() {
@@ -271,7 +275,7 @@ public static class PokemonData {
     private void loadUserProgressSafely() {
         try {
             int[] stats = UserData.loadPlayerStats();
-            Set<String> unlockedStages = UserData.loadUnlockedStages();
+            Map<String, Set<Integer>> unlockedStages = UserData.loadUnlockedStages();
             Map<String, Integer> pokemonXpMap = UserData.loadPokemonXp();
             gameManager.initializePlayerState(stats[0], stats[1], stats[2], unlockedStages, pokemonXpMap);
             selectedStageMap.putAll(UserData.loadSelectedStages());
@@ -290,8 +294,10 @@ public static class PokemonData {
                     gameManager.getTotalXP(),
                     gameManager.getCurrentPokemonId());
 
-            for (String stageKey : gameManager.getUnlockedStageKeys()) {
-                UserData.saveUnlockedStage(stageKey);
+            for (Map.Entry<String, Set<Integer>> entry : gameManager.getUnlockedStages().entrySet()) {
+                for (int stage : entry.getValue()) {
+                    UserData.saveUnlockedStage(entry.getKey(), stage);
+                }
             }
 
             UserData.savePokemonXp(gameManager.getPokemonXpMap());
@@ -513,7 +519,7 @@ public static class PokemonData {
         pokedexTab.setClosable(false);
         Tab statsTab = createStatsTab();
         statsTab.setClosable(false);
-        Tab gachaTab = createGachaTab();
+        gachaTab = createGachaTab();
         gachaTab.setClosable(false);
         Tab todoTab = createTodoTab();
         todoTab.setClosable(false);
@@ -521,14 +527,14 @@ public static class PokemonData {
         settingsTab.setClosable(false);
 
         gachaTab.setOnSelectionChanged(e -> {
-            if (gachaTab.isSelected())
+            if (gachaTab.isSelected() && !drawInProgress)
                 refreshDrawBtnStatus();
         });
         
         tabPane.getTabs().addAll(focusTab, gachaTab, pokedexTab, statsTab, todoTab, settingsTab);
 
         // 2. 頂部狀態列 (主題切換 + 貨幣)
-        ChoiceBox<String> themeSelector = new ChoiceBox<>();
+        themeSelector = new ChoiceBox<>();
         themeSelector.getStyleClass().add("theme-selector");
         themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
         String savedThemeName = jfocus.io.UserData.loadAppSetting("theme_name", "暗黑電競");
@@ -638,7 +644,10 @@ public static class PokemonData {
 
         normalBtn.setDisable(true);
         premiumBtn.setDisable(true);
-            
+        drawInProgress = true;
+        tabPane.getTabs().forEach(t -> { if (t != gachaTab) t.setDisable(true); });
+        themeSelector.setDisable(true);
+
         RotateTransition shake = new RotateTransition(javafx.util.Duration.millis(100), ballView);
         shake.setFromAngle(-15);
         shake.setToAngle(15);
@@ -714,6 +723,9 @@ public static class PokemonData {
                 ballExpandBack.play();
                 if (finalDrawnId != null) refreshPokedexGrid(finalDrawnId);
                 else refreshPokedexGrid();
+                drawInProgress = false;
+                tabPane.getTabs().forEach(t -> t.setDisable(false));
+                themeSelector.setDisable(false);
                 refreshDrawBtnStatus();
             });
             delay.play();

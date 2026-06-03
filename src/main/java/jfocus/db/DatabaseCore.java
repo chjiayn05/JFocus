@@ -79,13 +79,7 @@ public class DatabaseCore {
                 coins INTEGER NOT NULL DEFAULT 0,
                 stones INTEGER NOT NULL DEFAULT 0,
                 xp INTEGER NOT NULL DEFAULT 0,
-                partner_id TEXT NOT NULL DEFAULT '004_charmander_1'
-            );
-            """;
-
-        String unlockedStagesTableSql = """
-            CREATE TABLE IF NOT EXISTS unlocked_stages (
-                stage_key TEXT PRIMARY KEY
+                partner_id TEXT NOT NULL DEFAULT '004_charmander'
             );
             """;
 
@@ -130,10 +124,14 @@ public class DatabaseCore {
             );
             """;
 
-        String pokemonSelectedStageTableSql = """
-            CREATE TABLE IF NOT EXISTS pokemon_selected_stage (
-                pokemon_id TEXT PRIMARY KEY,
-                stage INTEGER NOT NULL DEFAULT 1
+        String pokemonProgressTableSql = """
+            CREATE TABLE IF NOT EXISTS pokemon_progress (
+                pokemon_id      TEXT    PRIMARY KEY,
+                xp              INTEGER NOT NULL DEFAULT 0,
+                stage1_unlocked INTEGER NOT NULL DEFAULT 0,
+                stage2_unlocked INTEGER NOT NULL DEFAULT 0,
+                stage3_unlocked INTEGER NOT NULL DEFAULT 0,
+                selected_stage  INTEGER NOT NULL DEFAULT 1
             );
             """;
 
@@ -152,12 +150,11 @@ public class DatabaseCore {
             stmt.execute("PRAGMA synchronous=NORMAL");
             stmt.execute(activityTableSql);
             stmt.execute(playerStatsTableSql);
-            stmt.execute(unlockedStagesTableSql);
             stmt.execute(distractionRulesTableSql);
             stmt.execute(appSettingsTableSql);
             stmt.execute(todosTableSql);
             stmt.execute(focusSessionsTableSql);
-            stmt.execute(pokemonSelectedStageTableSql);
+            stmt.execute(pokemonProgressTableSql);
             stmt.execute(subjectsTableSql);
             if (isNewDb) seedDefaultSubjects(conn);
             seedDefaultBlacklistRules(conn);
@@ -354,4 +351,5 @@ public class DatabaseCore {
             ps.executeBatch();
         }
     }
+
 }

@@ -111,6 +111,10 @@
 .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
     -fx-border-color: transparent;
 }
+.tab:disabled {
+    -fx-cursor: default;
+    -fx-opacity: 1;
+}
 
 /* 按鈕 */
 .button {
