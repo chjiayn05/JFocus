@@ -451,11 +451,14 @@ public static class PokemonData {
             todoView.refreshTodoList();
         }
 
-        updateDockIcon(cssFileName);
+        updateDockIcon(cssFileName, primaryStage);
     }
 
-
     public static void updateDockIcon(String cssFileName) {
+        updateDockIcon(cssFileName, null);
+    }
+
+    public static void updateDockIcon(String cssFileName, javafx.stage.Stage stage) {
         try {
             String iconFile = switch (cssFileName) {
                 case "PokemonLight.css" -> "tab_icon_light.png";
@@ -463,15 +466,20 @@ public static class PokemonData {
                 case "PokemonPurple.css" -> "tab_icon_purple.png";
                 default -> "tab_icon_dark.png";
             };
-            java.awt.Image dockIcon = java.awt.Toolkit.getDefaultToolkit().getImage("res/tab_icon/" + iconFile);
+            String iconPath = "res/tab_icon/" + iconFile;
+            // Windows/Linux: Stage.getIcons()
+            if (stage != null) {
+                stage.getIcons().setAll(new javafx.scene.image.Image("file:" + iconPath));
+            }
+            // macOS: Dock icon via Taskbar
             if (Taskbar.isTaskbarSupported()) {
                 Taskbar taskbar = Taskbar.getTaskbar();
                 if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
-                    taskbar.setIconImage(dockIcon);
+                    taskbar.setIconImage(java.awt.Toolkit.getDefaultToolkit().getImage(iconPath));
                 }
             }
         } catch (Exception e) {
-            System.out.println("無法設定 Dock 圖示: " + e.getMessage());
+            System.out.println("無法設定圖示: " + e.getMessage());
         }
     }
 
@@ -597,6 +605,7 @@ public static class PokemonData {
         primaryStage.setResizable(false);
         updatePokemonDisplay(currentPokemonFolder, currentStage);
         primaryStage.show();
+        updateDockIcon(css, primaryStage);
     }
 
     public void bringToFront() {
