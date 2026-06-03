@@ -53,6 +53,12 @@ public class DistractionClassifier {
             "new tab",
             "google 搜尋",
             "起始頁面");
+    private static final Set<String> MUSIC_WORD = Set.of(
+        "音樂",
+        "music",
+        "金曲",
+        "歌曲"
+    );
 
     private final DocumentCategorizerME categorizer;
     private final double playThreshold;
@@ -194,7 +200,7 @@ public class DistractionClassifier {
             return true;
         }
 
-        if (isYoutubeUnnecessaryPage(app, title)) {
+        if (isYoutubeUnnecessaryPage(app, title) || isMusic(app, title)) {
             return false;
         }
 
@@ -269,6 +275,13 @@ public class DistractionClassifier {
                 || "喜歡的影片 - youtube".equals(stripped)
                 || "電影 - youtube".equals(stripped)
                 || "直播 - youtube".equals(stripped);
+    }
+
+    private boolean isMusic(String app, String title) {
+        String normalizedTitle = stripBrowserSuffix(title);
+        String stripped = normalizedTitle.replaceAll("\\s*-\\s*音訊播放中\\s*$", "").trim();
+        
+        return app.contains("music") || MUSIC_WORD.stream().anyMatch(stripped::contains);
     }
 
     private String stripBrowserSuffix(String title) {
