@@ -169,8 +169,20 @@ public class SettingsView extends VBox {
         closeBtn.getStyleClass().addAll("segment-btn", "segment-btn-right");
         (currentMode == DistractionHandlingMode.WARN_USER ? warnBtn : closeBtn).setSelected(true);
         modeGroup.selectedToggleProperty().addListener((obs, old, nw) -> {
-            if (nw == null) { old.setSelected(true); return; }
-            modeRepo.saveMode(nw == warnBtn ? DistractionHandlingMode.WARN_USER : DistractionHandlingMode.CLOSE_DISTRACTION);
+            if (nw == null) {
+                old.setSelected(true);
+                return;
+            }
+            DistractionHandlingMode selected = nw == warnBtn
+                    ? DistractionHandlingMode.WARN_USER
+                    : DistractionHandlingMode.CLOSE_DISTRACTION;
+            modeRepo.saveMode(selected);
+            mainApp.applyDistractionHandlingMode(selected);
+            FocusApp.getNotificationService().notify(new NotificationPayload(
+                    "系統通知",
+                    "分心處理模式: " + (nw == warnBtn ? "警告提示" : "強制關閉"),
+                    NotificationSeverity.INFO,
+                    "FocusEngine"));
         });
         warnBtn.disableProperty().bind(mainApp.sessionActiveProperty());
         closeBtn.disableProperty().bind(mainApp.sessionActiveProperty());
@@ -402,6 +414,7 @@ public class SettingsView extends VBox {
             subjectList.getItems().setAll(items);
             if (sel != null && items.contains(sel)) subjectList.getSelectionModel().select(sel);
         });
+        mainApp.refreshTimerSubjects();
     }
 
     private void refreshList(RuleListType listType) {

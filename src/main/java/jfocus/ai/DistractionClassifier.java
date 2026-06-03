@@ -25,6 +25,7 @@ import opennlp.tools.doccat.DocumentCategorizerME;
  * 根據 app 與視窗標題判斷是否為分心活動。
  */
 public class DistractionClassifier {
+
     private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
     private static final int MAX_KEYWORD_CANDIDATES = 6;
@@ -53,11 +54,21 @@ public class DistractionClassifier {
             "new tab",
             "google 搜尋",
             "起始頁面");
+
     private static final Set<String> MUSIC_WORD = Set.of(
-        "音樂",
-        "music",
-        "金曲",
-        "歌曲"
+            "spotify",
+            "apple music", "蘋果音樂",
+            "youtube music", "youtube 音樂",
+            "amazon music", "亞馬遜音樂",
+            "soundcloud", "聲雲",
+            "kkbox", "kkbox 音樂",
+            "line music", "line 音樂",
+            "netease cloud music", "網易雲音樂",
+            "qq music", "qq 音樂",
+            "音樂", "music", "金曲", "歌曲", "歌單",
+            "r&b", "rnb", "chill", "pop", "song",
+            "sing", "翻唱", "唱", "歌", "曲", "流行樂",
+            "單曲", "mix", "曲目", "重金屬"
     );
 
     private final DocumentCategorizerME categorizer;
@@ -72,10 +83,6 @@ public class DistractionClassifier {
                 loadCategorizer(AppPaths.getModelPath()),
                 DEFAULT_PLAY_THRESHOLD,
                 new JdbcDistractionRuleRepository(new DatabaseCore()));
-    }
-
-    DistractionClassifier(DocumentCategorizerME categorizer, double playThreshold) {
-        this(categorizer, playThreshold, new JdbcDistractionRuleRepository(new DatabaseCore()));
     }
 
     public DistractionClassifier(DistractionRuleRepository ruleRepository) {
@@ -280,8 +287,8 @@ public class DistractionClassifier {
     private boolean isMusic(String app, String title) {
         String normalizedTitle = stripBrowserSuffix(title);
         String stripped = normalizedTitle.replaceAll("\\s*-\\s*音訊播放中\\s*$", "").trim();
-        
-        return app.contains("music") || MUSIC_WORD.stream().anyMatch(stripped::contains);
+
+        return MUSIC_WORD.stream().anyMatch(app::contains) || MUSIC_WORD.stream().anyMatch(stripped::contains);
     }
 
     private String stripBrowserSuffix(String title) {

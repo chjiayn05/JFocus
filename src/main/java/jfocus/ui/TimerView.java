@@ -825,6 +825,10 @@ public class TimerView extends VBox implements FocusListener {
 
     private static final String SUBJECT_PLACEHOLDER = "選擇科目";
 
+    public void refreshSubjects() {
+        reloadSubjects(null);
+    }
+
     private void reloadSubjects(String selectValue) {
         String current = selectValue != null ? selectValue
                 : (subjectSelector.getValue() != null ? subjectSelector.getValue() : SUBJECT_PLACEHOLDER);

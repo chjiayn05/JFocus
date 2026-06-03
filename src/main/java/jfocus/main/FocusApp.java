@@ -10,6 +10,7 @@ import jfocus.io.UserData;
 import jfocus.notification.NoOpNotificationService;
 import jfocus.notification.NotificationService;
 import jfocus.notification.SystemNotificationService;
+import jfocus.settings.JdbcDistractionSettingsRepository;
 import jfocus.ui.FocusUI;
 
 /**
@@ -64,7 +65,10 @@ public final class FocusApp {
         FocusUI.updateDockIcon(savedCss);
         
         startModelTraining();
-        initializeNotificationService();
+        boolean notifEnabled = new JdbcDistractionSettingsRepository(new DatabaseCore()).loadSettings().systemNotificationsEnabled();
+        if (notifEnabled) {
+            initializeNotificationService();
+        }
         MacAccessibilityPermission.requestIfNeeded();
         try {
             Application.launch(jfocus.ui.FocusUI.class, args);

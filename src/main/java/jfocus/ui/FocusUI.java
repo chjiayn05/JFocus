@@ -230,7 +230,19 @@ public static class PokemonData {
             timerView.refreshXpDisplay();
         }
     }
-    
+
+    public void applyDistractionHandlingMode(jfocus.ai.distraction.DistractionHandlingMode mode) {
+        if (timerView != null) {
+            timerView.setDistractionHandlingMode(mode);
+        }
+    }
+
+    public void refreshTimerSubjects() {
+        if (timerView != null) {
+            timerView.refreshSubjects();
+        }
+    }
+
     private void refreshDrawBtnStatus() {
         int tempCoins = gameManager.getFocusCoins();
         int tempStones = gameManager.getMasterStones();

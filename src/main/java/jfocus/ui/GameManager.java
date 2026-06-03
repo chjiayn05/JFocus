@@ -178,10 +178,10 @@ public class GameManager {
         totalXP += safeMinutes;
         dailyMinutes += safeMinutes;
 
-        while (dailyMinutes >= 240) {
+        while (dailyMinutes >= 120) {
             masterStones += 1;
-            dailyMinutes -= 240;
-            System.out.println("💎 累積專注滿 4 小時，獲得一顆大師晶石！");
+            dailyMinutes -= 120;
+            System.out.println("💎 累積專注滿 2 小時，獲得一顆大師晶石！");
         }
 
         String pokemonId = normalizePokemonId(activePokemonId);
