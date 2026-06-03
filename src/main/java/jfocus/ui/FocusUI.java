@@ -1,4 +1,5 @@
 package jfocus.ui;
+import java.awt.Taskbar;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement; // 在最上方加入這行
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javafx.animation.AnimationTimer;
@@ -229,7 +230,7 @@ public static class PokemonData {
     private void refreshDrawBtnStatus() {
         int tempCoins = gameManager.getFocusCoins();
         int tempStones = gameManager.getMasterStones();
-        if (tempCoins < 200 && tempStones < 1) {
+        if (tempCoins < 200 && tempStones < 2) {
             normalBtn.setDisable(true);
             premiumBtn.setDisable(true);
             gachaMessageLabel.setText("資源不夠啦！再去專注幾分鐘吧！");
@@ -443,8 +444,30 @@ public static class PokemonData {
         if (todoView != null) {
             todoView.refreshTodoList();
         }
+
+        updateDockIcon(cssFileName);
     }
 
+
+    public static void updateDockIcon(String cssFileName) {
+        try {
+            String iconFile = switch (cssFileName) {
+                case "PokemonLight.css" -> "tab_icon_light.png";
+                case "PokemonRed.css" -> "tab_icon_red.png";
+                case "PokemonPurple.css" -> "tab_icon_purple.png";
+                default -> "tab_icon_dark.png";
+            };
+            java.awt.Image dockIcon = java.awt.Toolkit.getDefaultToolkit().getImage("res/tab_icon/" + iconFile);
+            if (Taskbar.isTaskbarSupported()) {
+                Taskbar taskbar = Taskbar.getTaskbar();
+                if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+                    taskbar.setIconImage(dockIcon);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("無法設定 Dock 圖示: " + e.getMessage());
+        }
+    }
 
     private Tab createTimerTab() {
         Tab tab = new Tab("專注計時");
@@ -510,7 +533,7 @@ public static class PokemonData {
         themeSelector.getItems().addAll("暗黑電競", "明亮清新", "經典紅", "大師球");
         String savedThemeName = jfocus.io.UserData.loadAppSetting("theme_name", "暗黑電競");
         themeSelector.setValue(savedThemeName);
-
+        
         themeSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             css = switch (newVal) {
                 case "暗黑電競" -> "PokemonDark.css";
@@ -822,7 +845,7 @@ public static class PokemonData {
         confirmBtn.setOnAction(e -> {
             dialog.close();
             if (!selectedStageMap.containsKey(data.getId())) {
-                int keepStage = unlockedStage - 1;
+                int keepStage = Math.max(1, this.currentStage);
                 selectedStageMap.put(data.getId(), keepStage);
                 jfocus.io.UserData.saveSelectedStage(data.getId(), keepStage);
             }
