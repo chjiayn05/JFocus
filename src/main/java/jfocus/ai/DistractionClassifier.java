@@ -53,6 +53,12 @@ public class DistractionClassifier {
             "new tab",
             "google 搜尋",
             "起始頁面");
+    private static final Set<String> MUSIC_WORD = Set.of(
+        "音樂",
+        "music",
+        "金曲",
+        "歌曲"
+    );
 
     private final DocumentCategorizerME categorizer;
     private final double playThreshold;
@@ -194,7 +200,7 @@ public class DistractionClassifier {
             return true;
         }
 
-        if (isYoutubeUnnecessaryPage(app, title)) {
+        if (isYoutubeUnnecessaryPage(app, title) || isMusic(app, title)) {
             return false;
         }
 
@@ -216,7 +222,15 @@ public class DistractionClassifier {
 
         int categoryIndex = categorizer.getIndex(category);
         double probability = categoryIndex >= 0 ? outcomes[categoryIndex] : 0.0;
-        boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= playThreshold;
+        boolean isYoutubeVideo = isBrowserApp(app) && title.contains("youtube");
+        // YouTube 需要更高 PLAY 信心（0.70）才算分心，避免誤擋學習影片。
+        double effectiveThreshold = isYoutubeVideo ? 0.70 : playThreshold;
+        boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= effectiveThreshold;
+        // model 完全不確定時（任一類信心 < 0.55），YouTube 預設分心。
+        // 學習頻道請加白名單排除。
+        if (!distracted && isYoutubeVideo && probability < 0.55) {
+            distracted = true;
+        }
 
         System.out.println(distracted ? "[PLAY]" : "[STUDY]" + " | Text = \"" + cleanedTitle + "\"");
         System.out.println("Probability=" + probability + " | Distracted = " + distracted);
@@ -250,14 +264,24 @@ public class DistractionClassifier {
         }
 
         String normalizedTitle = stripBrowserSuffix(title);
-        return "youtube".equals(normalizedTitle)
-                || "訂閱內容 - youtube".equals(normalizedTitle)
-                || "觀看紀錄 - youtube".equals(normalizedTitle)
-                || "播放清單 - youtube".equals(normalizedTitle)
-                || "稍後觀看 - youtube".equals(normalizedTitle)
-                || "喜歡的影片 - youtube".equals(normalizedTitle)
-                || "電影 - youtube".equals(normalizedTitle)
-                || "直播 - youtube".equals(normalizedTitle);
+        // 去掉 Chrome 在播放時附加的「- 音訊播放中」後綴再比對
+        String stripped = normalizedTitle.replaceAll("\\s*-\\s*音訊播放中\\s*$", "").trim();
+        return "youtube".equals(stripped)
+                || "youtube".equals(normalizedTitle)
+                || "訂閱內容 - youtube".equals(stripped)
+                || "觀看紀錄 - youtube".equals(stripped)
+                || "播放清單 - youtube".equals(stripped)
+                || "稍後觀看 - youtube".equals(stripped)
+                || "喜歡的影片 - youtube".equals(stripped)
+                || "電影 - youtube".equals(stripped)
+                || "直播 - youtube".equals(stripped);
+    }
+
+    private boolean isMusic(String app, String title) {
+        String normalizedTitle = stripBrowserSuffix(title);
+        String stripped = normalizedTitle.replaceAll("\\s*-\\s*音訊播放中\\s*$", "").trim();
+        
+        return app.contains("music") || MUSIC_WORD.stream().anyMatch(stripped::contains);
     }
 
     private String stripBrowserSuffix(String title) {

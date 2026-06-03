@@ -30,6 +30,8 @@ import jfocus.ai.rules.RuleListType;
 import jfocus.ai.rules.SqliteDistractionRuleRepository;
 import jfocus.db.DatabaseCore;
 import jfocus.main.FocusApp;
+import jfocus.notification.NotificationPayload;
+import jfocus.notification.NotificationSeverity;
 import jfocus.settings.DistractionSettings;
 import jfocus.settings.JdbcDistractionSettingsRepository;
 import jfocus.subjects.JdbcSubjectRepository;
@@ -190,8 +192,16 @@ public class SettingsView extends VBox {
         notifToggle.setSelected(ds.systemNotificationsEnabled());
         notifToggle.selectedProperty().addListener((obs, old, val) -> {
             distractionSettingsRepo.saveSystemNotificationsEnabled(val);
-            if (val) FocusApp.initializeNotificationService();
-            else     FocusApp.shutdownNotificationService();
+            if (val) {
+                FocusApp.initializeNotificationService();
+                FocusApp.getNotificationService().notify(new NotificationPayload(
+                    "系統通知",
+                    "通知系統已開啟",
+                    NotificationSeverity.INFO,
+                    "FocusEngine"));
+            } else {
+                FocusApp.shutdownNotificationService();
+            }     
         });
 
         Label notifLabel = new Label("系統通知");

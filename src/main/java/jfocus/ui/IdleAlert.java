@@ -54,7 +54,7 @@ public class IdleAlert extends FullScreenAlert {
     protected void showContent() {
         VBox root = createRoot();
 
-        HBox titleRow = createTitleRow("𝗓ᶻ", "偵測到閒置！", "alert-title-idle");
+        HBox titleRow = createTitleRow("Zzz", "偵測到閒置！", "alert-title-idle");
 
         long idleSeconds = idleTimeMillis / 1000;
         String timeText = idleSeconds < 60

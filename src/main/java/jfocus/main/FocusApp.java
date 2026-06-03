@@ -6,9 +6,11 @@ import javafx.application.Application;
 import jfocus.ai.ModelTrainer;
 import jfocus.ai.distraction.MacAccessibilityPermission;
 import jfocus.db.DatabaseCore;
+import jfocus.io.UserData;
 import jfocus.notification.NoOpNotificationService;
 import jfocus.notification.NotificationService;
 import jfocus.notification.SystemNotificationService;
+import jfocus.ui.FocusUI;
 
 /**
  * 應用程式主入口，負責啟動 UI
@@ -51,6 +53,16 @@ public final class FocusApp {
 
     public static void main(String[] args) {
         DatabaseCore.initializeDatabase();
+
+        String savedTheme = UserData.loadAppSetting("theme_name", "暗黑電競");
+        String savedCss = switch (savedTheme) {
+            case "明亮清新" -> "PokemonLight.css";
+            case "經典紅" -> "PokemonRed.css";
+            case "大師球" -> "PokemonPurple.css";
+            default -> "PokemonDark.css";
+        };
+        FocusUI.updateDockIcon(savedCss);
+        
         startModelTraining();
         initializeNotificationService();
         MacAccessibilityPermission.requestIfNeeded();

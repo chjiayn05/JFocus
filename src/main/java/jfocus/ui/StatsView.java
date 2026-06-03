@@ -55,8 +55,8 @@ public class StatsView extends VBox {
         this.gameManager = gameManager;
         this.timerView = timerView;
         this.mainApp = mainApp;
-        // this.dataManager = new MockDashboardDataManager();
-        this.dataManager = new JdbcDashboardDataManager();
+        this.dataManager = new MockDashboardDataManager();
+        //this.dataManager = new JdbcDashboardDataManager();
 
         this.setSpacing(10);
         this.setPadding(new Insets(10));
