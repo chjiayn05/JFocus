@@ -20,7 +20,7 @@ import jfocus.db.StorageException;
 public final class UserData {
     private static final Pattern STAGE_KEY_PATTERN = Pattern.compile("\\d{3}_[1-3]");
     private static final Pattern POKEMON_ID_PATTERN = Pattern.compile("\\d{3}");
-    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_1", "004_1", "007_1");
+    private static final Set<String> DEFAULT_UNLOCKED_STAGES = Set.of("001_bulbasaur", "004_charmander", "007_squirtle");
 
     private UserData() {
         // Utility class
@@ -103,7 +103,7 @@ public final class UserData {
         } catch (SQLException e) {
             System.err.println("讀取夥伴 ID 失敗，使用預設值。");
         }
-        return "004"; // 找不到就給預設值小火龍
+        return "004_charmander"; // 找不到就給預設值小火龍
     }
 
     /**
@@ -135,7 +135,10 @@ public final class UserData {
                  ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     String stageKey = rs.getString("stage_key");
-                    if (isValidStageKey(stageKey)) {
+                    
+                    // 🌟 【關鍵修改】：不要再用那個嚴格的 isValidStageKey 了！
+                    // 只要資料庫裡抓出來的東西不是 null 也不是空白，就直接加進去！
+                    if (stageKey != null && !stageKey.trim().isEmpty()) {
                         result.add(stageKey);
                     }
                 }
@@ -286,15 +289,72 @@ public final class UserData {
         }
     }
 
-    private static boolean isValidStageKey(String stageKey) {
-        return stageKey != null
-                && !stageKey.isBlank()
-                && STAGE_KEY_PATTERN.matcher(stageKey.trim()).matches();
-    }
+private static boolean isValidStageKey(String key) {
+    return key != null && !key.trim().isEmpty(); // ✅ 變成超級寬鬆模式
+}
 
     private static boolean isValidPokemonId(String pokemonId) {
         return pokemonId != null
                 && !pokemonId.isBlank()
                 && POKEMON_ID_PATTERN.matcher(pokemonId.trim()).matches();
+    }
+
+    public static java.util.Map<String, Integer> loadSelectedStages() {
+        String sql = "SELECT pokemon_id, stage FROM pokemon_selected_stage";
+        java.util.Map<String, Integer> map = new java.util.HashMap<>();
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString("pokemon_id"), rs.getInt("stage"));
+            }
+        } catch (SQLException e) {
+            System.err.println("讀取選擇 stage 失敗: " + e.getMessage());
+        }
+        return map;
+    }
+
+    public static void saveSelectedStage(String pokemonId, int stage) {
+        String sql = "INSERT INTO pokemon_selected_stage(pokemon_id, stage) VALUES (?, ?) "
+                   + "ON CONFLICT(pokemon_id) DO UPDATE SET stage = excluded.stage";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, pokemonId);
+            pstmt.setInt(2, stage);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("儲存選擇 stage 失敗: " + e.getMessage());
+        }
+    }
+
+    public static void saveAppSetting(String key, String value) {
+        String sql = "INSERT INTO app_settings(setting_key, setting_value) VALUES (?, ?) "
+                   + "ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, "
+                   + "updated_at = datetime('now')";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, key);
+            pstmt.setString(2, value);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("儲存設定失敗: " + e.getMessage());
+        }
+    }
+
+    public static String loadAppSetting(String key, String defaultValue) {
+        String sql = "SELECT setting_value FROM app_settings WHERE setting_key = ?";
+        try (Connection conn = new DatabaseCore().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, key);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String val = rs.getString("setting_value");
+                    return val != null ? val : defaultValue;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("讀取設定失敗: " + e.getMessage());
+        }
+        return defaultValue;
     }
 }

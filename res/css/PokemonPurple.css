@@ -1,94 +1,85 @@
-/* 大師球尊爵風 (MasterBall.css) */
-.root {
-    -fx-background-color: #1a1a24; 
-    -fx-font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
-}
-.label { -fx-text-fill: #e0e0e0; }
-
-/* 頂部狀態列 (深紫) */
-.top-bar {
-    -fx-background-color: #3B205E; 
-}
-.top-bar .label {
-    -fx-text-fill: #ffffff;
-    -fx-font-weight: bold;
-}
-
-/* 分頁標籤 */
-.tab-pane .tab-header-area .tab-header-background { -fx-background-color: #2a1645; }
-.tab {
-    -fx-background-color: #4A2B7A; 
-    -fx-background-radius: 10 10 0 0; 
-    -fx-padding: 8 20;
-}
-.tab .tab-label {
-    -fx-text-fill: #bfa3e8;
-    -fx-font-weight: bold;
-}
-.tab:selected {
-    -fx-background-color: #E22B6D; /* 大師球洋紅色 */
-}
-.tab:selected .tab-label {
-    -fx-text-fill: #ffffff;
-}
-
-/* 按鈕 (大師粉紅) */
-.button {
-    -fx-background-color: #E22B6D; 
-    -fx-text-fill: white; 
-    -fx-background-radius: 20; 
-    -fx-font-weight: bold; 
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 5, 0, 0, 3);
-}
-.button:hover { -fx-background-color: #f74382; -fx-translate-y: -2px; }
-
-/* 圖鑑卡片 (暗星空灰) */
-.pokemon-card {
-    -fx-background-color: #2a2a3b; 
-    -fx-background-radius: 15; 
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);
-}
-.pokemon-card:hover {
-    -fx-border-color: #E22B6D; 
-    -fx-border-width: 2; 
-    -fx-border-radius: 15;
-}
-
-/* 經驗條 (紫粉漸層) */
-.progress-bar .track { -fx-background-color: #1a1a24; -fx-background-radius: 10; }
-.progress-bar .bar { -fx-background-color: linear-gradient(to right, #4A2B7A, #E22B6D); -fx-background-radius: 8; }
-
-/* 屬性標籤沿用 */
-.type-tag { -fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 12px; }
-.fire { -fx-background-color: #e84118; }
-.water { -fx-background-color: #00a8ff; }
-.grass { -fx-background-color: #4cd137; }
-.electric { -fx-background-color: #fbc531; -fx-text-fill: #2f3640; }
-.normal { -fx-background-color: #7f8fa6; }
-
 /* ==========================================
-   【終極修復】拔除 TabPane 與 ScrollPane 的隱藏底色
-   讓最底層 (.root) 的漂亮背景色完美透出來
+   PokemonPurple.css — 大師球
    ========================================== */
-.tab-pane,
-.tab-pane .tab-content-area,
-.scroll-pane, 
-.scroll-pane > .viewport {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
+
+.root {
+    -my-primary-color: #24232f;
+    -my-secondary-color: #57328f;
+    -my-background-color: #341c53;
+
+    -my-shadow-color: #792140;
+    -my-shadow-hover-color: #f74382;
+
+    -my-btn-primary-color: #ac2f5b;
+    -my-btn-primary-hover-color: #d83c73;
+    -my-btn-secondary-color: #7c2041;
+    
+    -my-text-color: #ffffff;
+    -my-text-soft-color: #cacaca;
+    -my-label-text-color: #d8bdff;
+
+    -my-border-color: #f74382;
+    -my-tab-border-color: #f74382;
+    -my-line-color: #a081cfa0;
+
+    -my-pokemon-card: #57328f;
+    -my-pokemon-card-lock: #453a55;
+    -my-pokemon-card-hover: #f74382;
+
+    -my-progress-track: #ffb1cd;
+    -my-progress-bar: #f74382;
+    -my-lock-color: #850000;
+    -my-stage-color: #57328f50;
+    -my-stage-hover-color: #57328f99;
+
+    -fx-font-family: 'Chiron GoRound TC';
+    -fx-font-weight: 700;
+    -fx-background-color: -my-primary-color;
+
+    /* Theme color variables used by global.css */
+    -my-label-text-fill: -my-text-soft-color;
+    -my-label-change-color: #f74382;
+
+    -my-choice-box-text-color: -my-text-color;
+    -my-tab-selected-text-color: -my-text-color;
+    -my-detail-view-border-color: -my-tab-border-color;
+
+    /* Stats Page Variables */
+    -my-heatmap-0: #2a2a3b;
+    -my-heatmap-1: #4b2e6e;
+    -my-heatmap-2: #6d3ea3;
+    -my-heatmap-3: #8c52d9;
+    -my-heatmap-4: #a86df2;
+    -my-heatmap-text-0: #bfa3e8;
+    -my-heatmap-text-1: #ffffff;
+    -my-heatmap-text-2: #ffffff;
+    -my-heatmap-text-3: #ffffff;
+    -my-heatmap-text-4: #ffffff;
+    -my-heatmap-active-border: #E22B6D;
+    -my-setting-list: #4b2e6e;
+    -my-setting-list-cell: #6d3ea3;
+
+    -my-stats-card-bg: #4b2e6e;
+    -my-stats-card-opacity: 1.0;
+    -my-stats-card-border-color: transparent;
+    -my-stats-card-border-width: 0px;
+    -my-stats-card-shadow-color: rgba(0, 0, 0, 0.3);
+    -my-stats-card-title-color: #bfa3e8;
+    -my-stats-card-value-color: #ffffff;
+    -my-stats-card-comment-color: #ffffff;
+    -my-stats-soft-text-color: #aaaaaa;
+
+    -my-chart-grid-color: rgba(255, 255, 255, 0.08);
+    -my-chart-tick-label-color: #777777;
+    -my-chart-axis-label-color: #777777;
+    -my-chart-legend-text-color: #cccccc;
+
+    -my-rank-comment-color: #E22B6D;
+    -my-trend-line-color: #E22B6D;
 }
 
-/* 讓屬性變成一個漂亮的圓角標籤 */
-.type-badge {
-    -fx-background-color: #3498db; /* 水屬性的藍色，可以用 Java 根據屬性動態替換 */
-    -fx-background-radius: 15;     /* 圓角 */
-    -fx-padding: 5 15 5 15;        /* 內邊距，讓它看起來像一顆膠囊 */
+.stats-container .label {
+    -fx-text-fill: #ffffff;
 }
 
-/* 確保裡面的字永遠是白色且清晰 */
-.type-text {
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-font-size: 14px;
-}
+

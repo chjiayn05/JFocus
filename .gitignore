@@ -28,3 +28,4 @@ target/
 jfocus-data/
 .DS_Store
 .idea/*
+temp/

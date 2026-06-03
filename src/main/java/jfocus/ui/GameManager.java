@@ -1,7 +1,6 @@
 package jfocus.ui;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -9,29 +8,142 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class GameManager {
-    private static final int STAGE_2_XP_REQUIREMENT = 50;
-    private static final int STAGE_3_XP_REQUIREMENT = 200;
+import jfocus.io.UserData;
 
-    // 貨幣與數據
+public class GameManager {
+    private final int STAGE_1 = 0;
+    private final int STAGE_2 = 1;
+    private final int STAGE_3 = 2;
+
+    private final int STAGE_1_XP_REQUIREMENT = 50;
+    private final int STAGE_2_XP_REQUIREMENT = 200;
+    private final int STAGE_3_XP_REQUIREMENT = 500;
+
+    private final int[] STAGE_XP_REQUIREMENT = {
+        STAGE_1_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT,
+        STAGE_1_XP_REQUIREMENT + STAGE_2_XP_REQUIREMENT + STAGE_3_XP_REQUIREMENT};
+
+    // --- 貨幣與數據 ---
     private int focusCoins = 0;
     private int masterStones = 0;
     private int totalXP = 0;
     private int dailyMinutes = 0;
 
-    // 保底計數器
-    private int pokeBallPity = 0;
-    private int masterBallPity = 0;
-    // 1. 定義分級獎池 (這裡放的是資料夾名稱或 ID)
-    private static final List<String> STANDARD_POOL = Arrays.asList("010_caterpie", "013_weedle", "016_pidgey", "019_rattata");
-    private static final List<String> RARE_POOL = Arrays.asList("001_bulbasaur", "004_charmander", "007_squirtle", "025_pikachu");
-    private static final List<String> SUPER_RARE_POOL = Arrays.asList("147_dratini", "092_gastly", "063_abra");
+    // --- 抽獎與保底系統 ---
+    private int pokeBallPity = 0;   // 普通球保底計數
+    private int masterBallPity = 0; // 大師球保底計數
+    private boolean lastDrawDuplicate = false; // 紀錄剛剛那抽是不是重複的
 
-    // 已解鎖關卡，格式: ddd_s (例如 004_2)
-    private final Set<String> unlockedStageKeys = new LinkedHashSet<>(
-            Arrays.asList("001_1", "004_1", "007_1"));
-    // 每隻寶可夢自己的 XP，key: ddd
+    // 動態分級獎池 (由 FocusUI 載入 JSON 後自動灌入)
+    private final List<String> STANDARD_POOL = new ArrayList<>();
+    private final List<String> RARE_POOL = new ArrayList<>();
+
+    // 已解鎖關卡與 XP 紀錄
+    private final Set<String> unlockedStageKeys = new LinkedHashSet<>();
     private final Map<String, Integer> pokemonXpById = new LinkedHashMap<>();
+
+    // 當前夥伴
+    private String currentPartnerId = jfocus.io.UserData.loadCurrentPartner(); 
+
+    // ==========================================
+    // 🌟 自動構建獎池 (解決手動輸入幾百隻的問題)
+    // ==========================================
+// ==========================================
+    // 🌟 裝上防呆機制的動態獎池載入
+    // ==========================================
+// ==========================================
+    // 🌟 自動構建獎池 (安全版：直接接收分類好的字串名單)
+    // ==========================================
+    public void setGachaPools(List<String> standard, List<String> rare) {
+        STANDARD_POOL.clear();
+        RARE_POOL.clear();
+
+        // 直接把 FocusUI 分類好的名單倒進來
+        if (standard != null) STANDARD_POOL.addAll(standard);
+        if (rare != null) RARE_POOL.addAll(rare);
+
+        // 🛡️ 終極防護網
+        if (STANDARD_POOL.isEmpty()) {
+            System.err.println("⚠️ 警告：普通獎池為空！強制放入小火龍。");
+            STANDARD_POOL.add("004_charmander");
+        }
+        if (RARE_POOL.isEmpty()) {
+            System.err.println("⚠️ 警告：大師獎池為空！強制放入快龍。");
+            RARE_POOL.add("147_dratini");
+        }
+
+        System.out.println("🎲 獎池初始化完成: 普通池 " + STANDARD_POOL.size() + " 隻, 大師池 (神獸) " + RARE_POOL.size() + " 隻");
+    }
+
+    // ==========================================
+    // 🌟 安全的抽獎核心邏輯
+    // ==========================================
+    public String performPokeBallDraw(String ballType) {
+        this.lastDrawDuplicate = false; 
+        double rand = Math.random();
+        List<String> selectedPool;
+
+        if ("MASTERBALL".equals(ballType)) {
+            if (this.masterStones < 1) return "INSUFFICIENT_FUNDS";
+            this.masterStones -= 1;
+            this.masterBallPity++;
+
+            if (this.masterBallPity >= 10 || rand < 0.20) {
+                selectedPool = RARE_POOL;
+                this.masterBallPity = 0; 
+                System.out.println("✨ 大師球抽中稀有神獸！(保底計數重置)");
+            } else {
+                selectedPool = STANDARD_POOL;
+            }
+        } else {
+            if (this.focusCoins < 200) return "INSUFFICIENT_FUNDS";
+            this.focusCoins -= 200;
+            this.pokeBallPity++;
+
+            if (this.pokeBallPity >= 50 || rand < 0.01) {
+                selectedPool = RARE_POOL;
+                this.pokeBallPity = 0;
+                System.out.println("🌟 普通球竟然抽中神獸！歐氣爆發！");
+            } else {
+                selectedPool = STANDARD_POOL;
+            }
+        }
+
+        // 🛡️ 二度防呆：如果抽到的池子是空的，強制降級
+        if (selectedPool == null || selectedPool.isEmpty()) {
+            selectedPool = STANDARD_POOL;
+        }
+
+        // 🛡️ 終極防呆：如果連普通池都是空的 (代表沒有載入成功)，直接硬塞救命寶可夢！
+        if (selectedPool.isEmpty()) {
+            System.err.println("🚨 嚴重警告：所有獎池皆為空！觸發終極防呆機制。");
+            selectedPool = java.util.Arrays.asList("004_charmander", "147_dratini");
+        }
+
+        // 隨機抽出一隻
+        String prizeId = selectedPool.get(new java.util.Random().nextInt(selectedPool.size()));
+
+        String pokemonId = normalizePokemonId(prizeId);
+
+        if (unlockedStageKeys.contains(stageKey(pokemonId, 1))) {
+            this.lastDrawDuplicate = true;
+            if ("MASTERBALL".equals(ballType)) {
+                this.masterStones += 1; 
+                System.out.println("♻️ [重複] 大師球抽到重複神獸，已返還 1 顆大師晶石！");
+            } else {
+                this.focusCoins += 160; 
+                System.out.println("♻️ [重複] 普通球抽到重複精靈，已返還 160 專注幣！");
+            }
+        } else {
+            if (pokemonId != null) {
+                unlockedStageKeys.add(stageKey(pokemonId, 1));
+                pokemonXpById.putIfAbsent(pokemonId, 0);
+            }
+        }
+
+        return prizeId;
+    }
 
     public void initializePlayerState(int coins, int stones, int xp, Set<String> stageKeys,
             Map<String, Integer> pokemonXpMap) {
@@ -53,16 +165,17 @@ public class GameManager {
                 String pokemonId = normalizePokemonId(entry.getKey());
                 if (pokemonId != null) {
                     int xpValue = entry.getValue() == null ? 0 : Math.max(0, entry.getValue());
-                    xpValue = Math.min(STAGE_3_XP_REQUIREMENT, xpValue);
+                    xpValue = Math.min(STAGE_XP_REQUIREMENT[STAGE_3], xpValue);
                     pokemonXpById.put(pokemonId, xpValue);
                 }
             }
         }
 
+        // 預設解鎖御三家 (使用完整資料夾名稱)
         if (unlockedStageKeys.isEmpty()) {
-            unlockedStageKeys.add("001_1");
-            unlockedStageKeys.add("004_1");
-            unlockedStageKeys.add("007_1");
+            unlockedStageKeys.add("001_bulbasaur_1");
+            unlockedStageKeys.add("004_charmander_1");
+            unlockedStageKeys.add("007_squirtle_1");
         }
 
         ensureXpEntriesForUnlockedStage1();
@@ -73,186 +186,68 @@ public class GameManager {
         initializePlayerState(coins, stones, xp, stageKeys, Collections.emptyMap());
     }
 
-    // --- 貨幣邏輯 ---
     public void addFocusTime(int minutes, String activePokemonId) {
         int safeMinutes = Math.max(0, minutes);
-        focusCoins += safeMinutes; // 1 分鐘 = 1 幣
-        totalXP += safeMinutes;    // 將專注時間轉為經驗值
+        focusCoins += safeMinutes; 
+        totalXP += safeMinutes;    
         dailyMinutes += safeMinutes;
 
-        System.out.println("🪙 【結算】增加專注幣: " + safeMinutes + " | 總 XP 變為: " + totalXP);
-
-        // 滿 4 小時送一顆大師晶石
         while (dailyMinutes >= 240) {
             masterStones += 1;
             dailyMinutes -= 240;
-            System.out.println("💎 獲得一顆大師晶石！");
+            System.out.println("💎 累積專注滿 4 小時，獲得一顆大師晶石！");
         }
 
         String pokemonId = normalizePokemonId(activePokemonId);
-        System.out.println("🔍 【準備加經驗】目前出戰寶可夢 ID: " + pokemonId);
-
-        if (pokemonId != null) {
-            // 檢查這隻寶可夢是否在「已解鎖名單」中
-            if (unlockedStageKeys.contains(stageKey(pokemonId, 1))) {
-                int currentXp = pokemonXpById.getOrDefault(pokemonId, 0);
-                int nextXp = Math.min(STAGE_3_XP_REQUIREMENT, currentXp + safeMinutes);
-                pokemonXpById.put(pokemonId, nextXp);
-                syncEvolutionStagesForPokemon(pokemonId);
-                
-                System.out.println("✨ 【成功】寶可夢 [" + pokemonId + "] 經驗值增加！目前 XP: " + nextXp);
-            } else {
-                System.err.println("⚠️ 【失敗】寶可夢 [" + pokemonId + "] 不在已解鎖清單中，無法獲得經驗值！");
-            }
-        } else {
-            System.err.println("⚠️ 【失敗】沒有傳入有效的寶可夢 ID！");
+        if (pokemonId != null && unlockedStageKeys.contains(stageKey(pokemonId, 1))) {
+            int currentXp = pokemonXpById.getOrDefault(pokemonId, 0);
+            int nextXp = Math.min(STAGE_XP_REQUIREMENT[STAGE_3], currentXp + safeMinutes);
+            pokemonXpById.put(pokemonId, nextXp);
+            syncEvolutionStagesForPokemon(pokemonId);
+            UserData.savePlayerStats(focusCoins, masterStones, totalXP, pokemonId);
         }
     }
 
     public void addXP(int amount) {
-    // 1. 增加記憶體中的數值
-    this.totalXP += amount;
-    System.out.println("📈 經驗值增加！目前總經驗: " + this.totalXP);
-
-  
-}
-
-    // --- 抽獎系統 (Gacha) ---
-    public String drawPokemon(String ballType) {
-        double rand = Math.random();
-        String rarity;
-
-        if (ballType.equals("POKEBALL")) {
-            if (focusCoins < 200)
-                return "INSUFFICIENT_FUNDS";
-            focusCoins -= 200;
-            pokeBallPity++;
-
-            if (pokeBallPity >= 20 || rand < 0.01) { // 1% 或 保底
-                rarity = "Super Rare";
-                pokeBallPity = 0;
-            } else if (rand < 0.15) { // 14%
-                rarity = "Rare";
-            } else {
-                rarity = "Standard";
-            }
-        } else { // MASTERBALL
-            if (masterStones < 10)
-                return "INSUFFICIENT_FUNDS";
-            masterStones -= 10;
-            masterBallPity++;
-
-            if (masterBallPity >= 10 || rand < 0.20) { // 20% 或 保底
-                rarity = "Super Rare";
-                masterBallPity = 0;
-            } else {
-                rarity = "Rare";
-            }
-        }
-        return rarity; // 回傳抽到的稀有度，再從 JSON 挑一隻該稀有度的 ID 給玩家
+        this.totalXP += amount;
     }
 
-    // 在 GameManager.java 裡
+    // ==========================================
+    // 🌟 核心抽獎邏輯 (含保底與返還機制)
+    // ==========================================
+ 
+
+    // 讓 UI 知道剛剛那一抽是不是重複的，以便跳出提示
+    public boolean isLastDrawDuplicate() {
+        return this.lastDrawDuplicate;
+    }
+
     public boolean isStageUnlocked(String id, int stage) {
-        if (stage < 1 || stage > 3) {
-            return false;
-        }
-
+        if (stage < 1 || stage > 3) return false;
         String pokemonId = normalizePokemonId(id);
-        if (pokemonId == null) {
-            return false;
-        }
-
+        if (pokemonId == null) return false;
         return unlockedStageKeys.contains(stageKey(pokemonId, stage));
     }
 
-    // 抽獎
-
-public String performPokeBallDraw(String ballType) {
-if ("MASTERBALL".equals(ballType)) {
-            if (this.masterStones < 1) { // 假設大師球一次消耗 1 顆大師晶石 (請依你企劃修改)
-                return "INSUFFICIENT_FUNDS";
-            }
-            this.masterStones -= 1; // 扣除大師晶石
-            System.out.println("💎 消耗 1 顆大師晶石！剩餘：" + this.masterStones);
-        } else {
-            if (this.focusCoins < 200) {
-                return "INSUFFICIENT_FUNDS";
-            }
-            this.focusCoins -= 200; // 扣除專注幣
-            System.out.println("🪙 消耗 200 枚專注幣！剩餘：" + this.focusCoins);
-        }
-
-        // 2. 決定抽到哪個等級 (隨機 0.0 ~ 1.0)
-        double rand = Math.random();
-        List<String> selectedPool;
-        
-        if (ballType.equals("MASTERBALL")) {
-            // 大師球：20% 超稀有, 80% 稀有
-            selectedPool = (rand < 0.20) ? SUPER_RARE_POOL : RARE_POOL;
-        } else {
-            // 普通球：1% 超稀有, 14% 稀有, 85% 普通
-            if (rand < 0.01) {
-                selectedPool = SUPER_RARE_POOL;
-            } else if (rand < 0.15) {
-                selectedPool = RARE_POOL;
-            } else {
-                selectedPool = STANDARD_POOL;
-            }
-        }
-
-        // 3. 從選定的池子裡隨機抽一隻
-        String prizeId = selectedPool.get(new java.util.Random().nextInt(selectedPool.size()));
-
-        // 4. 解鎖邏輯 (原本的邏輯)
-        String pokemonId = normalizePokemonId(prizeId);
-        if (pokemonId != null) {
-            unlockedStageKeys.add(stageKey(pokemonId, 1));
-            pokemonXpById.putIfAbsent(pokemonId, 0);
-        }
-
-        return prizeId;
-    }
-// ==========================================
-    // 取得指定寶可夢目前的「最高進化階段」(1, 2, 或 3)
-    // ==========================================
     public int getEvolutionStage(String id) {
         String pokemonId = normalizePokemonId(id);
-        if (pokemonId == null) {
-            return 1; // 防呆，預設回傳 1
-        }
+        if (pokemonId == null) return 1;
 
-        // 從最高階段 (3) 往下檢查，如果有解鎖就回傳該階段
-        if (unlockedStageKeys.contains(stageKey(pokemonId, 3))) {
-            return 3; // 已經進化到水箭龜
-        } else if (unlockedStageKeys.contains(stageKey(pokemonId, 2))) {
-            return 2; // 已經進化到卡咪龜
-        }
-        
-        return 1; // 預設是第一階段 (傑尼龜)
-    }
-    // Getters
-    public int getFocusCoins() {
-        return focusCoins;
+        if (unlockedStageKeys.contains(stageKey(pokemonId, 3))) return 3;
+        if (unlockedStageKeys.contains(stageKey(pokemonId, 2))) return 2;
+        return 1;
     }
 
-    public int getMasterStones() {
-        return masterStones;
-    }
-
-    public int getTotalXP() {
-        return totalXP;
-    }
+    public int getFocusCoins() { return focusCoins; }
+    public int getMasterStones() { return masterStones; }
+    public int getTotalXP() { return totalXP; }
 
     public int getPokemonXp(String pokemonId) {
         String normalized = normalizePokemonId(pokemonId);
-        if (normalized == null) {
-            return 0;
-        }
-        return Math.min(STAGE_3_XP_REQUIREMENT, pokemonXpById.getOrDefault(normalized, 0));
+        if (normalized == null) return 0;
+        return Math.min(STAGE_XP_REQUIREMENT[STAGE_3], pokemonXpById.getOrDefault(normalized, 0));
     }
 
-    
     public Map<String, Integer> getPokemonXpMap() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(pokemonXpById));
     }
@@ -261,26 +256,14 @@ if ("MASTERBALL".equals(ballType)) {
         return Collections.unmodifiableSet(new LinkedHashSet<>(unlockedStageKeys));
     }
 
-    public List<String> getUnlockedPokemonIds() {
-        List<String> ids = new ArrayList<>();
-        for (String key : unlockedStageKeys) {
-            if (key.endsWith("_1")) {
-                ids.add(key.substring(0, 3));
-            }
-        }
-        return ids;
-    }
-
     private void syncEvolutionStages() {
         ensureXpEntriesForUnlockedStage1();
-
         List<String> basePokemonIds = new ArrayList<>();
         for (String key : unlockedStageKeys) {
-            if (key.endsWith("_1") && key.length() >= 3) {
-                basePokemonIds.add(key.substring(0, 3));
+            if (key.endsWith("_1")) {
+                basePokemonIds.add(key.substring(0, key.length() - 2));
             }
         }
-
         for (String pokemonId : basePokemonIds) {
             syncEvolutionStagesForPokemon(pokemonId);
         }
@@ -289,89 +272,60 @@ if ("MASTERBALL".equals(ballType)) {
     private void reconcileEvolutionStagesWithXp() {
         Set<String> stage1Keys = new LinkedHashSet<>();
         for (String key : unlockedStageKeys) {
-            if (key.endsWith("_1")) {
-                stage1Keys.add(key);
-            }
+            if (key.endsWith("_1")) stage1Keys.add(key);
         }
-
         unlockedStageKeys.clear();
         unlockedStageKeys.addAll(stage1Keys);
         syncEvolutionStages();
     }
 
     private void syncEvolutionStagesForPokemon(String pokemonId) {
-        if (!unlockedStageKeys.contains(stageKey(pokemonId, 1))) {
-            return;
-        }
-
+        if (!unlockedStageKeys.contains(stageKey(pokemonId, 1))) return;
         int pokemonXp = pokemonXpById.getOrDefault(pokemonId, 0);
-        if (pokemonXp >= STAGE_2_XP_REQUIREMENT) {
-            unlockedStageKeys.add(stageKey(pokemonId, 2));
-        }
-        if (pokemonXp >= STAGE_3_XP_REQUIREMENT) {
-            unlockedStageKeys.add(stageKey(pokemonId, 3));
-        }
+        
+        if (pokemonXp >= 0) unlockedStageKeys.add(stageKey(pokemonId, 1));
+        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_1]) unlockedStageKeys.add(stageKey(pokemonId, 2));
+        if (pokemonXp >= STAGE_XP_REQUIREMENT[STAGE_2]) unlockedStageKeys.add(stageKey(pokemonId, 3));
     }
 
     private void ensureXpEntriesForUnlockedStage1() {
         for (String key : unlockedStageKeys) {
-            if (key.endsWith("_1") && key.length() >= 3) {
-                String pokemonId = key.substring(0, 3);
+            if (key.endsWith("_1")) {
+                String pokemonId = key.substring(0, key.length() - 2);
                 pokemonXpById.putIfAbsent(pokemonId, 0);
             }
         }
     }
 
     private void addStageKeyIfValid(String stageKey) {
-        if (stageKey == null) {
-            return;
-        }
-
+        if (stageKey == null) return;
         String value = stageKey.trim();
-        if (value.matches("\\d{3}_[1-3]")) {
+        if (value.endsWith("_1") || value.endsWith("_2") || value.endsWith("_3")) {
             unlockedStageKeys.add(value);
         }
     }
 
+    // 🌟 關鍵修復：不再擷取前三碼，直接使用完整的資料夾名稱作為獨立 ID
+    // 這樣 265_beautifly 和 265_dustox 就會被視為兩隻完全不同的寶可夢
     private String normalizePokemonId(String idOrFolder) {
-        if (idOrFolder == null) {
-            return null;
-        }
-
+        if (idOrFolder == null) return null;
         String trimmed = idOrFolder.trim();
-        if (trimmed.length() < 3) {
-            return null;
-        }
-
-        String maybeId = trimmed.substring(0, 3);
-        if (!maybeId.matches("\\d{3}")) {
-            return null;
-        }
-
-        return maybeId;
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private String stageKey(String pokemonId, int stage) {
         return pokemonId + "_" + stage;
     }
-    // ==========================================
-    // 貼在 GameManager.java 最下面 (大括號 } 結束前)
-    // ==========================================
 
-    // 1. 【新增】記錄玩家現在正在帶哪一隻寶可夢出門 (預設給小火龍 004)
-    private String currentPartnerId = jfocus.io.UserData.loadCurrentPartner(); 
-
-    // 2. 取得當前夥伴的 ID
     public String getCurrentPokemonId() {
-        return this.currentPartnerId; 
+        return this.currentPartnerId == null ? "004_charmander" : this.currentPartnerId; 
     }
 
-// 3. 【修改】當玩家在 UI 切換夥伴時，不僅要改記憶體，還要寫入資料庫！
     public void setCurrentPokemonId(String id) {
         String normalized = normalizePokemonId(id);
         if (normalized != null) {
             this.currentPartnerId = normalized;
-            jfocus.io.UserData.saveCurrentPartner(normalized); // 同步存檔！
+            jfocus.io.UserData.saveCurrentPartner(normalized); 
         }
     }
 }

@@ -34,9 +34,15 @@ public class DistractionClassifier {
     private static final Set<String> LOW_VALUE_KEYWORDS = Set.of(
             "google chrome",
             "chrome",
+            "youtube",
             "safari",
             "microsoft edge",
             "edge",
+            "音訊",
+            "音訊播放中",
+            "播放中",
+            "audio",
+            "playing audio",
             "首頁",
             "home",
             "登入",
@@ -97,13 +103,18 @@ public class DistractionClassifier {
     public List<String> suggestRuleKeywords(String appName, String windowTitle) {
         String app = normalize(appName);
         String extractedTitle = extractWindowTitle(windowTitle);
-        String title = isBrowserApp(app)
+        String browserTitle = isBrowserApp(app)
+                ? BrowserTitleCleaner.stripBrowserSuffix(extractedTitle)
+                : stripBrowserSuffix(extractedTitle);
+        String importantTitle = isBrowserApp(app)
                 ? BrowserTitleCleaner.extractImportantTitle(app, extractedTitle)
                 : stripBrowserSuffix(extractedTitle);
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
 
-        addBracketedCandidates(candidates, title);
-        addTitlePartCandidates(candidates, removeBracketedText(title));
+        addBracketedCandidates(candidates, browserTitle);
+        addTitlePartCandidates(candidates, removeBracketedText(browserTitle));
+        addTitlePartCandidates(candidates, removeBracketedText(importantTitle));
+        addTokenCandidates(candidates, importantTitle);
 
         if (!isBrowserApp(app)) {
             addKeywordCandidate(candidates, app);
@@ -174,25 +185,20 @@ public class DistractionClassifier {
         String app = normalize(appName);
         String title = normalize(extractWindowTitle(windowTitle));
         String searchableText = toSearchText(app, title);
-        System.out.println("[DEBUG][Distraction] App=" + app + " | Title=" + title);
 
         if (matchesWhitelistRule(searchableText)) {
-            System.out.println("[DEBUG][Distraction] Whitelist rule.");
             return false;
         }
 
         if (matchesBlacklistRule(searchableText)) {
-            System.out.println("[DEBUG][Distraction] Blacklist rule.");
             return true;
         }
 
-        if (isYoutubeHomePage(app, title)) {
-            System.out.println("[DEBUG][Distraction] YouTube homepage.");
+        if (isYoutubeUnnecessaryPage(app, title)) {
             return false;
         }
 
         if (categorizer == null) {
-            System.out.println("[DEBUG][Distraction] Mo model; Treating as focused.");
             return false;
         }
 
@@ -201,7 +207,6 @@ public class DistractionClassifier {
             cleanedTitle = TextProcessor.cleanText(app);
         }
         if (cleanedTitle.isBlank()) {
-            System.out.println("[DEBUG][Distraction] Text is blank; Treating as focused.");
             return false;
         }
 
@@ -212,9 +217,9 @@ public class DistractionClassifier {
         int categoryIndex = categorizer.getIndex(category);
         double probability = categoryIndex >= 0 ? outcomes[categoryIndex] : 0.0;
         boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= playThreshold;
-        System.out.println("[DEBUG][Distraction] Result. CleanedText=\"" + cleanedTitle
-                + "\" | Category=" + category + " | Probability=" + probability + " | Threshold=" + playThreshold
-                + " | Distracted=" + distracted);
+
+        System.out.println(distracted ? "[PLAY]" : "[STUDY]" + " | Text = \"" + cleanedTitle + "\"");
+        System.out.println("Probability=" + probability + " | Distracted = " + distracted);
 
         return distracted;
     }
@@ -239,19 +244,20 @@ public class DistractionClassifier {
         return ruleRepository.matches(RuleListType.BLACKLIST, text);
     }
 
-    private boolean isYoutubeHomePage(String app, String title) {
+    private boolean isYoutubeUnnecessaryPage(String app, String title) {
         if (!isBrowserApp(app)) {
             return false;
         }
 
         String normalizedTitle = stripBrowserSuffix(title);
         return "youtube".equals(normalizedTitle)
-                || "youtube 首頁".equals(normalizedTitle)
-                || "首頁 youtube".equals(normalizedTitle)
-                || "youtube home".equals(normalizedTitle)
-                || "youtube.com".equals(normalizedTitle)
-                || "www.youtube.com".equals(normalizedTitle)
-                || "https://www.youtube.com".equals(normalizedTitle);
+                || "訂閱內容 - youtube".equals(normalizedTitle)
+                || "觀看紀錄 - youtube".equals(normalizedTitle)
+                || "播放清單 - youtube".equals(normalizedTitle)
+                || "稍後觀看 - youtube".equals(normalizedTitle)
+                || "喜歡的影片 - youtube".equals(normalizedTitle)
+                || "電影 - youtube".equals(normalizedTitle)
+                || "直播 - youtube".equals(normalizedTitle);
     }
 
     private String stripBrowserSuffix(String title) {
@@ -302,6 +308,17 @@ public class DistractionClassifier {
         String[] parts = TITLE_SEPARATOR_PATTERN.split(normalize(title));
         for (String part : parts) {
             addKeywordCandidate(candidates, part);
+        }
+    }
+
+    private static void addTokenCandidates(Set<String> candidates, String title) {
+        String cleanedTitle = TextProcessor.cleanText(title);
+        if (cleanedTitle.isBlank()) {
+            return;
+        }
+
+        for (String token : cleanedTitle.split("\\s+")) {
+            addKeywordCandidate(candidates, token);
         }
     }
 

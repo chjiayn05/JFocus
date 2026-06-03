@@ -145,9 +145,11 @@ public class FocusEngine {
             public void onIdleStateChanged(boolean isIdle, long idleTimeMillis) {
                 if (isIdle) {
                     pause(idleTimeMillis);
-                } else {
-                    resume();
+                    if (listener != null) {
+                        listener.onIdleDetected(idleTimeMillis);
+                    }
                 }
+                // 使用者回來的 event (!isIdle) 不再自動呼叫 resume()，而是等使用者關掉視窗後由 UI 呼叫 resume()
             }
         });
     }
@@ -264,6 +266,32 @@ public class FocusEngine {
         }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
+    public void startBreak(int seconds) {
+        stop();
+        this.isPaused = false;
+        this.isStopwatch = false;
+        this.originalSeconds = seconds;
+        this.currentSeconds = seconds;
+
+        currentTask = scheduler.scheduleAtFixedRate(() -> {
+            if (isPaused)
+                return;
+
+            currentSeconds--;
+
+            if (currentSeconds <= 0) {
+                stop();
+                if (listener != null) {
+                    listener.onFinished();
+                }
+            } else {
+                if (listener != null) {
+                    listener.onTick(currentSeconds);
+                }
+            }
+        }, SCHEDULER_INITIAL_DELAY_SECONDS, SCHEDULER_PERIOD_SECONDS, TimeUnit.SECONDS);
+    }
+
     // 正向計時模式 (碼表)
     public void startStopwatch() {
         stop();
@@ -333,9 +361,13 @@ public class FocusEngine {
         }
 
         sessionMonitor.pause(deductMillis);
+
+        if (listener != null) {
+            listener.onPaused();
+        }
     }
 
-    // ✅ 正確的恢復計時邏輯
+    // 正確的恢復計時邏輯
     public void resume() {
         if (!isPaused) {
             return; // 如果根本沒有暫停，就什麼都不做
@@ -346,6 +378,23 @@ public class FocusEngine {
 
         if (sessionMonitor != null) {
             sessionMonitor.resume(); // 恢復視窗監控
+        }
+
+        if (listener != null) {
+            listener.onResumed();
+        }
+    }
+
+    // Debug: 快進 N 秒（碼表往前加，倒數往前減，不觸發 onFinished）
+    public void debugForward(int seconds) {
+        if (isStopwatch) {
+            currentSeconds += seconds;
+        } else {
+            currentSeconds -= seconds;
+            if (currentSeconds <= 1) currentSeconds = 1;
+        }
+        if (listener != null) {
+            listener.onTick(currentSeconds);
         }
     }
 

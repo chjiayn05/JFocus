@@ -70,7 +70,7 @@ public class TrainingMetadata {
                     }
                     Files.deleteIfExists(oldLastIdPath);
                 } catch (Exception e) {
-                    System.err.println("⚠️ 轉移舊的 .lastid 失敗: " + e.getMessage());
+                    System.err.println("轉移舊的 .lastid 失敗: " + e.getMessage());
                 }
             }
 
@@ -83,13 +83,13 @@ public class TrainingMetadata {
                     }
                     Files.deleteIfExists(oldTrainedIdPath);
                 } catch (Exception e) {
-                    System.err.println("⚠️ 轉移舊的 .trainedid 失敗: " + e.getMessage());
+                    System.err.println("轉移舊的 .trainedid 失敗: " + e.getMessage());
                 }
             }
 
             if (changed) {
                 writeMeta(newMetaPath, meta);
-                System.out.println("🔄 已自動將舊的 .lastid / .trainedid 轉移合併至 .meta.json 中！");
+                System.out.println("已自動將舊的 .lastid / .trainedid 轉移合併至 .meta.json 中！");
             }
         }
     }
@@ -105,7 +105,7 @@ public class TrainingMetadata {
             }
             return new JSONObject(raw);
         } catch (Exception e) {
-            System.err.println("⚠️ 讀取 meta 檔失敗或格式錯誤，將重新建立: " + e.getMessage());
+            System.err.println("讀取 meta 檔失敗或格式錯誤，將重新建立: " + e.getMessage());
             return new JSONObject();
         }
     }
@@ -131,7 +131,7 @@ public class TrainingMetadata {
                 Files.move(tempPath, metaPath, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            System.err.println("❌ 寫入 meta 檔失敗: " + e.getMessage());
+            System.err.println("寫入 meta 檔失敗: " + e.getMessage());
         }
     }
 }

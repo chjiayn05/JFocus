@@ -3,11 +3,12 @@ package jfocus.main;
 import java.util.UUID;
 
 import javafx.application.Application;
+import jfocus.ai.ModelTrainer;
+import jfocus.ai.distraction.MacAccessibilityPermission;
 import jfocus.db.DatabaseCore;
 import jfocus.notification.NoOpNotificationService;
 import jfocus.notification.NotificationService;
 import jfocus.notification.SystemNotificationService;
-import jfocus.ai.ModelTrainer;
 
 /**
  * 應用程式主入口，負責啟動 UI
@@ -52,6 +53,7 @@ public final class FocusApp {
         DatabaseCore.initializeDatabase();
         startModelTraining();
         initializeNotificationService();
+        MacAccessibilityPermission.requestIfNeeded();
         try {
             Application.launch(jfocus.ui.FocusUI.class, args);
         } finally {
