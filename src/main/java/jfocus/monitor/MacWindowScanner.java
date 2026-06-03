@@ -41,7 +41,7 @@ public class MacWindowScanner implements WindowScanner {
                 "                end try\n" +
                 "                if isMini is not true then\n" +
                 "                    set wName to name of w\n" +
-                "                    if wName is not \"\" then\n" +
+                "                    if wName is not \"\" and wName is not \"音訊播放\" and wName is not \"音頻播放\" and wName is not \"Audio Playback\" then\n" +
                 "                        set windowList to windowList & pName & \"::\" & pId & \"::\" & wName & \"\\n\"\n" +
                 "                    end if\n" +
                 "                end if\n" +
