@@ -64,6 +64,10 @@
 .choice-box.mode-selector {
     -fx-pref-width: 100px;
 }
+.choice-box:disabled, 
+.choice-box:disabled > *{
+    -fx-opacity: 1;
+}
 
 /* TextField */
 .text-field {
@@ -619,7 +623,6 @@
 .choice-box.todo-subject-choice:focused {
     -fx-border-color: -my-text-color;
 }
-
 
 .settings-card {
     -fx-background-color: derive(-my-setting-list, -5%);
