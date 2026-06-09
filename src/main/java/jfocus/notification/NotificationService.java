@@ -5,10 +5,6 @@ public interface NotificationService {
 
     void notify(NotificationPayload payload);
 
-    String scheduleDailyNotification(DailyNotificationRequest request);
-
-    boolean cancelScheduledNotification(String notificationId);
-
     void setEnabled(boolean enabled);
 
     boolean isEnabled();

@@ -8,30 +8,14 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.TrayIcon.MessageType;
 import java.awt.image.BufferedImage;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class TrayNotificationService implements NotificationService {
-    private static final long SECONDS_PER_DAY = 24L * 60L * 60L;
 
-    private final ScheduledExecutorService scheduler;
-    private final Map<String, ScheduledFuture<?>> scheduledTasks;
     private TrayIcon trayIcon;
     private volatile boolean enabled = true;
 
     public TrayNotificationService() {
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledTasks = new ConcurrentHashMap<>();
         this.trayIcon = createTrayIcon();
     }
 
@@ -43,15 +27,8 @@ public class TrayNotificationService implements NotificationService {
     @Override
     public void notify(NotificationPayload payload) {
         Objects.requireNonNull(payload, "payload cannot be null");
-        System.out.println("[TrayNotificationService] notify() called: " + payload.getTitle());
-        
-        if (!enabled) {
-            System.out.println("[TrayNotificationService] Service disabled, skipping notification.");
-            return;
-        }
-        
-        if (trayIcon == null) {
-            System.out.println("[TrayNotificationService] TrayIcon is null, notification skipped.");
+
+        if (!enabled || trayIcon == null) {
             return;
         }
 
@@ -61,39 +38,9 @@ public class TrayNotificationService implements NotificationService {
             trayIcon.displayMessage("[" + payload.getSeverity().name() + "] " + payload.getTitle(),
                     payload.getMessage(),
                     mapMessageType(payload.getSeverity()));
-            System.out.println("[TrayNotificationService] Notification displayed successfully.");
         } catch (Exception ex) {
-            System.err.println("[TrayNotificationService] Error displaying notification: " + ex.getMessage());
             ex.printStackTrace();
         }
-    }
-
-    @Override
-    public String scheduleDailyNotification(DailyNotificationRequest request) {
-        Objects.requireNonNull(request, "request cannot be null");
-        String id = UUID.randomUUID().toString();
-
-        long initialDelaySeconds = secondsUntilNext(request.getTriggerTime());
-        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> {
-            NotificationPayload payload = new NotificationPayload(
-                    request.getTitle(),
-                    request.getMessage(),
-                    request.getSeverity(),
-                    request.getSource());
-            notify(payload);
-        }, initialDelaySeconds, SECONDS_PER_DAY, TimeUnit.SECONDS);
-
-        scheduledTasks.put(id, future);
-        return id;
-    }
-
-    @Override
-    public boolean cancelScheduledNotification(String notificationId) {
-        ScheduledFuture<?> future = scheduledTasks.remove(notificationId);
-        if (future == null) {
-            return false;
-        }
-        return future.cancel(false);
     }
 
     @Override
@@ -108,25 +55,10 @@ public class TrayNotificationService implements NotificationService {
 
     @Override
     public void shutdown() {
-        for (ScheduledFuture<?> future : scheduledTasks.values()) {
-            future.cancel(false);
-        }
-        scheduledTasks.clear();
-        scheduler.shutdownNow();
-
         if (trayIcon != null) {
             SystemTray.getSystemTray().remove(trayIcon);
             trayIcon = null;
         }
-    }
-
-    private static long secondsUntilNext(LocalTime triggerTime) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime nextRun = LocalDate.now().atTime(triggerTime);
-        if (!nextRun.isAfter(now)) {
-            nextRun = nextRun.plusDays(1);
-        }
-        return Math.max(1L, Duration.between(now, nextRun).getSeconds());
     }
 
     private static MessageType mapMessageType(NotificationSeverity severity) {
@@ -139,24 +71,19 @@ public class TrayNotificationService implements NotificationService {
 
     private TrayIcon createTrayIcon() {
         if (!SystemTray.isSupported()) {
-            System.out.println("[TrayNotificationService] SystemTray.isSupported() returned false.");
             return null;
         }
 
         try {
-            System.out.println("[TrayNotificationService] Attempting to create TrayIcon...");
             TrayIcon icon = new TrayIcon(createCircleImage(NotificationSeverity.INFO), "JFocus Notification");
             icon.setImageAutoSize(true);
             SystemTray.getSystemTray().add(icon);
-            System.out.println("[TrayNotificationService] TrayIcon created successfully.");
             return icon;
         } catch (AWTException ex) {
             System.err.println("[TrayNotificationService] Failed to create TrayIcon: " + ex.getMessage());
-            ex.printStackTrace();
             return null;
         } catch (Exception ex) {
             System.err.println("[TrayNotificationService] Unexpected error: " + ex.getMessage());
-            ex.printStackTrace();
             return null;
         }
     }

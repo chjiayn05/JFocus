@@ -23,14 +23,12 @@ public class SystemNotificationService implements NotificationService {
         String osName = System.getProperty(OS_NAME_PROPERTY, "").toLowerCase(Locale.ROOT);
         boolean isTraySupported = SystemTray.isSupported();
         System.out.println("[NotificationService] OS: " + osName + ", SystemTray.isSupported(): " + isTraySupported);
-        
-        // macOS: use AppleScript-based notifications
+
         if (osName.contains(MAC_TOKEN)) {
             System.out.println("[NotificationService] Using MacOSNotificationService for native notifications.");
             return new MacOSNotificationService();
         }
-        
-        // Windows: use AWT SystemTray
+
         if (osName.contains(WINDOWS_TOKEN) && isTraySupported) {
             System.out.println("[NotificationService] Using TrayNotificationService for Windows.");
             return new TrayNotificationService();
@@ -48,16 +46,6 @@ public class SystemNotificationService implements NotificationService {
     @Override
     public void notify(NotificationPayload payload) {
         delegate.notify(payload);
-    }
-
-    @Override
-    public String scheduleDailyNotification(DailyNotificationRequest request) {
-        return delegate.scheduleDailyNotification(request);
-    }
-
-    @Override
-    public boolean cancelScheduledNotification(String notificationId) {
-        return delegate.cancelScheduledNotification(notificationId);
     }
 
     @Override
