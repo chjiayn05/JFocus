@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import com.google.gson.Gson;
@@ -30,9 +29,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
@@ -50,7 +47,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import jfocus.io.UserData;
@@ -176,16 +172,6 @@ public static class PokemonData {
     }
 
     // --- 接口 (Integration Hooks) ---
-
-    public void triggerDistractionWarning(String appTitle) {
-        statusLabel.setText("警告：偵測到分心視窗 [" + appTitle + "]！");
-        statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-    }
-
-    public void updateSettingsFromJSON(int workTime, int breakTime) {
-        workInput.setText(String.valueOf(workTime));
-        breakInput.setText(String.valueOf(breakTime));
-    }
 
     private int parsePositiveInt(String text, int fallback) {
         try {
@@ -316,42 +302,6 @@ public static class PokemonData {
         } catch (RuntimeException ex) {
             statusLabel.setText("儲存資料失敗，請稍後再試。");
             System.err.println("儲存存檔失敗: " + ex.getMessage());
-        }
-    }
-
-    private void settleCurrentSession() {
-        int settledMinutes = parsePositiveInt(workInput.getText(), 25);
-        gameManager.addFocusTime(settledMinutes, getCurrentPokemonId());
-        refreshCurrencyLabels();
-        timerView.refreshXpDisplay();
-        refreshPokedexGrid();
-        saveUserProgressSafely();
-
-        timerLabel.setStyle("-fx-font-size: 80px; -fx-text-fill: #f39c12; -fx-font-weight: bold;");
-        statusLabel.setText("本輪已結算，獲得 " + settledMinutes + " 專注幣與 XP！");
-    }
-
-    private void showStopSettlementDialog() {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.initModality(Modality.APPLICATION_MODAL);
-        alert.setTitle("冒險結算");
-        alert.setHeaderText("要繼續冒險，還是現在結算？");
-        alert.setContentText("結算會把本輪專注時間換成獎勵。\n你也可以選擇繼續，不進行結算。");
-
-        ButtonType continueButton = new ButtonType("繼續專冒險");
-        ButtonType settleButton = new ButtonType("立即結算");
-        alert.getButtonTypes().setAll(continueButton, settleButton);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        if (result.isEmpty()) {
-            return;
-        }
-
-        if (result.get() == settleButton) {
-            settleCurrentSession();
-        } else if (result.get() == continueButton) {
-            timerLabel.setStyle("-fx-font-size: 80px; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
-            statusLabel.setText("已返回冒險模式，繼續加油！");
         }
     }
 

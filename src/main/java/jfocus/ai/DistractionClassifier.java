@@ -26,7 +26,7 @@ import opennlp.tools.doccat.DocumentCategorizerME;
  */
 public class DistractionClassifier {
 
-    private static final double DEFAULT_PLAY_THRESHOLD = 0.6;
+    private static final double DEFAULT_PLAY_THRESHOLD = 0.55;
     private static final String WINDOW_TITLE_SEPARATOR = ": ";
     private static final int MAX_KEYWORD_CANDIDATES = 6;
     private static final int MAX_KEYWORD_LENGTH = 30;
@@ -230,12 +230,12 @@ public class DistractionClassifier {
         int categoryIndex = categorizer.getIndex(category);
         double probability = categoryIndex >= 0 ? outcomes[categoryIndex] : 0.0;
         boolean isYoutubeVideo = isBrowserApp(app) && title.contains("youtube");
-        // YouTube 需要更高 PLAY 信心（0.70）才算分心，避免誤擋學習影片。
-        double effectiveThreshold = isYoutubeVideo ? 0.70 : playThreshold;
+        // YouTube 需要更高 PLAY 信心（0.60）才算分心，避免誤擋學習影片。
+        double effectiveThreshold = isYoutubeVideo ? 0.60 : playThreshold;
         boolean distracted = "PLAY".equalsIgnoreCase(category) && probability >= effectiveThreshold;
         // model 完全不確定時（任一類信心 < 0.55），YouTube 預設分心。
         // 學習頻道請加白名單排除。
-        if (!distracted && isYoutubeVideo && probability < 0.55) {
+        if (!distracted && isYoutubeVideo && probability < effectiveThreshold) {
             distracted = true;
         }
 

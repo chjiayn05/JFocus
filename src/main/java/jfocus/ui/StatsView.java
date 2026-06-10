@@ -55,8 +55,8 @@ public class StatsView extends VBox {
         this.gameManager = gameManager;
         this.timerView = timerView;
         this.mainApp = mainApp;
-        this.dataManager = new MockDashboardDataManager();
-        //this.dataManager = new JdbcDashboardDataManager();
+        //this.dataManager = new MockDashboardDataManager();
+        this.dataManager = new JdbcDashboardDataManager();
 
         this.setSpacing(10);
         this.setPadding(new Insets(10));
@@ -91,10 +91,7 @@ public class StatsView extends VBox {
         scrollContent.setAlignment(Pos.TOP_CENTER);
         scrollPane.setContent(scrollContent);
 
-        // 3. 底部調試折疊區
-        TitledPane debugPane = createDebugCollapsibleSection();
-
-        this.getChildren().addAll(navBar, scrollPane, debugPane);
+        this.getChildren().addAll(navBar, scrollPane);
 
         // 4. 事件綁定
         btnDaily.setOnAction(e -> {
@@ -1156,10 +1153,6 @@ public class StatsView extends VBox {
         return String.format("%02d:%02d:%02d", h, m, s);
     }
 
-    private String formatSecondsShort(long seconds) {
-        return formatSeconds(seconds);
-    }
-
     private String formatCalendarDuration(long seconds) {
         if (seconds <= 0) {
             return "";
@@ -1167,124 +1160,5 @@ public class StatsView extends VBox {
         long h = seconds / 3600;
         long m = (seconds % 3600) / 60;
         return String.format("%02d:%02d", h, m);
-    }
-
-    // 調試與模式設定折疊區
-    private TitledPane createDebugCollapsibleSection() {
-        TitledPane debugPane = new TitledPane();
-        debugPane.setText("偵測與調試設定");
-        debugPane.setExpanded(false); // 預設折疊起來
-
-        VBox debugLayout = new VBox(15);
-        debugLayout.setPadding(new Insets(15));
-        debugLayout.setAlignment(Pos.CENTER);
-
-        // A. 分心模式設定
-        JdbcDistractionModeRepository modeRepository = new JdbcDistractionModeRepository(new DatabaseCore());
-        DistractionHandlingMode currentMode = modeRepository.loadMode(DistractionHandlingMode.WARN_USER);
-
-        Label modeStatusLabel = new Label("目前分心處理模式: " + currentMode.name());
-        modeStatusLabel.setStyle("-fx-font-size: 12px;");
-
-        ToggleButton modeSwitch = createDistractionModeSwitch(currentMode, modeStatusLabel, modeRepository);
-        Label warnLabel = new Label("提醒");
-        Label closeLabel = new Label("關閉");
-        HBox modeSwitchRow = new HBox(12, warnLabel, modeSwitch, closeLabel);
-        modeSwitchRow.setAlignment(Pos.CENTER);
-
-        // B. 模擬增加資源
-        Button btnAdd = new Button("DEBUG: 增加資源 200");
-        Button btnAdd1 = new Button("DEBUG: 增加資源 100");
-        Button btnAdd2 = new Button("DEBUG: 增加資源 50");
-
-        btnAdd.setOnAction(e -> {
-            gameManager.addFocusTime(200, mainApp.getCurrentPokemonId());
-            mainApp.refreshCurrencyLabels();
-            mainApp.refreshXpDisplay();
-            mainApp.refreshPokedexGrid();
-            mainApp.saveUserProgressSafely();
-        });
-
-        btnAdd1.setOnAction(e -> {
-            gameManager.addFocusTime(100, mainApp.getCurrentPokemonId());
-            mainApp.refreshCurrencyLabels();
-            mainApp.refreshXpDisplay();
-            mainApp.refreshPokedexGrid();
-            mainApp.saveUserProgressSafely();
-        });
-
-        btnAdd2.setOnAction(e -> {
-            gameManager.addFocusTime(50, mainApp.getCurrentPokemonId());
-            mainApp.refreshCurrencyLabels();
-            mainApp.refreshXpDisplay();
-            mainApp.refreshPokedexGrid();
-            mainApp.saveUserProgressSafely();
-        });
-
-        HBox btnBox = new HBox(10, btnAdd, btnAdd1, btnAdd2);
-        btnBox.setAlignment(Pos.CENTER);
-
-        debugLayout.getChildren().addAll(modeStatusLabel, modeSwitchRow, new Separator(), btnBox);
-        debugPane.setContent(debugLayout);
-
-        return debugPane;
-    }
-
-    private ToggleButton createDistractionModeSwitch(
-            DistractionHandlingMode initialMode,
-            Label modeStatusLabel,
-            JdbcDistractionModeRepository modeRepository) {
-        ToggleButton toggle = new ToggleButton();
-        toggle.setSelected(initialMode == DistractionHandlingMode.CLOSE_DISTRACTION);
-        toggle.setCursor(Cursor.HAND);
-        toggle.setFocusTraversable(true);
-        toggle.setMinSize(66, 40);
-        toggle.setPrefSize(66, 40);
-        toggle.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
-
-        Rectangle track = new Rectangle(60, 34);
-        track.setArcWidth(34);
-        track.setArcHeight(34);
-
-        Circle thumb = new Circle(14);
-        thumb.setFill(Color.WHITE);
-        thumb.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 5, 0, 0, 1);");
-
-        StackPane switchGraphic = new StackPane(track, thumb);
-        switchGraphic.setPadding(new Insets(3));
-        switchGraphic.setAlignment(Pos.CENTER_LEFT);
-        toggle.setGraphic(switchGraphic);
-
-        updateSlidingSwitchVisual(toggle, track, thumb, false);
-
-        toggle.selectedProperty().addListener((obs, oldValue, selected) -> {
-            DistractionHandlingMode selectedMode = selected
-                    ? DistractionHandlingMode.CLOSE_DISTRACTION
-                    : DistractionHandlingMode.WARN_USER;
-            modeRepository.saveMode(selectedMode);
-            if (timerView != null) {
-                timerView.setDistractionHandlingMode(selectedMode);
-            }
-            modeStatusLabel.setText("目前分心處理模式: " + selectedMode.name());
-            updateSlidingSwitchVisual(toggle, track, thumb, true);
-            System.out.println("[DEBUG][Distraction] Stats tab switch mode: " + selectedMode.name());
-        });
-
-        return toggle;
-    }
-
-    private void updateSlidingSwitchVisual(ToggleButton toggle, Rectangle track, Circle thumb, boolean animated) {
-        boolean selected = toggle.isSelected();
-        track.setFill(selected ? Color.web("#27ae60") : Color.web("#7f8c8d"));
-
-        double targetX = selected ? 29 : 3;
-        if (!animated) {
-            thumb.setTranslateX(targetX);
-            return;
-        }
-
-        TranslateTransition transition = new TranslateTransition(Duration.millis(160), thumb);
-        transition.setToX(targetX);
-        transition.play();
     }
 }

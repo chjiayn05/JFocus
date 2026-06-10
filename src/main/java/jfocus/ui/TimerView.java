@@ -71,9 +71,9 @@ public class TimerView extends VBox implements FocusListener {
     private Label statusLabel;
 
     private Button pauseBtn; // 新增這行
-    private Button debugBtn10s;
-    private Button debugBtn1m;
-    private Button debugBtn5m;
+    // private Button debugBtn10s;
+    // private Button debugBtn1m;
+    // private Button debugBtn5m;
     private boolean isPaused = false; // 記錄目前的暫停狀態
     private int lastTickSeconds = 0; // 碼表模式：記錄最後一次 tick 的秒數
 
@@ -105,26 +105,26 @@ public class TimerView extends VBox implements FocusListener {
         pauseBtn.setManaged(false);
 
         //TODO Debug區域
-        debugBtn10s = new Button("⟳10s");
-        debugBtn10s.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
-        debugBtn10s.setVisible(false);
-        debugBtn10s.setManaged(false);
-        debugBtn10s.setOnAction(e -> engine.debugForward(10));
+        // debugBtn10s = new Button("⟳10s");
+        // debugBtn10s.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        // debugBtn10s.setVisible(false);
+        // debugBtn10s.setManaged(false);
+        // debugBtn10s.setOnAction(e -> engine.debugForward(10));
 
-        debugBtn1m = new Button("⟳1m");
-        debugBtn1m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
-        debugBtn1m.setVisible(false);
-        debugBtn1m.setManaged(false);
-        debugBtn1m.setOnAction(e -> engine.debugForward(60));
+        // debugBtn1m = new Button("⟳1m");
+        // debugBtn1m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        // debugBtn1m.setVisible(false);
+        // debugBtn1m.setManaged(false);
+        // debugBtn1m.setOnAction(e -> engine.debugForward(60));
         
-        debugBtn5m = new Button("⟳5m");
-        debugBtn5m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
-        debugBtn5m.setVisible(false);
-        debugBtn5m.setManaged(false);
-        debugBtn5m.setOnAction(e -> engine.debugForward(60* 5));
+        // debugBtn5m = new Button("⟳5m");
+        // debugBtn5m.setStyle("-fx-background-color: #7f8c8d; -fx-font-size: 16px; -fx-text-fill: white; -fx-padding: 5 10; -fx-background-radius: 8;");
+        // debugBtn5m.setVisible(false);
+        // debugBtn5m.setManaged(false);
+        // debugBtn5m.setOnAction(e -> engine.debugForward(60* 5));
 
         HBox btnBox = new HBox(15, startBtn, pauseBtn, stopBtn);
-        HBox debugBtnBox = new HBox(15, debugBtn10s, debugBtn1m, debugBtn5m);
+        // HBox debugBtnBox = new HBox(15, debugBtn10s, debugBtn1m, debugBtn5m);
         // 1. 實例化所有 UI 零件
         TimerSettings timerSettings = loadTimerSettingsSafely();
 
@@ -236,7 +236,7 @@ public class TimerView extends VBox implements FocusListener {
         selectorRow.setAlignment(Pos.CENTER);
 
         btnBox.setAlignment(Pos.CENTER);
-        debugBtnBox.setAlignment(Pos.CENTER);
+        // debugBtnBox.setAlignment(Pos.CENTER);
 
         settingsSection = new VBox(8, selectorRow, inputArea);
         settingsSection.setAlignment(Pos.CENTER);
@@ -248,8 +248,8 @@ public class TimerView extends VBox implements FocusListener {
                 xpBox,
                 statusLabel,
                 timerLabel,
-                btnBox,
-                debugBtnBox
+                btnBox
+                // debugBtnBox
         );
 
         // 4. 掛載組員寫的引擎與按鈕事件
@@ -302,12 +302,12 @@ public class TimerView extends VBox implements FocusListener {
                 stopBtn.setManaged(true);
 
                 //TODO Debug區域
-                debugBtn10s.setVisible(true);
-                debugBtn10s.setManaged(true);
-                debugBtn1m.setVisible(true);
-                debugBtn1m.setManaged(true);
-                debugBtn5m.setVisible(true);
-                debugBtn5m.setManaged(true);
+                // debugBtn10s.setVisible(true);
+                // debugBtn10s.setManaged(true);
+                // debugBtn1m.setVisible(true);
+                // debugBtn1m.setManaged(true);
+                // debugBtn5m.setVisible(true);
+                // debugBtn5m.setManaged(true);
 
                 isPaused = false;
                 pauseBtn.setText("暫停");
@@ -493,12 +493,12 @@ public class TimerView extends VBox implements FocusListener {
             stopBtn.setManaged(true);
 
             //TODO Debug區域
-            debugBtn10s.setVisible(true);
-            debugBtn10s.setManaged(true);
-            debugBtn1m.setVisible(true);
-            debugBtn1m.setManaged(true);
-            debugBtn5m.setVisible(true);
-            debugBtn5m.setManaged(true);
+            // debugBtn10s.setVisible(true);
+            // debugBtn10s.setManaged(true);
+            // debugBtn1m.setVisible(true);
+            // debugBtn1m.setManaged(true);
+            // debugBtn5m.setVisible(true);
+            // debugBtn5m.setManaged(true);
         } else {
             startBtn.setVisible(true);
             startBtn.setManaged(true);
@@ -518,12 +518,12 @@ public class TimerView extends VBox implements FocusListener {
             scaleDown.play();
 
             //TODO Debug區域
-            debugBtn10s.setVisible(false);
-            debugBtn10s.setManaged(false);
-            debugBtn1m.setVisible(false);
-            debugBtn1m.setManaged(false);
-            debugBtn5m.setVisible(false);
-            debugBtn5m.setManaged(false);
+            // debugBtn10s.setVisible(false);
+            // debugBtn10s.setManaged(false);
+            // debugBtn1m.setVisible(false);
+            // debugBtn1m.setManaged(false);
+            // debugBtn5m.setVisible(false);
+            // debugBtn5m.setManaged(false);
         }
 
         PauseTransition delay = new PauseTransition(Duration.seconds(setTime));
